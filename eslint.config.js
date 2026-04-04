@@ -4,18 +4,25 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import css from '@eslint/css';
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
     ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
       tseslint.configs.stylisticTypeChecked,
       react.configs.flat.recommended,
+      react.configs.flat['jsx-runtime'],
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
@@ -28,4 +35,11 @@ export default defineConfig([
       }
     },
   },
+  {
+    name: 'CSS config',
+    files: ['src/**/*.css'],
+    plugins: { css },
+    language: 'css/css',
+    extends: ['css/recommended']
+  }
 ])

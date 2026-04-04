@@ -1,11 +1,13 @@
-import js from '@eslint/js'
-import globals from 'globals'
+import js from '@eslint/js';
+import globals from 'globals';
 import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
 import css from '@eslint/css';
-import { defineConfig, globalIgnores } from 'eslint/config'
+import prettierPlugin from 'eslint-config-prettier/flat';
+
+import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -32,7 +34,7 @@ export default defineConfig([
       parserOptions: {
         project: ['./tsconfig.node.json', './tsconfig.app.json'],
         tsconfigRootDir: import.meta.dirname,
-      }
+      },
     },
   },
   {
@@ -40,6 +42,7 @@ export default defineConfig([
     files: ['src/**/*.css'],
     plugins: { css },
     language: 'css/css',
-    extends: ['css/recommended']
-  }
-])
+    extends: ['css/recommended'],
+  },
+  prettierPlugin,
+]);

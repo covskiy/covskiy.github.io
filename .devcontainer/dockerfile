@@ -1,0 +1,35 @@
+# 24 нода на lts дебиане
+FROM node:24-bookworm-slim
+
+# Метаданные образа
+LABEL description="Node.js dev container's image"
+
+# Список полезных пакетов, отсутствующий в исходном образе
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    less \
+    nano \
+    tmux \
+    htop \
+    # tree \
+    # netstat \
+    # build-essential \
+    curl \ 
+    # wget \
+    git \
+    # ssh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка Node.js глобальных пакетов для отладки/разработки
+RUN npm install -g \
+    nodemon \
+    serve \
+    tsx
+
+# Настраиваем рабочую директорию
+USER node
+WORKDIR /workspace
+
+# Экспонируем порт
+EXPOSE 3005 9229
+
+CMD ["sleep", "infinity"]

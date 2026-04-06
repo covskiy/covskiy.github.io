@@ -4,7 +4,6 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
-import css from '@eslint/css';
 import prettierPlugin from 'eslint-config-prettier/flat';
 
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -36,13 +35,6 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
-  },
-  {
-    name: 'CSS config',
-    files: ['src/**/*.css'],
-    plugins: { css },
-    language: 'css/css',
-    extends: ['css/recommended'],
   },
   prettierPlugin,
 ]);

@@ -3,31 +3,20 @@ import reactLogo from './assets/react.svg';
 import viteLogo from './assets/vite.svg';
 import heroImg from './assets/hero.svg';
 import './App.css';
+import { Navigate, Route, Routes } from 'react-router';
+import { NavLink } from 'react-router';
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <NavBar />
+      <div className="ticks"></div>
+      <Routes>
+        <Route index element={<Clicker />} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
+        <Route path="/info" element={<Info />} />
+        <Route path="/*" element={<RouteError />} />
+      </Routes>
 
       <div className="ticks"></div>
 
@@ -124,6 +113,66 @@ function App() {
       <section id="spacer"></section>
     </>
   );
+
+  function NavBar() {
+    return (
+      <nav id="navbar">
+        <ul>
+          <li>
+            <NavLink to="/">Home</NavLink>
+          </li>
+          <li>
+            <NavLink to="/info">Info</NavLink>
+          </li>
+        </ul>
+      </nav>
+    );
+  }
+
+  function Info() {
+    return (
+      <section id="center">
+        <h2>Базовый проект</h2>
+        <p>
+          Проект для того, чтобы собрать библиотеки, настроить все
+          парсеры/конфиги и залить на хостинг
+        </p>
+      </section>
+    );
+  }
+  function RouteError() {
+    return (
+      <section id="center">
+        <h2>404 page</h2>
+        <p>Нет пути!</p>
+      </section>
+    );
+  }
+
+  function Clicker() {
+    const [count, setCount] = useState(0);
+    return (
+      <section id="center">
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
+          <img src={reactLogo} className="framework" alt="React logo" />
+          <img src={viteLogo} className="vite" alt="Vite logo" />
+        </div>
+        <div>
+          <h1>Get started</h1>
+          <p>
+            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+          </p>
+        </div>
+        <button
+          className="counter"
+          onClick={() => setCount((count) => count + 1)}
+        >
+          Count is {count}
+        </button>
+      </section>
+    );
+  }
 }
 
 export default App;

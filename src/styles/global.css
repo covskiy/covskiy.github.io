@@ -1,6 +1,6 @@
 /* Global utility styles */
 
-@import './typography.css';
+@import url('./typography.css');
 
 body {
   margin: 0;

@@ -48,15 +48,15 @@
   transition: border-color 0.2s;
 }
 
+.field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
 .field input:focus,
 .field textarea:focus {
   outline: none;
   border-color: var(--accent);
-}
-
-.field textarea {
-  resize: vertical;
-  min-height: 120px;
 }
 
 .submit {

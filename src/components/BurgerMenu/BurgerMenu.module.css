@@ -1,0 +1,90 @@
+.burger {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.line {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-h);
+  border-radius: 1px;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.menu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg);
+  padding: 72px 24px 24px;
+  overflow-y: auto;
+}
+
+.close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  margin: 0;
+}
+
+.link {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 18px;
+  line-height: 1.4;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.link:hover {
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+@media (width < 768px) {
+  .burger {
+    display: flex;
+  }
+}

@@ -8,6 +8,117 @@
     <title>Portfolio — Сайт-визитка</title>
   </head>
   <body>
+    <!-- Preloader -->
+    <div id="preloader">
+      <div class="preloader-content">
+        <div class="spinner"></div>
+        <div class="preloader-text">
+          <span id="resource-counter">0</span> /
+          <span id="total-resources">0</span> ресурсов загружено
+        </div>
+      </div>
+    </div>
+
+    <style>
+      /* Preloader styles */
+      #preloader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        transition:
+          opacity 0.4s ease,
+          visibility 0.4s ease;
+      }
+
+      #preloader.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .preloader-content {
+        text-align: center;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #333;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .preloader-text {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        font-size: 14px;
+        color: #666;
+      }
+    </style>
+
+    <script>
+      // Resource tracking
+      (function () {
+        let loadedCount = 0;
+        const totalResources = performance.getEntriesByType('resource').length;
+
+        function updateCounter() {
+          const counter = document.getElementById('resource-counter');
+          const total = document.getElementById('total-resources');
+          if (counter && total) {
+            counter.textContent = loadedCount;
+            total.textContent = Math.max(totalResources, loadedCount);
+          }
+        }
+
+        // Track resource loads
+        const originalXHROpen = XMLHttpRequest.prototype.open;
+        const originalFetch = window.fetch;
+
+        // Initial count
+        updateCounter();
+
+        // Update counter periodically until React loads
+        const updateInterval = setInterval(function () {
+          const currentResources =
+            performance.getEntriesByType('resource').length;
+          loadedCount = Math.max(loadedCount, currentResources);
+          updateCounter();
+        }, 100);
+
+        // Expose function to hide preloader
+        window.hidePreloader = function () {
+          clearInterval(updateInterval);
+          const preloader = document.getElementById('preloader');
+          if (preloader) {
+            preloader.classList.add('hidden');
+            setTimeout(function () {
+              preloader.remove();
+            }, 400);
+          }
+        };
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

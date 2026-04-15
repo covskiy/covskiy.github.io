@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Suspense, lazy, type ReactNode } from 'react';
 import { type RouteObject } from 'react-router';
 import HomePage from './pages/HomePage/HomePage';
@@ -11,9 +12,7 @@ function LazyFallback() {
 }
 
 function withSuspense(element: ReactNode) {
-  return (
-    <Suspense fallback={<LazyFallback />}>{element}</Suspense>
-  );
+  return <Suspense fallback={<LazyFallback />}>{element}</Suspense>;
 }
 
 export const routes: RouteObject[] = [

@@ -21,7 +21,13 @@ function IntroAnimation({ onComplete }: IntroAnimationProps) {
       tl.fromTo(
         `.${styles.logo}`,
         { opacity: 0, scale: 0.5, rotation: -45 },
-        { opacity: 1, scale: 1, rotation: 0, duration: 0.8, ease: 'back.out(1.7)' },
+        {
+          opacity: 1,
+          scale: 1,
+          rotation: 0,
+          duration: 0.8,
+          ease: 'back.out(1.7)',
+        },
       )
         .fromTo(
           `.${styles.title}`,
@@ -35,15 +41,12 @@ function IntroAnimation({ onComplete }: IntroAnimationProps) {
           { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
           '-=0.2',
         )
-        .to(
-          `.${styles.intro}`,
-          {
-            opacity: 0,
-            duration: 0.5,
-            delay: 0.3,
-            ease: 'power2.inOut',
-          },
-        );
+        .to(`.${styles.intro}`, {
+          opacity: 0,
+          duration: 0.5,
+          delay: 0.3,
+          ease: 'power2.inOut',
+        });
     },
     { scope: containerRef },
   );

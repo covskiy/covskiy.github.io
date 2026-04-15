@@ -11,8 +11,7 @@
   --accent-bg: rgb(170 59 255 / 10%);
   --accent-border: rgb(170 59 255 / 50%);
   --social-bg: rgb(244 243 236 / 50%);
-  --shadow:
-    rgb(0 0 0 / 10%) 0 10px 15px -3px, rgb(0 0 0 / 5%) 0 4px 6px -2px;
+  --shadow: rgb(0 0 0 / 10%) 0 10px 15px -3px, rgb(0 0 0 / 5%) 0 4px 6px -2px;
 
   /* Fonts */
   --sans: system-ui, 'Segoe UI', roboto, sans-serif;

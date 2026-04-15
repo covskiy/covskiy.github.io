@@ -23,7 +23,9 @@
   height: 2px;
   background: var(--text-h);
   border-radius: 1px;
-  transition: transform 0.2s, opacity 0.2s;
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
 }
 
 .menu {
@@ -69,7 +71,9 @@
   text-decoration: none;
   font-size: 18px;
   line-height: 1.4;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .link:hover {

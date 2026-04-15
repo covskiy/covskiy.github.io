@@ -36,7 +36,9 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 
 .card:hover {

@@ -196,12 +196,12 @@ User → /about (direct link on GitHub Pages)
 
 ### 4.4 Переиспользование компонентов
 
-| Компонент | Повторное использование |
-|-----------|------------------------|
-| `VerticalNav` | На всех страницах, fixed position |
-| `BurgerMenu` | Только на мобильных, заменяет VerticalNav |
-| `PageTransition` | Обёртка вокруг каждого `<Page>` в роутах |
-| `IntroAnimation` | Одноразовый, при первом монтировании App |
+| Компонент        | Повторное использование                   |
+| ---------------- | ----------------------------------------- |
+| `VerticalNav`    | На всех страницах, fixed position         |
+| `BurgerMenu`     | Только на мобильных, заменяет VerticalNav |
+| `PageTransition` | Обёртка вокруг каждого `<Page>` в роутах  |
+| `IntroAnimation` | Одноразовый, при первом монтировании App  |
 
 ### 4.5 Responsive breakpoint
 
@@ -313,16 +313,20 @@ gsap.registerPlugin(useGSAP);
 function AnimatedComponent() {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useGSAP(() => {
-    // Все GSAP-анимации здесь — автоматически очищаются при unmount
-    gsap.from('.element', { opacity: 0, y: 20, duration: 0.6 });
-  }, { scope: containerRef });
+  useGSAP(
+    () => {
+      // Все GSAP-анимации здесь — автоматически очищаются при unmount
+      gsap.from('.element', { opacity: 0, y: 20, duration: 0.6 });
+    },
+    { scope: containerRef },
+  );
 
   return <div ref={containerRef}>...</div>;
 }
 ```
 
 **Ключевые преимущества:**
+
 - Не нужно вручную вызывать `gsap.context()` и `ctx.revert()`
 - Автоматическая очистка при unmount компонента
 - Опция `scope` ограничивает селекторы потомками указанного элемента
@@ -362,6 +366,7 @@ export default defineConfig({
 ```
 
 **Ключевые изменения:**
+
 - `base` — путь для GitHub Pages (имя репозитория).
 - `manualChunks.vendor` — вынос react + gsap в отдельный чанк.
 
@@ -493,21 +498,21 @@ jobs:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Redirecting...</title>
-  <script>
-    const path = location.pathname;
-    if (path !== '/') {
-      sessionStorage.setItem('redirect', path);
-      const redirect = '/covskiy.github.io/?r=' + encodeURIComponent(path);
-      location.replace(redirect);
-    }
-  </script>
-</head>
-<body>
-  <p>Redirecting to SPA...</p>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <script>
+      const path = location.pathname;
+      if (path !== '/') {
+        sessionStorage.setItem('redirect', path);
+        const redirect = '/covskiy.github.io/?r=' + encodeURIComponent(path);
+        location.replace(redirect);
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to SPA...</p>
+  </body>
 </html>
 ```
 
@@ -538,19 +543,19 @@ function AppWithRedirect() {
 
 ## 8. Итоговая структура зависимостей
 
-| Пакет | Назначение |
-|-------|-----------|
-| `react` | UI library |
-| `react-dom` | DOM rendering |
-| `react-router` | Client-side routing |
-| `gsap` | Animations (intro + page transitions) |
-| `@gsap/react` | React hook (`useGSAP`) для GSAP с автоматическим cleanup |
-| `vite` | Build tool + dev server |
-| `@vitejs/plugin-react` | React + HMR |
-| `typescript` | Type safety |
-| `eslint` + plugins | Linting |
-| `prettier` | Formatting |
-| `stylelint` + config-standard | CSS linting |
-| `husky` | Git hooks |
-| `lint-staged` | Pre-commit checks |
-| `lightningcss` | CSS transform + minify |
+| Пакет                         | Назначение                                               |
+| ----------------------------- | -------------------------------------------------------- |
+| `react`                       | UI library                                               |
+| `react-dom`                   | DOM rendering                                            |
+| `react-router`                | Client-side routing                                      |
+| `gsap`                        | Animations (intro + page transitions)                    |
+| `@gsap/react`                 | React hook (`useGSAP`) для GSAP с автоматическим cleanup |
+| `vite`                        | Build tool + dev server                                  |
+| `@vitejs/plugin-react`        | React + HMR                                              |
+| `typescript`                  | Type safety                                              |
+| `eslint` + plugins            | Linting                                                  |
+| `prettier`                    | Formatting                                               |
+| `stylelint` + config-standard | CSS linting                                              |
+| `husky`                       | Git hooks                                                |
+| `lint-staged`                 | Pre-commit checks                                        |
+| `lightningcss`                | CSS transform + minify                                   |

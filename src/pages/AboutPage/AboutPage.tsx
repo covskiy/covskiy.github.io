@@ -16,8 +16,8 @@ function AboutPage() {
         <p>
           Sed ut perspiciatis unde omnis iste natus error sit voluptatem
           accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae
-          ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt
-          explicabo.
+          ab illo inventore veritatis et quasi architecto beatae vitae dicta
+          sunt explicabo.
         </p>
       </section>
 
@@ -46,8 +46,8 @@ function AboutPage() {
         <h2>Наши ценности</h2>
         <ul className={styles.values}>
           <li>
-            <strong>Инновации</strong> — Nemo enim ipsam voluptatem quia voluptas
-            sit aspernatur aut odit aut fugit.
+            <strong>Инновации</strong> — Nemo enim ipsam voluptatem quia
+            voluptas sit aspernatur aut odit aut fugit.
           </li>
           <li>
             <strong>Качество</strong> — Neque porro quisquam est, qui dolorem

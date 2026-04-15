@@ -16,9 +16,7 @@ function App() {
 
   return (
     <div className={styles.app}>
-      {!introComplete && (
-        <IntroAnimation onComplete={handleIntroComplete} />
-      )}
+      {!introComplete && <IntroAnimation onComplete={handleIntroComplete} />}
 
       {introComplete && (
         <>

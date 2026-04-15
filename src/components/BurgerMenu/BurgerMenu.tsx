@@ -48,9 +48,7 @@ function BurgerMenu() {
                 <NavLink
                   to={path}
                   className={({ isActive }) =>
-                    isActive
-                      ? `${styles.link} ${styles.active}`
-                      : styles.link
+                    isActive ? `${styles.link} ${styles.active}` : styles.link
                   }
                   onClick={closeMenu}
                 >

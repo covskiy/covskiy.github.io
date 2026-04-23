@@ -1,51 +1,40 @@
-/* CSS-переменные для шрифтов, цветов, размеров */
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
 
 :root {
-  /* Colors */
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgb(170 59 255 / 10%);
-  --accent-border: rgb(170 59 255 / 50%);
-  --social-bg: rgb(244 243 236 / 50%);
-  --shadow: rgb(0 0 0 / 10%) 0 10px 15px -3px, rgb(0 0 0 / 5%) 0 4px 6px -2px;
-
-  /* Fonts */
-  --sans: system-ui, 'Segoe UI', roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', roboto, sans-serif;
-  --mono: ui-monospace, consolas, monospace;
-
-  /* Typography */
-  --font-size-base: 18px;
-  --line-height-base: 145%;
-  --letter-spacing-base: 0.18px;
-
-  /* Font settings */
-  font-synthesis: none;
-  text-rendering: optimizelegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  /* Responsive breakpoints */
-  --bp-tablet: 1024px;
-  --bp-mobile: 768px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgb(192 132 252 / 15%);
-    --accent-border: rgb(192 132 252 / 50%);
-    --social-bg: rgb(47 48 58 / 50%);
-    --shadow:
-      rgb(0 0 0 / 40%) 0 10px 15px -3px, rgb(0 0 0 / 25%) 0 4px 6px -2px;
-  }
+  --typography-logo: 700 3rem/2 "Playfair Display", serif;
+  --typography-hero-description: 500 1.875rem/1.4 "Playfair Display", serif;
+  --typography-heading-h1: 800 2.25rem/1.4 "Inter", sans-serif;
+  --typography-heading-h2: 700 1.875rem/1.4 "Inter", sans-serif;
+  --typography-heading-h3: 600 1.5rem/1.4 "Inter", sans-serif;
+  --typography-paragraph: 400 1rem/1.6 "Open Sans", sans-serif;
+  --typography-small-text: 300 0.875rem/1.6 "Open Sans", sans-serif;
+  --font-families-logo: "Playfair Display", serif; /** Элегантный шрифт с засечками для логотипа и hero‑описания. Создаёт премиальное впечатление. */
+  --font-families-headings: "Inter", sans-serif; /** Современный гротеск для заголовков всех уровней. Хорошая читаемость и чёткие формы. */
+  --font-families-body: "Open Sans", sans-serif; /** Универсальный шрифт без засечек для основного текста, параграфов, подписей и мелких элементов. */
+  --font-sizes-xs: 0.75rem; /** Очень мелкий текст (12px). Для подписей, мелких подписей к изображениям, дисклеймеров. */
+  --font-sizes-sm: 0.875rem; /** Мелкий текст (14px). Для подзаголовков, второстепенного текста, подписей к полям формы. */
+  --font-sizes-base: 1rem; /** Базовый размер (16px). Основной текст параграфов, описания, списки. */
+  --font-sizes-lg: 1.125rem; /** Увеличенный текст (18px). Для акцентированного основного текста или более крупных параграфов. */
+  --font-sizes-xl: 1.25rem; /** Заголовок уровня H4 (20px). */
+  --font-sizes-2xl: 1.5rem; /** Заголовок уровня H3 (24px). */
+  --font-sizes-3xl: 1.875rem; /** Заголовок уровня H2 (30px). */
+  --font-sizes-4xl: 2.25rem; /** Заголовок уровня H1 (36px). */
+  --font-sizes-5xl: 3rem; /** Hero‑заголовок (48px). Используется для главного заголовка в hero‑секции. */
+  --font-sizes-6xl: 3.75rem; /** Крупный hero‑текст (60px). Для особо выразительных заголовков в hero‑блоке. */
+  --line-heights-tight: 1.1; /** Плотный интерлиньяж для крупных заголовков и логотипов. */
+  --line-heights-normal: 1.4; /** Стандартный интерлиньяж для заголовков среднего размера. */
+  --line-heights-relaxed: 1.6; /** Комфортный интерлиньяж для основного текста и параграфов. */
+  --line-heights-loose: 2; /** Свободный интерлиньяж для очень крупных заголовков в hero‑секциях. */
+  --font-weights-thin: 100;
+  --font-weights-light: 300;
+  --font-weights-normal: 400;
+  --font-weights-medium: 500;
+  --font-weights-semibold: 600;
+  --font-weights-bold: 700;
+  --font-weights-extrabold: 800;
+  --letter-spacings-tight: -0.025em; /** Сжатый трекинг для крупных заголовков. */
+  --letter-spacings-normal: normal; /** Нормальный трекинг. */
+  --letter-spacings-wide: 0.05em; /** Расширенный трекинг для логотипов и акцентированных надписей. */
 }

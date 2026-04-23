@@ -1,0 +1,62 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --color-primary-25: #eafeeb;
+  --color-primary-50: #dfffe3;
+  --color-primary-100: #cafbda;
+  --color-primary-200: #97f8c0;
+  --color-primary-300: #61eba9;
+  --color-primary-400: #39d89c;
+  --color-primary-500: #04bf8a;
+  --color-primary-600: #02a486;
+  --color-primary-700: #02897d;
+  --color-primary-800: #016d6e;
+  --color-primary-900: #00525b;
+  --color-purple-25: #fbfbfe;
+  --color-purple-50: #ebebf9;
+  --color-purple-100: #e3e2fc;
+  --color-purple-200: #c7c6fa;
+  --color-purple-300: #a8a6f2;
+  --color-purple-400: #8d8ce5;
+  --color-purple-500: #6866d4;
+  --color-purple-600: #4c4ab6;
+  --color-purple-700: #343398;
+  --color-purple-800: #21207a;
+  --color-purple-900: #141365;
+  --color-gray-25: #fcfcfd;
+  --color-gray-100: #f2f4f7;
+  --color-gray-300: #d0d5dd;
+  --color-gray-700: #344054;
+  --color-gray-800: #1d2939;
+  --color-gray-900: #101828;
+  --color-success-25: #f9ffef;
+  --color-success-50: #ecfbd3;
+  --color-success-100: #e6fbc7;
+  --color-success-200: #d6f7a9;
+  --color-success-300: #b4e87b;
+  --color-success-400: #8fd256;
+  --color-success-500: #60b527;
+  --color-success-600: #489b1c;
+  --color-success-700: #338213;
+  --color-success-800: #21680c;
+  --color-success-900: #145607;
+  --color-error-25: #fffcfa;
+  --color-error-50: #fff4ef;
+  --color-error-100: #ffe5d6;
+  --color-error-200: #ffc4ad;
+  --color-error-300: #ff9d83;
+  --color-error-400: #ff7765;
+  --color-error-500: #ff3932;
+  --color-error-600: #db242d;
+  --color-error-700: #b7192e;
+  --color-error-800: #930f2c;
+  --color-error-900: #7a092b;
+  --color-gradient-primary-900-600-45-deg: linear-gradient(45deg, #00525b 0%, #02a486 100%);
+  --color-gradient-primary-800-700-26-5-deg: linear-gradient(26.5deg, #016d6e 0%, #02897d 100%);
+  --color-gradient-primary-800-600-90-deg: linear-gradient(90deg, #016d6e 0%, #02a486 100%);
+  --color-gradient-primary-800-600-45-deg: linear-gradient(45deg, #016d6e 0%, #02a486 100%);
+  --color-gradient-primary-700-600-45-deg: linear-gradient(45deg, #02897d 0%, #02a486 100%);
+  --color-gradient-primary-600-500-90-deg: linear-gradient(90deg, #02a486 0%, #04bf8a 100%);
+}

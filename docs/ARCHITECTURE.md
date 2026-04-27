@@ -14,9 +14,6 @@ covskiy.github.io/
 │   ├── assets/                     # Статические изображения
 │   │   └── ...
 │   ├── components/
-│   │   ├── IntroAnimation/         # GSAP intro-анимация
-│   │   │   ├── IntroAnimation.tsx
-│   │   │   └── IntroAnimation.module.css
 │   │   ├── VerticalNav/            # Фиксированный вертикальный navbar
 │   │   │   ├── VerticalNav.tsx
 │   │   │   └── VerticalNav.module.css
@@ -26,7 +23,10 @@ covskiy.github.io/
 │   │   └── PageTransition/         # Обёртка для анимации перехода между роутами
 │   │       └── PageTransition.tsx  # useGSAP для анимаций (автоматический cleanup)
 │   ├── pages/
-│   │   ├── HomePage/               # Главная страница
+│   │   ├── SplashPage/               # Splash-экран с анимацией (блокирует UI)
+│   │   │   ├── SplashPage.tsx
+│   │   │   └── SplashPage.module.css
+│   │   ├── HomePage/               # Главная страница (/home)
 │   │   │   ├── HomePage.tsx
 │   │   │   └── HomePage.module.css
 │   │   ├── AboutPage/              # Страница "О нас"
@@ -77,15 +77,22 @@ covskiy.github.io/
     ▼
 [App.tsx]
     │
-    ├── Mount → IntroAnimation (GSAP timeline)
+    ├── location.pathname === '/'?
     │       │
-    │       ├── Анимация entrance (logo, текст, декоративные элементы)
+    │       ├── YES → <SplashPage> (conditional render, блокирует UI)
+    │       │       │
+    │       │       ├── localStorage.getItem('splashShown') === 'true'?
+    │       │       │       │
+    │       │       │       ├── YES → navigate('/home')
+    │       │       │       └── NO → проиграть GSAP анимацию
+    │       │       │               │
+    │       │       │               ├── по завершении: localStorage.setItem('splashShown', 'true')
+    │       │       │               └── navigate('/home')
     │       │
-    │       └── onComplete → fade-out intro, show main content
-    │
-    └── После завершения intro:
-            ├── VerticalNav (фиксированный, слева)
-            └── <Routes> (основной контент)
+    │       └── NO (path === '/home', '/about', etc.) → полный UI
+    │               ├── VerticalNav (фиксированный, слева)
+    │               ├── BurgerMenu (мобильный)
+    │               └── <Routes> (основной контент)
 ```
 
 ### 2.2 Навигация между страницами
@@ -93,7 +100,7 @@ covskiy.github.io/
 ```
 [VerticalNav] / [BurgerMenu]
     │
-    ├── NavLink to="/about"  ──► React Router (client-side)
+    ├── NavLink to="/home"  ──► React Router (client-side)
     │                               │
     │                               ▼
     │                         [PageTransition]
@@ -103,7 +110,7 @@ covskiy.github.io/
     │                               ├── GSAP: entrance-анимация новой страницы
     │                               └── cleanup: kill/revert всех GSAP-таймлайнов
     │
-    └── NavLink to="/"  ──► тот же поток
+    └── NavLink to="/about"  ──► тот же поток
 ```
 
 ### 2.3 GSAP lifecycle
@@ -136,11 +143,14 @@ Component unmount (route change)
 ```tsx
 // routes.tsx — концепция
 export const routes = [
-  { path: '/', element: <HomePage /> },
+  { path: '/home', element: <HomePage /> },
   { path: '/about', element: <AboutPage /> },
   { path: '/services', element: <ServicesPage /> },
   { path: '/contact', element: <ContactPage /> },
 ];
+
+// Примечание: роут '/' обрабатывается в App.tsx (SplashPage)
+// Пример: при переходе на '/' → /home, либо показ анимации
 ```
 
 ### 3.2 Проблема GitHub Pages с BrowserRouter
@@ -201,7 +211,7 @@ User → /about (direct link on GitHub Pages)
 | `VerticalNav`    | На всех страницах, fixed position         |
 | `BurgerMenu`     | Только на мобильных, заменяет VerticalNav |
 | `PageTransition` | Обёртка вокруг каждого `<Page>` в роутах  |
-| `IntroAnimation` | Одноразовый, при первом монтировании App  |
+| `SplashPage`   | Блокирует UI на '/', редирект на /home  |
 
 ### 4.5 Responsive breakpoint
 
@@ -273,7 +283,7 @@ dist/
 ├── index.html
 ├── assets/
 │   ├── index-[hash].css          # Global CSS (typography, reset, global)
-│   ├── index-[hash].js           # main + App + VerticalNav + IntroAnimation
+│   ├── index-[hash].js           # main + App + VerticalNav + SplashPage
 │   ├── HomePage-[hash].js        # HomePage (eager, в основном чанке)
 │   ├── AboutPage-[hash].js       # lazy chunk
 │   ├── ServicesPage-[hash].js    # lazy chunk
@@ -285,12 +295,17 @@ dist/
 
 ## 6. GSAP: стратегия анимаций
 
-### 6.1 Intro-анимация
+### 6.1 SplashPage-анимация
 
-- Компонент `IntroAnimation` монтируется один раз при загрузке `App`.
+- Компонент `SplashPage` монтируется при переходе на `/` (conditional rendering в App.tsx).
 - Использует хук `useGSAP` из `@gsap/react` — автоматически создаёт контекст и управляет очисткой.
-- Для однократной анимации используется `{ dependencies: [] }` (пустой массив зависимостей).
-- После завершения — callback, который устанавливает флаг `showMain = true` в `App` (локальный state).
+- **Блокировка UI**: пока SplashPage active — не рендерятся VerticalNav, BurgerMenu и Routes.
+- Логика `localStorage`:
+  - При монтировании: `localStorage.getItem('splashShown')`
+  - Если `true` — сразу вызывает `onComplete()` (редирект на `/home`)
+  - Если `false` — проигрывает GSAP timeline, после завершения:
+    - `localStorage.setItem('splashShown', 'true')`
+    - вызывает `onComplete()` (редирект на `/home`)
 - Cleanup выполняется автоматически при unmount компонента.
 
 ### 6.2 Page transitions

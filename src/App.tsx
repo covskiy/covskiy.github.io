@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Routes, Route } from 'react-router';
-import IntroAnimation from './components/IntroAnimation/IntroAnimation';
+import { Routes, Route, useLocation, useNavigate } from 'react-router';
+import SplashPage from './pages/SplashPage/SplashPage';
 import VerticalNav from './components/VerticalNav/VerticalNav';
 import BurgerMenu from './components/BurgerMenu/BurgerMenu';
 import PageTransition from './components/PageTransition/PageTransition';
@@ -8,17 +8,21 @@ import { routes } from './routes';
 import styles from './App.module.css';
 
 function App() {
-  const [introComplete, setIntroComplete] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [splashComplete] = useState(() => location.pathname === '/home');
 
-  const handleIntroComplete = () => {
-    setIntroComplete(true);
+  const handleSplashComplete = () => {
+    void navigate('/home', { replace: true });
   };
+
+  const showSplash = location.pathname === '/' && !splashComplete;
 
   return (
     <div className={styles.app}>
-      {!introComplete && <IntroAnimation onComplete={handleIntroComplete} />}
-
-      {introComplete && (
+      {showSplash ? (
+        <SplashPage onComplete={handleSplashComplete} />
+      ) : (
         <>
           <VerticalNav />
           <BurgerMenu />

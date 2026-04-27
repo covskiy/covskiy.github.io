@@ -1,21 +1,33 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import styles from './IntroAnimation.module.css';
+import styles from './SplashPage.module.css';
 
 gsap.registerPlugin(useGSAP);
 
-interface IntroAnimationProps {
+interface SplashPageProps {
   onComplete: () => void;
 }
 
-function IntroAnimation({ onComplete }: IntroAnimationProps) {
+function SplashPage({ onComplete }: SplashPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasAnimatedRef = useRef(localStorage.getItem('splashShown') === 'true');
+
+  useEffect(() => {
+    if (hasAnimatedRef.current) {
+      onComplete();
+    }
+  }, [onComplete]);
 
   useGSAP(
     () => {
+      if (hasAnimatedRef.current) return;
+
       const tl = gsap.timeline({
-        onComplete,
+        onComplete: () => {
+          localStorage.setItem('splashShown', 'true');
+          onComplete();
+        },
       });
 
       tl.fromTo(
@@ -60,4 +72,4 @@ function IntroAnimation({ onComplete }: IntroAnimationProps) {
   );
 }
 
-export default IntroAnimation;
+export default SplashPage;

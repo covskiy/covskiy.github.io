@@ -6,6 +6,9 @@ import BurgerMenu from './components/BurgerMenu/BurgerMenu';
 import PageTransition from './components/PageTransition/PageTransition';
 import { routes } from './routes';
 import styles from './App.module.css';
+import { initGsap } from './utils/initGsap';
+
+initGsap();
 
 function App() {
   const location = useLocation();

@@ -17,7 +17,7 @@ function withSuspense(element: ReactNode) {
 
 export const routes: RouteObject[] = [
   {
-    path: '/home',
+    // path: '(/home)|/',
     element: <HomePage />,
   },
   {
@@ -31,5 +31,9 @@ export const routes: RouteObject[] = [
   {
     path: '/contact',
     element: withSuspense(<ContactPage />),
+  },
+  {
+    path: '*',
+    element: <div>404</div>,
   },
 ];

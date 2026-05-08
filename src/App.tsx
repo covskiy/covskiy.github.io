@@ -21,6 +21,8 @@ function App() {
 
   const showSplash = location.pathname === '/' && !splashComplete;
 
+  return <SplashPage onComplete={handleSplashComplete} />;
+
   return (
     <div className={styles.app}>
       {showSplash ? (

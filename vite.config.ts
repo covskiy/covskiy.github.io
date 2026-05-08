@@ -6,7 +6,26 @@ import svgr from 'vite-plugin-svgr';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr()],
+  plugins: [
+    react(),
+    svgr({
+      svgrOptions: {
+        plugins: ['@svgr/plugin-svgo', '@svgr/plugin-jsx'],
+        svgoConfig: {
+          plugins: [
+            {
+              name: 'preset-default',
+              params: {
+                overrides: {
+                  cleanupAttrs: false, // не удаляем при импорте svg файла css class
+                },
+              },
+            },
+          ],
+        },
+      },
+    }),
+  ],
   build: {
     target: ['es2020'],
     sourcemap: true,
@@ -29,6 +48,7 @@ export default defineConfig({
     transformer: 'lightningcss',
     lightningcss: {
       targets: browserslistToTargets(browserslist('baseline 2020')),
+      // cssModules: true,
     },
   },
   server: {

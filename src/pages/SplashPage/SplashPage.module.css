@@ -15,6 +15,25 @@
   margin-bottom: 16px;
 }
 
+.keyboard {
+  width: 80%;
+  height: auto;
+
+  & :global(.svg-board-key) {
+    opacity: 0;
+    fill: green;
+  }
+}
+
+/* 
+.keyboard .svg-board-key {
+  opacity: 0;
+} */
+
+/* .keyboard .svg-board-key {
+  opacity: 0;
+} */
+
 .title {
   font-size: 48px;
   font-weight: 500;

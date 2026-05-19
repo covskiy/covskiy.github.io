@@ -8,6 +8,8 @@ import { routes } from './routes';
 import styles from './App.module.css';
 import { initGsap } from './utils/initGsap';
 
+import { Intro } from './components/Intro/Intro';
+
 initGsap();
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
   };
 
   const showSplash = location.pathname === '/' && !splashComplete;
+
+  return <Intro />;
 
   return <SplashPage onComplete={handleSplashComplete} />;
 

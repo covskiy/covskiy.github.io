@@ -18,6 +18,7 @@ export default defineConfig({
               params: {
                 overrides: {
                   cleanupAttrs: false, // не удаляем при импорте svg файла css class
+                  cleanupIds: false,
                 },
               },
             },

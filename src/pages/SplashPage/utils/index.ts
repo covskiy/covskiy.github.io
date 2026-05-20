@@ -1,0 +1,1 @@
+export { splashStorage } from './splashStorage';

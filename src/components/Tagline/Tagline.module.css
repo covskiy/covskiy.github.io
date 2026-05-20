@@ -1,0 +1,7 @@
+.tagline {
+  visibility: hidden;
+  font-size: 1.25rem;
+  color: rgb(255 255 255 / 70%);
+  margin: 0;
+  letter-spacing: 0.05em;
+}

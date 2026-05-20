@@ -1,47 +1,11 @@
-.intro {
+.splashContainer {
   position: fixed;
   inset: 0;
-  z-index: 1000;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  background: var(--bg);
-}
-
-.logo {
-  font-size: 64px;
-  color: var(--accent);
-  margin-bottom: 16px;
-}
-
-.keyboard {
-  width: 80%;
-  height: auto;
-
-  & :global(.svg-board-key) {
-    opacity: 0;
-    fill: green;
-  }
-}
-
-/* 
-.keyboard .svg-board-key {
-  opacity: 0;
-} */
-
-/* .keyboard .svg-board-key {
-  opacity: 0;
-} */
-
-.title {
-  font-size: 48px;
-  font-weight: 500;
-  color: var(--text-h);
-  margin: 0 0 8px;
-}
-
-.subtitle {
-  font-size: 18px;
-  color: var(--text);
+  align-items: center;
+  gap: 2rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  z-index: 9999;
 }

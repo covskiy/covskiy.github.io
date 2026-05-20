@@ -1,0 +1,8 @@
+.logoText {
+  visibility: hidden;
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  letter-spacing: 0.1em;
+}

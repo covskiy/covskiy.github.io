@@ -1,0 +1,39 @@
+.skipControls {
+  position: absolute;
+  bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.skipButton {
+  padding: 0.5rem 1.5rem;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 10%);
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.skipButton:hover {
+  background: rgb(255 255 255 / 20%);
+  border-color: rgb(255 255 255 / 50%);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(255 255 255 / 60%);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.checkboxText {
+  user-select: none;
+}

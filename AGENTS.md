@@ -29,6 +29,7 @@ covskiy.github.io/
 │   ├── components/
 │   │   ├── VerticalNav/     # Навигация для десктопа (фикс. слева)
 │   │   ├── BurgerMenu/      # Мобильная навигация (<768px)
+│   │   ├── Intro/           # Анимированный логотип "COVSKIY" (morphSVG)
 │   │   └── PageTransition/  # Обертка для анимации переходов
 │   ├── pages/
 │   │   ├── SplashPage/      # Splash-экран с анимацией (блокирует UI)

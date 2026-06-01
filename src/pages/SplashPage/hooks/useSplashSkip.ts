@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { splashStorage } from '../utils/splashStorage';
-import { type gsap } from 'gsap';
 
 type UseSplashSkipProps = {
   timeline: gsap.core.Timeline | null;

@@ -2,29 +2,44 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import type { AnimationComponentProps } from '../../types/splash.types';
+import LogoSvg from './anvil_md.svg?react';
 import styles from './Logo.module.css';
 
 export function Logo({ timeline }: AnimationComponentProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      if (!timeline || !ref.current) return;
+      if (!timeline || !containerRef.current) return;
 
-      const tween = gsap.fromTo(
-        ref.current,
-        { opacity: 0, scale: 0.5, visibility: 'visible' },
-        { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.2)' },
-      );
+      const tl = gsap.timeline();
 
-      timeline.add(tween, 0);
+      tl.fromTo(
+        '.glow-path',
+        { drawSVG: '0% 0%' },
+        { drawSVG: '0% 100%', duration: 1.5, ease: 'power2.inOut' },
+        0,
+      )
+        .fromTo(
+          '.main-path',
+          { drawSVG: '0% 0%' },
+          { drawSVG: '0% 100%', duration: 1.2, ease: 'power2.inOut' },
+          0.15,
+        )
+        .to(
+          '.glow-path',
+          { opacity: 0, duration: 0.5, ease: 'power2.out' },
+          1.2,
+        );
+
+      timeline.add(tl, 0);
     },
-    { dependencies: [timeline], scope: ref },
+    { dependencies: [timeline], scope: containerRef },
   );
 
   return (
-    <div ref={ref} className={styles.logo} style={{ visibility: 'hidden' }}>
-      <div className={styles.logoPlaceholder}>LOGO</div>
+    <div ref={containerRef} className={styles.logo}>
+      <LogoSvg className={styles.svg} />
     </div>
   );
 }

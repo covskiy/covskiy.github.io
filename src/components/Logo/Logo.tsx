@@ -12,7 +12,7 @@ export function Logo({ timeline }: AnimationComponentProps) {
     () => {
       if (!timeline || !containerRef.current) return;
 
-      const tl = gsap.timeline();
+      const tl = gsap.timeline({ id: 'Logo.tsx timeline' });
 
       tl.fromTo(
         '.glow-path',

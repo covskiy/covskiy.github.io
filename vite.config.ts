@@ -19,6 +19,9 @@ export default defineConfig({
                 overrides: {
                   cleanupAttrs: false, // не удаляем при импорте svg файла css class
                   cleanupIds: false,
+                  removeHiddenElems: {
+                    displayNone: false, // morph пути скрытыми элементами лежат, их чистить не надо
+                  },
                 },
               },
             },

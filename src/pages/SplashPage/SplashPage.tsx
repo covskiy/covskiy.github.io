@@ -6,6 +6,9 @@ import { useSplashSkip } from './hooks';
 import type { SplashPageProps } from '../../types/splash.types';
 import styles from './SplashPage.module.css';
 
+import { GSDevTools } from 'gsap/GSDevTools';
+gsap.registerPlugin(GSDevTools);
+
 export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
   const timelineContainerRef = useRef<HTMLDivElement | null>(null);
   const [timeline, setTimeline] = useState<gsap.core.Timeline | null>(null);
@@ -25,8 +28,10 @@ export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
   useGSAP(
     () => {
       if (shouldBypass) return;
-      const tl = gsap.timeline({ onComplete: () => onComplete?.() });
+      // const tl = gsap.timeline({ id: 'SplashPage_master_timeline', onComplete: () => onComplete?.() });
+      const tl = gsap.timeline({ id: 'SplashPage_master_timeline' });
       setTimeline(tl);
+      GSDevTools.create({ animation: tl, css: 'z-index: 9999' });
     },
     {
       dependencies: [shouldBypass, onComplete],

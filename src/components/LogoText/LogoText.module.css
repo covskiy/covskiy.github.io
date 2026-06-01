@@ -1,8 +1,25 @@
-.logoText {
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 600px;
+}
+
+:global(#layer1) {
+  display: block !important;
   visibility: hidden;
-  font-size: 3rem;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-  letter-spacing: 0.1em;
+  opacity: 0;
+}
+
+:global(.img-orig):global(:not(.img-c)) {
+  opacity: 0;
+  visibility: hidden;
 }

@@ -25,7 +25,10 @@ export function Tagline({ timeline }: AnimationComponentProps) {
     () => {
       if (!timeline || !containerRef.current) return;
 
-      const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+      const tl = gsap.timeline({
+        id: 'Tagline.tsx timeline',
+        defaults: { ease: 'power2.out' },
+      });
 
       const split = SplitText.create(textRef.current, { type: 'lines' });
       gsap.set(split.lines, { y: -20, opacity: 0 });

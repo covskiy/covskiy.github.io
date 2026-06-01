@@ -17,7 +17,7 @@ function withSuspense(element: ReactNode) {
 
 export const routes: RouteObject[] = [
   {
-    // path: '(/home)|/',
+    path: '/home',
     element: <HomePage />,
   },
   {
@@ -34,6 +34,20 @@ export const routes: RouteObject[] = [
   },
   {
     path: '*',
-    element: <div>404</div>,
+    element: (
+      <div
+        style={{
+          width: '100%',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <h2 style={{ fontSize: '32px', fontWeight: 'bolder' }}>404</h2>
+        <p>Route not found</p>
+      </div>
+    ),
   },
 ];

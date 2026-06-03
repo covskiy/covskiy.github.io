@@ -44,12 +44,14 @@ rect.img-orig.img-i    — маркер позиции I (скрыт изнач�
 ## Интерфейс компонента
 
 ```tsx
+type RegisterTimelineFn = (tl: gsap.core.Timeline, position?: number) => void;
+
 type AnimationComponentProps = {
-  timeline: gsap.core.Timeline | null;
+  onRegisterTimeline: RegisterTimelineFn;
 };
 ```
 
-Получает родительский мастер `Timeline`, добавляет свои tween'ы.
+Получает колбэк `onRegisterTimeline`, создаёт свой внутренний таймлайн и регистрирует его через колбэк. Родитель (SplashPage) сам добавляет его в мастер-таймлайн.
 
 ## Последовательность анимации
 
@@ -64,6 +66,17 @@ type AnimationComponentProps = {
 | **1.7s** (старт курсора)                         | Подкова → C                          | `morphSVG: letter-c` на `.img-c`                                                                                                                                |
 | **прогрессивно** (курсор проходит каждый маркер) | img-{o,v,s,k,i} → letter-{o,v,s,k,i} | `onUpdate` проверяет `cursorCenter >= markerX`; запускает `morphSVG` + видимость для каждой буквы                                                               |
 | **4.7s** (конец курсора)                         | Курсор → Y                           | `morphSVG: letter-y` на `.img-cur`                                                                                                                              |
+
+## Архитектура регистрации
+
+Компонент не получает мастер-таймлайн напрямую. Через колбэк `onRegisterTimeline` он сообщает родителю (SplashPage): «вот мой локальный таймлайн, добавь его в мастер». Это обеспечивает слабую связанность: дети не знают о структуре мастер-таймлайна и не мутируют его напрямую.
+
+```tsx
+// внутри useGSAP
+const tl = gsap.timeline({ id: 'Logo.tsx tl' });
+// наполнение tl анимациями...
+onRegisterTimeline(tl); // регистрация без позиции (по умолчанию 0)
+```
 
 ## Ключевые технические решения
 

@@ -16,14 +16,14 @@ const KEY_SELECTORS = [
   '.key_y',
 ];
 
-export function Tagline({ timeline }: AnimationComponentProps) {
+export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      if (!timeline || !containerRef.current) return;
+      if (!containerRef.current) return;
 
       const tl = gsap.timeline({
         id: 'Tagline.tsx timeline',
@@ -84,9 +84,9 @@ export function Tagline({ timeline }: AnimationComponentProps) {
         },
       );
 
-      timeline.add(tl, 1.0);
+      onRegisterTimeline(tl, 1.0);
     },
-    { dependencies: [timeline], scope: containerRef },
+    { dependencies: [onRegisterTimeline], scope: containerRef },
   );
 
   return (

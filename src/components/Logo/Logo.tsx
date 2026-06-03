@@ -5,12 +5,12 @@ import type { AnimationComponentProps } from '../../types/splash.types';
 import LogoSvg from './anvil_md.svg?react';
 import styles from './Logo.module.css';
 
-export function Logo({ timeline }: AnimationComponentProps) {
+export function Logo({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      if (!timeline || !containerRef.current) return;
+      if (!containerRef.current) return;
 
       const tl = gsap.timeline({ id: 'Logo.tsx timeline' });
 
@@ -32,9 +32,9 @@ export function Logo({ timeline }: AnimationComponentProps) {
           1.2,
         );
 
-      timeline.add(tl, 0);
+      onRegisterTimeline(tl, 0);
     },
-    { dependencies: [timeline], scope: containerRef },
+    { dependencies: [onRegisterTimeline], scope: containerRef },
   );
 
   return (

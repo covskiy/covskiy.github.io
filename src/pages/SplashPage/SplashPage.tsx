@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { Logo, LogoText, Tagline, SkipControls } from '../../components';
@@ -25,6 +25,13 @@ export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
     skipDelay,
   });
 
+  const handleRegisterTimeline = useCallback(
+    (tl: gsap.core.Timeline, position = 0) => {
+      timeline?.add(tl, position);
+    },
+    [timeline],
+  );
+
   useGSAP(
     () => {
       if (shouldBypass) return;
@@ -43,9 +50,9 @@ export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
 
   return (
     <div className={styles.splashContainer} ref={timelineContainerRef}>
-      <Logo timeline={timeline} />
-      <LogoText timeline={timeline} />
-      <Tagline timeline={timeline} />
+      <Logo onRegisterTimeline={handleRegisterTimeline} />
+      <LogoText onRegisterTimeline={handleRegisterTimeline} />
+      <Tagline onRegisterTimeline={handleRegisterTimeline} />
       {showSkipButton && (
         <SkipControls
           onNeverShowAgain={handleNeverShowAgain}

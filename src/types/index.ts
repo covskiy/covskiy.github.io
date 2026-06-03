@@ -1,5 +1,6 @@
 export type {
   AnimationComponentProps,
+  RegisterTimelineFn,
   SkipControlsProps,
   SplashPageProps,
   SplashStorageData,

@@ -10,12 +10,12 @@ const NAIL_FLY_DURATION = 1.2;
 const NAIL_MORPH_DURATION = 0.5;
 const CURSOR_MOVE_DURATION = 2;
 
-export function LogoText({ timeline }: AnimationComponentProps) {
+export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      if (!timeline || !containerRef.current) return;
+      if (!containerRef.current) return;
 
       const tl = gsap.timeline({ id: 'Logo.tsx tl' });
 
@@ -34,14 +34,15 @@ export function LogoText({ timeline }: AnimationComponentProps) {
         y: getPathD('.letter-y'),
       };
 
+      const letterC = gsap.utils.selector(containerRef)('.img-c');
       const CLetter = gsap
         .timeline({ id: 'CLetter tl' })
-        .from('.img-c', {
+        .from(letterC, {
           x: '-50',
           rotate: '-90',
           duration: 0.5,
         })
-        .to('.img-c', {
+        .to(letterC, {
           morphSVG: { shape: ltr.c },
           duration: 0.5,
         });
@@ -53,20 +54,31 @@ export function LogoText({ timeline }: AnimationComponentProps) {
         if (el) positions[letter] = (el as SVGGraphicsElement).getBBox().x;
       }
 
-      const lettersTl = gsap.timeline({ id: 'letters tl', paused: true });
+      const lettersTl = gsap.timeline({
+        id: 'letters tl',
+        paused: true,
+        onStart: () => console.log('letters tl start playing'),
+      });
       for (const letter of posMarkers) {
         lettersTl
-          .set(`.img-${letter}`, { opacity: 1, visibility: 'visible' })
+          .set(`.img-${letter}`, {
+            opacity: 1,
+            visibility: 'visible',
+            onComplete: () => console.log(`letter ${letter} set to visible`),
+          })
           .to(`.img-${letter}`, {
             morphSVG: ltr[letter as keyof typeof ltr],
             duration: MORPH_DURATION,
             ease: 'power1.inOut',
-          });
+            onComplete: () => console.log(`another morph done for: ${letter}`),
+          })
+          .pause();
       }
 
+      const cursor = gsap.utils.selector(containerRef)('.img-nail');
       const NailLine = gsap
         .timeline({ id: 'Nail tl' })
-        .from('.img-nail', {
+        .from(cursor, {
           x: 300,
           y: -150,
           rotation: 540,
@@ -74,20 +86,22 @@ export function LogoText({ timeline }: AnimationComponentProps) {
           ease: 'power3.out',
           transformOrigin: '50% 50%',
         })
-        .to('.img-nail', {
+        .to(cursor, {
           morphSVG: { shape: getPathD('.img-cur') },
           duration: NAIL_MORPH_DURATION,
           ease: 'power2.inOut',
         })
-        .to('.img-nail', {
+        .add(lettersTl)
+        .to(cursor, {
           x: 127,
           duration: CURSOR_MOVE_DURATION,
           ease: 'none',
           onStart: () => {
-            lettersTl.play();
+            lettersTl.play(0);
+            console.log(`Letters tl started by cursor`);
           },
         })
-        .set('.img-nail', {
+        .set(cursor, {
           opacity: 0,
           visibility: 'hidden',
         });
@@ -184,9 +198,9 @@ export function LogoText({ timeline }: AnimationComponentProps) {
 
       // tl.add(cursorTween, NAIL_FLY_DURATION + NAIL_MORPH_DURATION);
       tl.add([CLetter, NailLine]);
-      timeline.add(tl);
+      onRegisterTimeline(tl);
     },
-    { dependencies: [timeline], scope: containerRef },
+    { dependencies: [onRegisterTimeline], scope: containerRef },
   );
 
   return (

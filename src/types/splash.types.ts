@@ -1,5 +1,10 @@
+export type RegisterTimelineFn = (
+  tl: gsap.core.Timeline,
+  position?: number,
+) => void;
+
 export type AnimationComponentProps = {
-  timeline: gsap.core.Timeline | null;
+  onRegisterTimeline: RegisterTimelineFn;
 };
 
 export type SkipControlsProps = {

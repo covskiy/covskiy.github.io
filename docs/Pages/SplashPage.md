@@ -1,6 +1,6 @@
 # SplashPage
 
-Анимированная интро-страница (Splash Screen), последовательно анимирующая три ключевых элемента: **Логотип**, **Логотекст** и **Слоган**. Анимация управляется единым `gsap.core.Timeline`, создаваемым в `SplashPage` и передаваемым в дочерние компоненты через пропсы.
+Анимированная интро-страница (Splash Screen), последовательно анимирующая три ключевых элемента: **Логотип**, **Логотекст** и **Слоган**. Анимация управляется единым `gsap.core.Timeline`, создаваемым в `SplashPage`. Дочерние компоненты регистрируют свои локальные таймлайны через колбэк `onRegisterTimeline`, переданный в props.
 
 ## Управление состоянием
 
@@ -38,7 +38,7 @@ components/
 ```
 types/
 ├── index.ts                    # Barrel: splash types
-└── splash.types.ts             # AnimationComponentProps, SkipControlsProps, SplashPageProps, SplashStorageData
+└── splash.types.ts             # AnimationComponentProps, RegisterTimelineFn, SkipControlsProps, SplashPageProps, SplashStorageData
 ```
 
 ## Последовательность анимации
@@ -94,7 +94,11 @@ function App() {
 ## Ключевые решения
 
 - **Timeline создаётся ТОЛЬКО** в `SplashPage` через `useGSAP`, а не в дочерних компонентах
-- **Дочерние компоненты** получают `timeline` через пропсы и вызывают `timeline.add()`
+- **Дочерние компоненты** получают колбэк `onRegisterTimeline` через пропсы вместо прямого доступа к мастер-таймлайну
+- **Колбэк** `handleRegisterTimeline` создаётся через `useCallback` с зависимостью `[timeline]` — после инициализации мастер-таймлайна он пересоздаётся, и дети регистрируют свои локальные таймлайны
+- **Первый рендер**: `timeline === null` → вызов `onRegisterTimeline` является no-op
+- **Второй рендер** (после `setTimeline(tl)`): `handleRegisterTimeline` получает актуальный мастер-таймлайн, дети перезапускают `useGSAP` и регистрируются
+- **`useSplashSkip`** продолжает получать `timeline` напрямую из стейта
 - **Исходные стили** скрыты через `visibility: hidden`, GSAP переключает на `visible`
 - **Пропуск** выполняется через `timeline.progress(1).kill()` без `gsap.set`/`clearProps`
 - **`useGSAP`** из `@gsap/react` гарантирует безопасную работу в `StrictMode` и автоочистку

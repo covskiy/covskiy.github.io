@@ -1,44 +1,57 @@
-import { useCallback, useRef, useState } from 'react';
-import { useGSAP } from '@gsap/react';
+import { useCallback, useRef } from 'react';
 import gsap from 'gsap';
-import { Logo, LogoText, Tagline, SkipControls } from '../../components';
+import { GSDevTools } from 'gsap/GSDevTools';
+import { Logo, LogoText, Tagline } from '../../components';
 import { useSplashSkip } from './hooks';
 import type { SplashPageProps } from '../../types/splash.types';
 import styles from './SplashPage.module.css';
+import { useGSAP } from '@gsap/react';
 
-import { GSDevTools } from 'gsap/GSDevTools';
 gsap.registerPlugin(GSDevTools);
+
+export type registerFunc = (masterTimeline: gsap.core.Timeline) => void;
 
 export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
   const timelineContainerRef = useRef<HTMLDivElement | null>(null);
-  const [timeline, setTimeline] = useState<gsap.core.Timeline | null>(null);
+  const childTimelinesRegistrationRef = useRef<Set<registerFunc>>(new Set());
+  const masterTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
-  const {
-    showSkipButton,
-    neverShowAgain,
-    handleSkip,
-    handleNeverShowAgain,
-    shouldBypass,
-  } = useSplashSkip({
-    timeline: timeline,
-    onSkip: onComplete,
-    skipDelay,
-  });
+  const shouldBypass = false;
+  // const { shouldBypass } = useSplashSkip({
+  //   timeline: masterTimeline,
+  //   onSkip: () => onComplete?.(),
+  //   skipDelay,
+  // });
 
   const handleRegisterTimeline = useCallback(
-    (tl: gsap.core.Timeline, position = 0) => {
-      timeline?.add(tl, position);
+    (timeline: gsap.core.Timeline, position = 0) => {
+      const registrationFunc = (masterTimeline: gsap.core.Timeline) => {
+        masterTimeline.add(timeline, position);
+      };
+      childTimelinesRegistrationRef.current.add(registrationFunc);
+      return () => {
+        childTimelinesRegistrationRef.current.delete(registrationFunc);
+      };
     },
-    [timeline],
+    [],
   );
 
   useGSAP(
     () => {
       if (shouldBypass) return;
-      // const tl = gsap.timeline({ id: 'SplashPage_master_timeline', onComplete: () => onComplete?.() });
-      const tl = gsap.timeline({ id: 'SplashPage_master_timeline' });
-      setTimeline(tl);
-      GSDevTools.create({ animation: tl, css: 'z-index: 9999' });
+      const master = gsap.timeline({
+        id: 'SplashPage_master_timeline',
+        paused: true,
+        onComplete: () => onComplete?.(),
+      });
+
+      masterTimelineRef.current = master;
+      childTimelinesRegistrationRef.current.forEach((func) => func(master));
+      master.play();
+
+      if (import.meta.env.DEV) {
+        GSDevTools.create({ animation: master, css: 'z-index: 9999' });
+      }
     },
     {
       dependencies: [shouldBypass, onComplete],
@@ -53,13 +66,14 @@ export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
       <Logo onRegisterTimeline={handleRegisterTimeline} />
       <LogoText onRegisterTimeline={handleRegisterTimeline} />
       <Tagline onRegisterTimeline={handleRegisterTimeline} />
-      {showSkipButton && (
+
+      {/*showSkipButton && (
         <SkipControls
           onNeverShowAgain={handleNeverShowAgain}
           neverShowAgain={neverShowAgain}
           onSkip={handleSkip}
         />
-      )}
+      )*/}
     </div>
   );
 }

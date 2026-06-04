@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 import KeyboardSvg from './keyboard.svg?react';
 import type { AnimationComponentProps } from '../../types/splash.types';
+import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import styles from './Tagline.module.css';
 
 const KEY_SELECTORS = [
@@ -20,6 +21,7 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const { labels: L, durations: D } = SPLASH_CHOREOGRAPHY.tagline;
 
   useGSAP(
     () => {
@@ -30,13 +32,17 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         defaults: { ease: 'power2.out' },
       });
 
+      // Метка старта Tagline на его собственном timeline
+      tl.addLabel('KEYBOARD_IN', L.KEYBOARD_IN);
+
       const split = SplitText.create(textRef.current, { type: 'lines' });
       gsap.set(split.lines, { y: -20, opacity: 0 });
 
       tl.fromTo(
         keyboardRef.current,
         { y: '-120%' },
-        { y: '0%', opacity: 1, duration: 0.5 },
+        { y: '0%', opacity: 1, duration: D.KEYBOARD_IN },
+        'KEYBOARD_IN',
       );
 
       KEY_SELECTORS.forEach((selector) => {
@@ -46,10 +52,10 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
             fill: '#04bf8a',
             opacity: 1,
             scale: 1.2,
-            duration: 0.3,
+            duration: D.KEY_HIGHLIGHT,
             transformOrigin: 'center center',
           },
-          '>0.3',
+          `>${D.KEY_STAGGER_GAP}`,
         );
       });
 
@@ -59,16 +65,16 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
           fill: '#04bf8a',
           opacity: 1,
           scale: 1.2,
-          duration: 0.3,
+          duration: D.KEY_HIGHLIGHT,
           transformOrigin: 'center center',
         },
-        '>0.5',
+        `>${D.ENTER_KEY_OFFSET}`,
       );
 
       tl.to(keyboardRef.current, {
         y: '120%',
         opacity: 0,
-        duration: 0.4,
+        duration: D.KEYBOARD_OUT,
         ease: 'power2.in',
       });
 
@@ -78,13 +84,13 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         {
           y: 0,
           opacity: 1,
-          duration: 0.6,
+          duration: D.TEXT_REVEAL,
           ease: 'back.out(1.7)',
-          stagger: 0.15,
+          stagger: D.TEXT_STAGGER,
         },
       );
 
-      onRegisterTimeline(tl, 1.0);
+      onRegisterTimeline(tl, SPLASH_CHOREOGRAPHY.master.labels.TAGLINE);
     },
     { dependencies: [onRegisterTimeline], scope: containerRef },
   );

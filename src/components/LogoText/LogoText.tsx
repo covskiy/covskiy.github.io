@@ -6,198 +6,29 @@ import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import LogoSvg from './LogoText.svg?react';
 import styles from './LogoText.module.css';
 
+import { MotionPathHelper } from 'gsap/MotionPathHelper';
+gsap.registerPlugin(MotionPathHelper);
+
 export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { labels: L, durations: D } = SPLASH_CHOREOGRAPHY.logoText;
+
   useGSAP(
     () => {
       if (!containerRef.current) return;
 
-      const tl = gsap.timeline({ id: 'Logo.tsx tl' });
+      const localTimeline = gsap.timeline({ id: 'Logo.tsx tl' });
 
-      // Метки на timeline LogoText
-      tl.addLabel('C_LETTER', L.C_LETTER).addLabel('NAIL_FLY', L.NAIL_FLY);
+      const cLetterTimeline = gsap.timeline({ id: 'CLetter tl' });
+      createCLetterTimeline(cLetterTimeline);
 
-      const svg = containerRef.current;
+      const ovskiyTl = gsap.timeline({ id: 'letters tl' });
+      createOVSKIYTimeline(ovskiyTl);
 
-      const getPathD = (sel: string) =>
-        svg.querySelector(sel)?.getAttribute('d') ?? '';
+      const cursorTl = gsap.timeline({ id: 'Nail tl' });
+      createCursorTimeline(cursorTl);
 
-      const ltr = {
-        c: getPathD('.letter-c'),
-        o: getPathD('.letter-o'),
-        v: getPathD('.letter-v'),
-        s: getPathD('.letter-s'),
-        k: getPathD('.letter-k'),
-        i: getPathD('.letter-i'),
-        y: getPathD('.letter-y'),
-      };
-
-      const letterC = gsap.utils.selector(containerRef)('.img-c');
-      const cTimeline = gsap
-        .timeline({ id: 'CLetter tl' })
-        .from(letterC, {
-          x: '-50',
-          rotate: '-90',
-          duration: D.C_LETTER_FROM,
-        })
-        .to(letterC, {
-          morphSVG: { shape: ltr.c },
-          duration: D.C_LETTER_MORPH,
-        });
-
-      const posMarkers = ['o', 'v', 's', 'k', 'i', 'y'] as const;
-      const positions: Record<string, number> = {};
-      for (const letter of posMarkers) {
-        const el = svg.querySelector(`.img-${letter}`);
-        if (el) positions[letter] = (el as SVGGraphicsElement).getBBox().x;
-      }
-
-      const ovskiyTl = gsap.timeline({
-        id: 'letters tl',
-        paused: true,
-        onStart: () => console.log('letters tl start playing'),
-      });
-      for (const letter of posMarkers) {
-        ovskiyTl
-          .set(`.img-${letter}`, {
-            opacity: 1,
-            visibility: 'visible',
-            onComplete: () => console.log(`letter ${letter} set to visible`),
-          })
-          .to(`.img-${letter}`, {
-            morphSVG: ltr[letter as keyof typeof ltr],
-            duration: D.LETTER_MORPH,
-            ease: 'power1.inOut',
-            onComplete: () => console.log(`another morph done for: ${letter}`),
-          });
-        // .pause();
-      }
-
-      const cursor = gsap.utils.selector(containerRef)('.img-nail');
-      const cursorTl = gsap
-        .timeline({ id: 'Nail tl' })
-        .from(cursor, {
-          x: 300,
-          y: -150,
-          rotation: 540,
-          duration: D.NAIL_FLY,
-          ease: 'power3.out',
-          transformOrigin: '50% 50%',
-        })
-        .to(cursor, {
-          morphSVG: { shape: getPathD('.img-cur') },
-          duration: D.NAIL_MORPH,
-          ease: 'power2.inOut',
-        })
-        .add(ovskiyTl)
-        .to(cursor, {
-          x: 127,
-          duration: D.CURSOR_MOVE,
-          ease: 'none',
-          onStart: () => {
-            ovskiyTl.play();
-            console.log(`Letters tl started by cursor`);
-          },
-        })
-        .set(cursor, {
-          opacity: 0,
-          visibility: 'hidden',
-        });
-
-      // const posMarkers = ['o', 'v', 's', 'k', 'i'] as const;
-      // const positions: Record<string, number> = {};
-      // for (const letter of posMarkers) {
-      //   const el = svg.querySelector(`.img-${letter}`);
-      //   if (el) positions[letter] = (el as SVGGraphicsElement).getBBox().x;
-      // }
-
-      // const nailEl = svg.querySelector(
-      //   '.img-nail',
-      // ) as SVGGraphicsElement | null;
-      // const imgOEl = svg.querySelector('.img-o') as SVGGraphicsElement | null;
-      // const curEl = svg.querySelector('.img-cur') as SVGGraphicsElement | null;
-      // if (!nailEl || !imgOEl || !curEl) return;
-      // const nailBBox = nailEl.getBBox();
-      // const imgOBBox = imgOEl.getBBox();
-      // const curBBox = curEl.getBBox();
-
-      // const targetCurCenter = positions.i + 30;
-      // const cursorDeltaX = targetCurCenter - (curBBox.x + curBBox.width / 2);
-
-      // const nailDx = imgOBBox.x - nailBBox.x;
-      // const nailDy = imgOBBox.y - nailBBox.y;
-
-      // const morphed: Record<string, boolean> = {};
-
-      // tl.add(
-      //   gsap.from('.img-nail', {
-      //     x: 300,
-      //     y: -150,
-      //     rotation: 540,
-      //     duration: NAIL_FLY_DURATION,
-      //     ease: 'power3.out',
-      //     transformOrigin: '50% 50%',
-      //   }),
-      //   0,
-      // );
-
-      // tl.add(
-      //   gsap.to('.img-nail', {
-      //     morphSVG: { shape: '.img-o' },
-      //     x: nailDx,
-      //     y: nailDy,
-      //     duration: NAIL_MORPH_DURATION,
-      //     ease: 'power2.inOut',
-      //     onComplete: () => {
-      //       gsap.set('.img-nail', { opacity: 0, visibility: 'hidden' });
-      //       gsap.set('.img-o', { opacity: 1, visibility: 'visible' });
-      //     },
-      //   }),
-      //   NAIL_FLY_DURATION,
-      // );
-
-      // const cursorTween = gsap.to('.img-cur', {
-      //   x: cursorDeltaX,
-      //   duration: CURSOR_MOVE_DURATION,
-      //   ease: 'none',
-      //   onUpdate: () => {
-      //     const curX = gsap.getProperty('.img-cur', 'x') as number;
-      //     const cursorCenter = curBBox.x + curX + curBBox.width / 2;
-
-      //     if (!morphed.c) {
-      //       morphed.c = true;
-      //       gsap.to('.img-c', {
-      //         morphSVG: ltr.c,
-      //         duration: MORPH_DURATION,
-      //         ease: 'power1.inOut',
-      //       });
-      //     }
-
-      //     for (const letter of posMarkers) {
-      //       const posX = positions[letter];
-      //       if (cursorCenter >= posX && !morphed[letter]) {
-      //         morphed[letter] = true;
-      //         gsap.to(`.img-${letter}`, {
-      //           morphSVG: ltr[letter as keyof typeof ltr],
-      //           duration: MORPH_DURATION,
-      //           ease: 'power1.inOut',
-      //         });
-      //       }
-      //     }
-      //   },
-      //   onComplete: () => {
-      //     gsap.to('.img-cur', {
-      //       morphSVG: ltr.y,
-      //       duration: MORPH_DURATION + 0.1,
-      //       ease: 'power1.inOut',
-      //     });
-      //   },
-      // });
-
-      // tl.add(cursorTween, NAIL_FLY_DURATION + NAIL_MORPH_DURATION);
-      tl.add(cTimeline, 0).add(cursorTl, 0);
-      onRegisterTimeline(tl);
+      localTimeline.add(cLetterTimeline, 0).add(cursorTl, 0).add(ovskiyTl, 0);
+      onRegisterTimeline(localTimeline);
     },
     { dependencies: [onRegisterTimeline], scope: containerRef },
   );
@@ -207,4 +38,233 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
       <LogoSvg className={styles.svg} />
     </div>
   );
+}
+
+/**
+ * Timeline с анимацией первой буквы C Intro страницы
+ * @param tl timeline на который будет регистрироваться анимация
+ * @returns timeline с добавленными аномалиями
+ */
+function createCLetterTimeline(tl: gsap.core.Timeline): gsap.core.Timeline {
+  const { C: letterC } = SPLASH_CHOREOGRAPHY.logoText;
+  const letterCSelector = '.img-c';
+  tl.from(
+    letterCSelector,
+    {
+      transformOrigin: '50% 50%',
+      x: letterC.phaseShoe.xPosition,
+      rotate: letterC.phaseShoe.rotate,
+      duration: letterC.phaseShoe.duration,
+    },
+    letterC.phaseShoe.start,
+  ).to(
+    letterCSelector,
+    {
+      morphSVG: { shape: '#morphPath-C' },
+      duration: letterC.phaseLetter.duration,
+    },
+    letterC.phaseLetter.start,
+  );
+  return tl;
+}
+
+/**
+ * Timeline с анимацией букв логотекста, кроме заглавной
+ * @param tl timeline на который будет регистрироваться анимация
+ * @returns timeline с добавленными аномалиями
+ */
+function createOVSKIYTimeline(tl: gsap.core.Timeline): gsap.core.Timeline {
+  const {
+    O: letterO,
+    V: letterV,
+    S: letterS,
+    K: letterK,
+    I: letterI,
+    Y: letterY,
+  } = SPLASH_CHOREOGRAPHY.logoText;
+
+  tl.set(
+    '.img-o',
+    { opacity: 1, visibility: 'visible' },
+    letterO.phaseDash.start,
+  )
+    .to(
+      '.img-o',
+      {
+        morphSVG: '#morphPath-O',
+        duration: letterO.phaseLetter.duration,
+        ease: 'power1.inOut',
+      },
+      letterO.phaseDash.start + letterO.phaseLetter.delay,
+    )
+
+    .set(
+      '.img-v',
+      { opacity: 1, visibility: 'visible' },
+      letterV.phaseDash.start,
+    )
+
+    .to(
+      '.img-v',
+      {
+        morphSVG: '#morphPath-V',
+        duration: letterV.phaseLetter.duration,
+        ease: 'power1.inOut',
+      },
+      letterV.phaseDash.start + letterV.phaseLetter.delay,
+    )
+
+    .set(
+      '.img-s',
+      { opacity: 1, visibility: 'visible' },
+      letterS.phaseDash.start,
+    )
+
+    .to(
+      '.img-s',
+      {
+        morphSVG: '#morphPath-S',
+        duration: letterS.phaseLetter.duration,
+        ease: 'power1.inOut',
+      },
+      letterS.phaseDash.start + letterS.phaseLetter.delay,
+    )
+
+    .set(
+      '.img-k',
+      { opacity: 1, visibility: 'visible' },
+      letterK.phaseDash.start,
+    )
+
+    .to(
+      '.img-k',
+      {
+        morphSVG: '#morphPath-K',
+        duration: letterK.phaseLetter.duration,
+        ease: 'power1.inOut',
+      },
+      letterK.phaseDash.start + letterK.phaseLetter.delay,
+    )
+
+    .set(
+      '.img-i',
+      { opacity: 1, visibility: 'visible' },
+      letterI.phaseDash.start,
+    )
+
+    .to(
+      '.img-i',
+      {
+        morphSVG: '#morphPath-I',
+        duration: letterI.phaseLetter.duration,
+        ease: 'power1.inOut',
+      },
+      letterI.phaseDash.start + letterI.phaseLetter.delay,
+    )
+
+    .set(
+      '.img-y',
+      { opacity: 1, visibility: 'visible' },
+      letterY.phaseDash.start,
+    )
+
+    .to(
+      '.img-y',
+      {
+        morphSVG: '#morphPath-Y',
+        duration: letterY.phaseLetter.duration,
+        ease: 'power1.inOut',
+      },
+      letterY.phaseDash.start + letterY.phaseLetter.delay,
+    );
+
+  return tl;
+}
+
+/**
+ * Timeline с анимацией курсора, бегущего по логотексту
+ * @param tl timeline на который будет регистрироваться анимация
+ * @returns timeline с добавленными аномалиями
+ */
+function createCursorTimeline(tl: gsap.core.Timeline): gsap.core.Timeline {
+  const {
+    Cursor,
+    O: letterO,
+    V: letterV,
+    S: letterS,
+    K: letterK,
+    I: letterI,
+    Y: letterY,
+  } = SPLASH_CHOREOGRAPHY.logoText;
+  const cursorSelector = '.img-nail';
+  tl.from(
+    cursorSelector,
+    {
+      motionPath: {
+        path: '#nail-path',
+        align: '#nail-path',
+        start: 0,
+        end: 1,
+      },
+      transformOrigin: '50% 50%',
+      ease: 'slow(0.7,0.7,false)',
+      rotate: Cursor.phaseNail.rotation,
+      duration: Cursor.phaseNail.duration,
+    },
+    Cursor.phaseNail.start,
+  )
+    .to(
+      cursorSelector,
+      {
+        morphSVG: '#morphCursorForm',
+        duration: Cursor.phaseCaret.duration,
+        ease: 'power2.inOut',
+      },
+      Cursor.phaseCaret.start,
+    )
+    .to(cursorSelector, {
+      x: Cursor.phaseMoving.xPosition,
+      duration: Cursor.phaseMoving.duration,
+      ease: 'none',
+    })
+    .set(
+      cursorSelector,
+      { transformOrigin: 'right center' },
+      letterO.phaseDash.start,
+    )
+    .to(
+      cursorSelector,
+      { scaleX: Cursor.scales.O, duration: 0 },
+      letterO.phaseDash.start,
+    )
+    .to(
+      cursorSelector,
+      { scaleX: Cursor.scales.V, duration: 0 },
+      letterV.phaseDash.start,
+    )
+    .to(
+      cursorSelector,
+      { scaleX: Cursor.scales.S, duration: 0 },
+      letterS.phaseDash.start,
+    )
+    .to(
+      cursorSelector,
+      { scaleX: Cursor.scales.K, duration: 0 },
+      letterK.phaseDash.start,
+    )
+    .to(
+      cursorSelector,
+      { scaleX: Cursor.scales.I, duration: 0 },
+      letterI.phaseDash.start,
+    )
+    .set(
+      cursorSelector,
+      {
+        opacity: 0,
+        visibility: 'hidden',
+      },
+      letterY.phaseDash.start,
+    );
+
+  return tl;
 }

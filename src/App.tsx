@@ -20,7 +20,7 @@ function App() {
   const handleSplashComplete = () => {
     console.log(`setShowSplash(false);`);
     setShowSplash(false);
-    void navigate('/home', { replace: true });
+    // void navigate('/home', { replace: true });
   };
 
   return <SplashPage onComplete={handleSplashComplete} skipDelay={800} />;

@@ -11,15 +11,22 @@
   width: 100%;
   height: auto;
   max-width: 600px;
-}
+  outline: 1px solid red;
 
-:global(#layer1) {
-  display: block !important;
-  visibility: hidden;
-  opacity: 0;
-}
+  :global(#logoLetters) {
+    display: none;
+    visibility: hidden;
+    opacity: 0;
+  }
 
-:global(.img-orig):global(:not(.img-c)) {
-  opacity: 0;
-  visibility: hidden;
+  :global(.img-nail) {
+    opacity: 0.5;
+    fill: red;
+  }
+
+  :global(.img-orig):global(:not(.img-c)) {
+    opacity: 0.5;
+    visibility: hidden;
+    fill: aquamarine;
+  }
 }

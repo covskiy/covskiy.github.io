@@ -27,19 +27,114 @@ export const SPLASH_CHOREOGRAPHY = {
     },
   },
 
+  /**
+   * толщина заготовки -
+   */
+
   /** LogoText — сборка букв "COVSKIY", гвоздь -> курсор */
   logoText: {
-    labels: {
-      C_LETTER: 0,
-      NAIL_FLY: 0,
+    start: 0,
+    C: {
+      phaseShoe: {
+        start: 0,
+        xPosition: -45,
+        rotate: -90,
+        duration: 0.5,
+      },
+      phaseLetter: {
+        start: 1.9,
+        duration: 0.5,
+      },
     },
-    durations: {
-      C_LETTER_FROM: 0.5,
-      C_LETTER_MORPH: 0.5,
-      NAIL_FLY: 1.2,
-      NAIL_MORPH: 0.5,
-      LETTER_MORPH: 0.4,
-      CURSOR_MOVE: 2,
+    Cursor: {
+      phaseNail: {
+        start: 0,
+        rotation: -360,
+        duration: 1,
+      },
+      phaseCaret: {
+        start: 1.5,
+        duration: 0.5,
+      },
+      phaseMoving: {
+        start: 2.0,
+        xPosition: 106,
+        duration: 1.6,
+      },
+      scales: {
+        O: 0.833,
+        V: 0.667,
+        S: 0.5,
+        K: 0.333,
+        I: 0.167,
+        Y: 0,
+      },
+    },
+    O: {
+      phaseDash: {
+        start: 2.09,
+        duration: 0.3,
+      },
+      phaseLetter: {
+        start: 2.9,
+        delay: 0.5,
+        duration: 0.5,
+      },
+    },
+    V: {
+      phaseDash: {
+        start: 2.45,
+        duration: 0.5,
+      },
+      phaseLetter: {
+        start: 2.6,
+        delay: 0.4,
+        duration: 0.5,
+      },
+    },
+    S: {
+      phaseDash: {
+        start: 2.77,
+        duration: 0.5,
+      },
+      phaseLetter: {
+        start: 3.2,
+        delay: 0.3,
+        duration: 0.5,
+      },
+    },
+    K: {
+      phaseDash: {
+        start: 3.1,
+        duration: 0.5,
+      },
+      phaseLetter: {
+        start: 5.9,
+        delay: 0.2,
+        duration: 0.5,
+      },
+    },
+    I: {
+      phaseDash: {
+        start: 3.35,
+        duration: 0.5,
+      },
+      phaseLetter: {
+        start: 6.9,
+        delay: 0.1,
+        duration: 0.5,
+      },
+    },
+    Y: {
+      phaseDash: {
+        start: 3.6,
+        duration: 0.5,
+      },
+      phaseLetter: {
+        start: 3.7,
+        delay: 0,
+        duration: 0.5,
+      },
     },
   },
 

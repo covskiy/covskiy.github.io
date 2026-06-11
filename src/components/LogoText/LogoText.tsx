@@ -6,9 +6,6 @@ import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import LogoSvg from './LogoText.svg?react';
 import styles from './LogoText.module.css';
 
-import { MotionPathHelper } from 'gsap/MotionPathHelper';
-gsap.registerPlugin(MotionPathHelper);
-
 export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 

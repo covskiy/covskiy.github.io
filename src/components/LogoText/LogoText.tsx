@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
+import { logger } from '../../utils/logger';
 import type { AnimationComponentProps } from '../../types/splash.types';
 import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import LogoSvg from './LogoText.svg?react';
@@ -11,8 +12,12 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
 
   useGSAP(
     () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current) {
+        logger.warn('LogoText', 'containerRef is null, skipping animation');
+        return;
+      }
 
+      logger.info('LogoText', 'Building animation timelines');
       const localTimeline = gsap.timeline({ id: 'Logo.tsx tl' });
 
       const cLetterTimeline = gsap.timeline({ id: 'CLetter tl' });
@@ -25,6 +30,7 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
       createCursorTimeline(cursorTl);
 
       localTimeline.add(cLetterTimeline, 0).add(cursorTl, 0).add(ovskiyTl, 0);
+      logger.debug('LogoText', 'Registering local timeline on master');
       onRegisterTimeline(localTimeline);
     },
     { dependencies: [onRegisterTimeline], scope: containerRef },
@@ -45,6 +51,18 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
 function createCLetterTimeline(tl: gsap.core.Timeline): gsap.core.Timeline {
   const { C: letterC } = SPLASH_CHOREOGRAPHY.logoText;
   const letterCSelector = '.img-c';
+
+  logger.debug('LogoText', 'C phaseShoe', {
+    x: letterC.phaseShoe.xPosition,
+    rotate: letterC.phaseShoe.rotate,
+    duration: letterC.phaseShoe.duration,
+    start: letterC.phaseShoe.start,
+  });
+  logger.debug('LogoText', 'C phaseLetter', {
+    duration: letterC.phaseLetter.duration,
+    start: letterC.phaseLetter.start,
+  });
+
   tl.from(
     letterCSelector,
     {
@@ -79,6 +97,15 @@ function createOVSKIYTimeline(tl: gsap.core.Timeline): gsap.core.Timeline {
     I: letterI,
     Y: letterY,
   } = SPLASH_CHOREOGRAPHY.logoText;
+
+  logger.debug('LogoText', 'Letters phaseDash starts', {
+    O: letterO.phaseDash.start,
+    V: letterV.phaseDash.start,
+    S: letterS.phaseDash.start,
+    K: letterK.phaseDash.start,
+    I: letterI.phaseDash.start,
+    Y: letterY.phaseDash.start,
+  });
 
   tl.set(
     '.img-o',
@@ -194,6 +221,18 @@ function createCursorTimeline(tl: gsap.core.Timeline): gsap.core.Timeline {
     Y: letterY,
   } = SPLASH_CHOREOGRAPHY.logoText;
   const cursorSelector = '.img-nail';
+
+  logger.debug('LogoText', 'Cursor phaseNail', {
+    rotation: Cursor.phaseNail.rotation,
+    duration: Cursor.phaseNail.duration,
+    start: Cursor.phaseNail.start,
+  });
+  logger.debug('LogoText', 'Cursor phaseMoving', {
+    xPosition: Cursor.phaseMoving.xPosition,
+    duration: Cursor.phaseMoving.duration,
+    start: Cursor.phaseMoving.start,
+  });
+
   tl.from(
     cursorSelector,
     {

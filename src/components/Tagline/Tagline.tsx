@@ -7,14 +7,15 @@ import type { AnimationComponentProps } from '../../types/splash.types';
 import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import styles from './Tagline.module.css';
 
-const KEY_SELECTORS = [
-  '.key_c',
-  '.key_o',
-  '.key_v',
-  '.key_s',
-  '.key_k',
-  '.key_i',
-  '.key_y',
+const KEY_MAP: readonly { selector: string; at: number }[] = [
+  { selector: '.key_c', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.C },
+  { selector: '.key_o', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.O },
+  { selector: '.key_v', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.V },
+  { selector: '.key_s', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.S },
+  { selector: '.key_k', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.K },
+  { selector: '.key_i', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.I },
+  { selector: '.key_y', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.Y },
+  { selector: '.key_enter', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.ENTER },
 ];
 
 export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
@@ -45,7 +46,7 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         'KEYBOARD_IN',
       );
 
-      KEY_SELECTORS.forEach((selector) => {
+      KEY_MAP.forEach(({ selector, at }) => {
         tl.to(
           selector,
           {
@@ -55,21 +56,9 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
             duration: D.KEY_HIGHLIGHT,
             transformOrigin: 'center center',
           },
-          `>${D.KEY_STAGGER_GAP}`,
+          at,
         );
       });
-
-      tl.to(
-        '.key_enter',
-        {
-          fill: '#04bf8a',
-          opacity: 1,
-          scale: 1.2,
-          duration: D.KEY_HIGHLIGHT,
-          transformOrigin: 'center center',
-        },
-        `>${D.ENTER_KEY_OFFSET}`,
-      );
 
       tl.to(keyboardRef.current, {
         y: '120%',

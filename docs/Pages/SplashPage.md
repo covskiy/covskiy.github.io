@@ -47,9 +47,26 @@ types/
 | ----------- | -------- | --------------------------------------------------------------------------------------------------------------- |
 | `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                   |
 | `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`) |
-| `1.0`       | Tagline  | `SplitText` lines reveal (`y: -20 → 0`, `back.out(1.7)`), keyboard SVG animation                                |
+| `1.0`       | Tagline  | Клавиатура влетает сверху, затем подсветка клавиш синхронно с появлением букв в LogoText, в конце — SplitText   |
 
 **Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `SPLASH_CHOREOGRAPHY` в `splashChoreography.ts`).
+
+### Синхронизация Tagline ↔ LogoText
+
+Начиная с master `1.0` подсветка каждой клавиши в Tagline синхронизирована с появлением соответствующей буквы в LogoText:
+
+| Master-время | Tagline (подсветка клавиши) | LogoText (появление буквы)               |
+| ------------ | --------------------------- | ---------------------------------------- |
+| 1.9          | C                           | C: `phaseLetter.start` (морф из подковы) |
+| 2.09         | O                           | O: `phaseDash.start`                     |
+| 2.45         | V                           | V: `phaseDash.start`                     |
+| 2.77         | S                           | S: `phaseDash.start`                     |
+| 3.1          | K                           | K: `phaseDash.start`                     |
+| 3.35         | I                           | I: `phaseDash.start`                     |
+| 3.6          | Y                           | Y: `phaseDash.start`                     |
+| 4.0          | ENTER                       | —                                        |
+
+Источник истины — `tagline.keyOffsets` в `splashChoreography.ts` (значения = `master.time − 1.0`).
 
 ## Хореография (SPLASH_CHOREOGRAPHY)
 
@@ -80,11 +97,22 @@ types/
 
 - `KEYBOARD_IN`: `0.5s`
 - `KEY_HIGHLIGHT`: `0.3s`
-- `KEY_STAGGER_GAP`: `0.3s`
-- `ENTER_KEY_OFFSET`: `0.5s`
 - `KEYBOARD_OUT`: `0.4s`
 - `TEXT_REVEAL`: `0.6s`
 - `TEXT_STAGGER`: `0.15s`
+
+### tagline.keyOffsets
+
+Абсолютные позиции подсветки клавиш на локальном таймлайне Tagline (master = local + `master.TAGLINE` = local + `1.0`):
+
+- `C`: `0.9` (master `1.9` — `logoText.C.phaseLetter.start`)
+- `O`: `1.09` (master `2.09` — `logoText.O.phaseDash.start`)
+- `V`: `1.45` (master `2.45`)
+- `S`: `1.77` (master `2.77`)
+- `K`: `2.1` (master `3.1`)
+- `I`: `2.35` (master `3.35`)
+- `Y`: `2.6` (master `3.6`)
+- `ENTER`: `3.0` (master `4.0`)
 
 **Примечание**: Метки и длительности используются в дочерних компонентах (`Logo.tsx`, `LogoText.tsx`, `Tagline.tsx`) для создания локальных таймлайнов.
 

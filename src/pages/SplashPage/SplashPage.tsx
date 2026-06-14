@@ -65,7 +65,7 @@ export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
     <div className={styles.splashContainer} ref={timelineContainerRef}>
       {/* <Logo onRegisterTimeline={handleRegisterTimeline} /> */}
       <LogoText onRegisterTimeline={handleRegisterTimeline} />
-      {/* <Tagline onRegisterTimeline={handleRegisterTimeline} /> */}
+      <Tagline onRegisterTimeline={handleRegisterTimeline} />
 
       {/*showSkipButton && (
         <SkipControls

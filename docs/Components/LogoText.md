@@ -61,7 +61,10 @@ type AnimationComponentProps = {
 
 ```tsx
 const { C: letterC, O: letterO, Cursor } = SPLASH_CHOREOGRAPHY.logoText;
-tl.from(selector, { x: letterC.phaseShoe.xPosition, duration: letterC.phaseShoe.duration });
+tl.from(selector, {
+  x: letterC.phaseShoe.xPosition,
+  duration: letterC.phaseShoe.duration,
+});
 ```
 
 ## Последовательность анимации
@@ -77,6 +80,34 @@ tl.from(selector, { x: letterC.phaseShoe.xPosition, duration: letterC.phaseShoe.
 - Фаза 3
   - Элемент `.img-nail` движется вправо, уменьшаясь по `scaleX` над каждой буквой; затем скрывается
   - Элементы `.letter-*` появляются в момент, когда позиция курсора совпадает с местом буквы; с небольшой задержкой элемент морфирует в конечную форму через `#morphPath-*`
+
+## Синхронизация с Tagline
+
+Моменты появления букв в LogoText синхронизированы с подсветкой клавиш в компоненте `Tagline`. Оба компонента опираются на единый источник истины — `src/pages/SplashPage/splashChoreography.ts`:
+
+| Буква | Master-время появления | Источник в `SPLASH_CHOREOGRAPHY` | Соответствующая клавиша в Tagline |
+| ----- | ---------------------- | -------------------------------- | --------------------------------- |
+| C     | 1.9                    | `logoText.C.phaseLetter.start`   | `.key_c`                          |
+| O     | 2.09                   | `logoText.O.phaseDash.start`     | `.key_o`                          |
+| V     | 2.45                   | `logoText.V.phaseDash.start`     | `.key_v`                          |
+| S     | 2.77                   | `logoText.S.phaseDash.start`     | `.key_s`                          |
+| K     | 3.1                    | `logoText.K.phaseDash.start`     | `.key_k`                          |
+| I     | 3.35                   | `logoText.I.phaseDash.start`     | `.key_i`                          |
+| Y     | 3.6                    | `logoText.Y.phaseDash.start`     | `.key_y`                          |
+
+Tagline стартует на master-таймлайне в позиции `1.0` (`SPLASH_CHOREOGRAPHY.master.labels.TAGLINE`), и его `keyOffsets` вычисляются как `master - 1.0`. Подробности — в `docs/Components/Tagline.md`.
+
+## Mobile-first стили
+
+Базовые стили рассчитаны на мобильные устройства (phone, ≤480px):
+
+- `.container` — `padding: 0 1rem` для отступов по бокам, `flex-shrink: 0` (защита от сжатия в flex-контейнере SplashPage)
+- `.svg` — `max-width: min(90vw, 360px)`, вписывается в мобильный viewport
+- Высота определяется пропорцией исходного `viewBox` SVG (200×150 → 360×270)
+
+**Важно**: контейнер **не** имеет `height: 100%` — это сломало бы flex-layout в SplashPage (заставляло LogoText занимать 100vh и вытеснять Tagline). Контейнер sizing определяется контентом (SVG).
+
+Брейкпоинты для планшетов/десктопов пока не заданы — будут добавлены отдельной задачей.
 
 ## Архитектура регистрации
 

@@ -183,6 +183,10 @@ covskiy.github.io/
        │                            ├─ master GSAP timeline (paused → play)
        │                            ├─ child timelines (Logo/LogoText/Tagline)
        │                            │   регистрируются через onRegisterTimeline
+       │                            ├─ LogoText и Tagline синхронизированы:
+       │                            │   подсветка клавиш в Tagline совпадает
+       │                            │   с появлением букв в LogoText
+       │                            │   (общий источник — SPLASH_CHOREOGRAPHY)
        │                            ├─ GSDevTools.create() (только DEV)
        │                            └─ onComplete → setShowSplash(false)
        │
@@ -286,16 +290,16 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент        | Назначение                                  |
-| ---------------- | ------------------------------------------- |
-| `Logo`           | Наковальня, drawSVG (Intro)                 |
-| `LogoText`       | Текст "COVSKIY" — SVG morph между формами   |
-| `Tagline`        | Слоган — клавиатура, поэтапная анимация      |
-| `SkipControls`   | Кнопки skip / never-show для Splash         |
-| `VerticalNav`    | Десктоп-навигация (фикс. слева)             |
-| `BurgerMenu`     | Мобильная навигация                         |
-| `PageTransition` | Обёртка анимации смены роута                |
-| `SplashPage`     | Splash screen (conditional render в App)    |
+| Компонент        | Назначение                                |
+| ---------------- | ----------------------------------------- |
+| `Logo`           | Наковальня, drawSVG (Intro)               |
+| `LogoText`       | Текст "COVSKIY" — SVG morph между формами |
+| `Tagline`        | Слоган — клавиатура, поэтапная анимация   |
+| `SkipControls`   | Кнопки skip / never-show для Splash       |
+| `VerticalNav`    | Десктоп-навигация (фикс. слева)           |
+| `BurgerMenu`     | Мобильная навигация                       |
+| `PageTransition` | Обёртка анимации смены роута              |
+| `SplashPage`     | Splash screen (conditional render в App)  |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `SplashPage` — в `docs/Pages/SplashPage.md`.
@@ -435,21 +439,21 @@ Skip-логика — хук `useSplashSkip(timeline, onSkip, skipDelay)`. В т
 
 ### 9.1 `window.splashDebug`
 
-| Метод | Действие |
-|---|---|
-| `reset()` | `splashStorage.clearFlag()` + reload (splash покажется) |
-| `forceShow()` | `setNeverShow(false)` + reload |
-| `forceHide()` | `setNeverShow(true)` + reload (splash не покажется) |
-| `status()` | `console.log('neverShow:', splashStorage.getNeverShow())` |
+| Метод         | Действие                                                  |
+| ------------- | --------------------------------------------------------- |
+| `reset()`     | `splashStorage.clearFlag()` + reload (splash покажется)   |
+| `forceShow()` | `setNeverShow(false)` + reload                            |
+| `forceHide()` | `setNeverShow(true)` + reload (splash не покажется)       |
+| `status()`    | `console.log('neverShow:', splashStorage.getNeverShow())` |
 
 ### 9.2 `window.loggerDebug`
 
-| Метод | Действие |
-|---|---|
+| Метод             | Действие                                                   |
+| ----------------- | ---------------------------------------------------------- |
 | `setLevel(level)` | Установить уровень (`error`/`warn`/`info`/`debug`/`trace`) |
-| `reset()` | Сбросить на `debug` (дефолт) |
-| `status()` | `Level: <active> \| localStorage: <value>` |
-| `levels()` | Таблица всех уровней с их `weight` |
+| `reset()`         | Сбросить на `debug` (дефолт)                               |
+| `status()`        | `Level: <active> \| localStorage: <value>`                 |
+| `levels()`        | Таблица всех уровней с их `weight`                         |
 
 ---
 
@@ -500,25 +504,25 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 
 ## 11. Сводка файлов — быстрый поиск
 
-| Задача | Файл |
-|---|---|
-| Точка входа JS | `src/main.tsx` |
-| Корневой компонент | `src/App.tsx` |
-| Все роуты | `src/routes.tsx` |
-| Splash screen | `src/pages/SplashPage/SplashPage.tsx` |
-| Splash storage | `src/pages/SplashPage/utils/splashStorage.ts` |
-| Skip-логика | `src/pages/SplashPage/hooks/useSplashSkip.ts` |
-| Splash типы | `src/types/splash.types.ts` |
-| GSAP-инициализация | `src/utils/initGsap.ts` |
-| Логгер | `src/utils/logger.ts` |
-| Design tokens build | `sd.config.js` |
-| Design tokens источник | `design-tokens/*.json` |
-| Design tokens (документация) | `docs/design-tokens.md` |
-| Сгенерированные токены | `src/styles/*.css` |
-| Preloader HTML | `index.html` |
-| Vite config | `vite.config.ts` |
-| ESLint config | `eslint.config.js` |
-| Deploy CI | `.github/workflows/deploy.yml` |
-| Husky hook | `.husky/pre-commit` |
-| Скрипты npm | `package.json` |
-| Обзор проекта (для AI) | `AGENTS.md` |
+| Задача                       | Файл                                          |
+| ---------------------------- | --------------------------------------------- |
+| Точка входа JS               | `src/main.tsx`                                |
+| Корневой компонент           | `src/App.tsx`                                 |
+| Все роуты                    | `src/routes.tsx`                              |
+| Splash screen                | `src/pages/SplashPage/SplashPage.tsx`         |
+| Splash storage               | `src/pages/SplashPage/utils/splashStorage.ts` |
+| Skip-логика                  | `src/pages/SplashPage/hooks/useSplashSkip.ts` |
+| Splash типы                  | `src/types/splash.types.ts`                   |
+| GSAP-инициализация           | `src/utils/initGsap.ts`                       |
+| Логгер                       | `src/utils/logger.ts`                         |
+| Design tokens build          | `sd.config.js`                                |
+| Design tokens источник       | `design-tokens/*.json`                        |
+| Design tokens (документация) | `docs/design-tokens.md`                       |
+| Сгенерированные токены       | `src/styles/*.css`                            |
+| Preloader HTML               | `index.html`                                  |
+| Vite config                  | `vite.config.ts`                              |
+| ESLint config                | `eslint.config.js`                            |
+| Deploy CI                    | `.github/workflows/deploy.yml`                |
+| Husky hook                   | `.husky/pre-commit`                           |
+| Скрипты npm                  | `package.json`                                |
+| Обзор проекта (для AI)       | `AGENTS.md`                                   |

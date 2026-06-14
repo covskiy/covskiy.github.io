@@ -1,227 +1,156 @@
 # Контекст для агентов — covskiy.github.io
 
-## Обзор проекта
+## Обзор
 
-Это **React 19 + TypeScript + Vite** одностраничное приложение, размещённое на GitHub Pages. Сайт представляет собой визитку/портфолио с GSAP-анимациями, переходами между страницами и системой прелоадера.
+React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pages. Сайт-визитка
+с GSAP-анимациями, design-tokens через style-dictionary, splash screen
+при первом заходе и системой preloader. Проект в активной разработке (WIP).
 
-## Основные команды
+## Команды
 
-```bash
-npm run dev          # Запуск dev-сервера (порт 3005)
-npm run build        # Проверка типов + продакшн-сборка
-npm run lint         # Проверка ESLint
-npm run lint:fix     # ESLint с автоисправлением
-npm run format:fix   # Форматирование Prettier
-npm run stylelint:fix # Исправление CSS Stylelint
-npm run precommit:check # Ручной запуск lint-staged
-```
+| Скрипт | Назначение |
+|---|---|
+| `npm run dev` | Dev-сервер на `0.0.0.0:3005` с HMR |
+| `npm run build` | `tsc -b && vite build` — типы + production-сборка |
+| `npm run build:design-tokens` | `style-dictionary build` — JSON → `src/styles/*.css` |
+| `npm run preview` | Локальный просмотр production-сборки |
+| `npm run lint` / `lint:fix` | ESLint |
+| `npm run format` / `format:fix` | Prettier |
+| `npm run stylelint` / `stylelint:fix` | Stylelint по `src/**/*.css` |
+| `npm run precommit:check` | Ручной запуск lint-staged |
 
-## Структура директорий
+## Структура (верхний уровень)
 
 ```
 covskiy.github.io/
-├── public/
-│   ├── favicon.svg          # Favicon
-│   ├── icons.svg            # SVG-спрайт
-│   └── 404.html             # Обработчик перенаправлений GitHub Pages
+├── design-tokens/        # JSON-токены → style-dictionary → src/styles/
+├── docs/                 # Подробная документация (см. ниже)
+├── public/               # favicon.svg, icons.svg (статические ассеты)
 ├── src/
-│   ├── assets/              # Статические изображения
-│   ├── components/
-│   │   ├── VerticalNav/     # Навигация для десктопа (фикс. слева)
-│   │   ├── BurgerMenu/      # Мобильная навигация (<768px)
-│   │   ├── Intro/           # Анимированный логотип "COVSKIY" (morphSVG)
-│   │   └── PageTransition/  # Обертка для анимации переходов
-│   ├── pages/
-│   │   ├── SplashPage/      # Splash-экран с анимацией (блокирует UI)
-│   │   ├── HomePage/
-│   │   ├── AboutPage/
-│   │   ├── ServicesPage/
-│   │   └── ContactPage/
-│   ├── styles/
-│   │   ├── typography.css   # CSS-переменные, шрифты
-│   │   ├── reset.css        # Минимальный сброс стилей
-│   │   └── global.css       # Стили body, #root
-│   ├── routes.tsx           # Все роуты (React Router)
-│   ├── App.tsx              # Корневой компонент (layout)
-│   ├── main.tsx             # Точка входа
-│   └── index.css           # CSS точка входа
-├── .github/workflows/deploy.yml
-├── vite.config.ts
+│   ├── assets/           # Изображения, SVG-исходники Intro
+│   ├── components/       # Logo, LogoText, Tagline, SkipControls,
+│   │                     #   VerticalNav, BurgerMenu, PageTransition
+│   ├── pages/            # SplashPage + HomePage + About/Services/Contact
+│   ├── styles/           # reset/global.css + сгенерированные токен-файлы
+│   ├── types/            # Splash- и общие типы
+│   ├── utils/            # initGsap, logger
+│   ├── App.tsx           # SplashPage → layout (Nav + Routes)
+│   ├── routes.tsx        # Все роуты + lazy-обёртки
+│   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
+│   └── index.css         # CSS entry: reset + global
+├── .github/workflows/    # deploy.yml
+├── index.html            # Inline preloader (CSS+JS) + #root
+├── vite.config.ts        # Vite, lightningcss, svgr
 ├── eslint.config.js
+├── sd.config.js          # Конфиг style-dictionary
+├── tsconfig*.json
 └── package.json
 ```
 
-## Роутинг
+## Ключевые архитектурные решения
 
-| Роут        | Компонент    | Примечания                             |
-| ----------- | ------------ | -------------------------------------- |
-| `/`         | SplashPage   | Показывает анимацию 1 раз, затем /home |
-| `/home`     | HomePage     | Загружается сразу                      |
-| `/about`    | AboutPage    | Lazy loaded                            |
-| `/services` | ServicesPage | Lazy loaded                            |
-| `/contact`  | ContactPage  | Lazy loaded                            |
-| `/*`        | RouteError   | 404 fallback                           |
+- **App.tsx** — splash screen (conditional render) → layout с
+  `VerticalNav`, `BurgerMenu` и `<Routes>`, обёрнутыми в `PageTransition`.
+- **routes.tsx** — `HomePage` eager, `About/Services/Contact` — `React.lazy`
+  + `withSuspense`. Роут `*` — inline 404. Роут `/` НЕ в `routes.tsx`,
+  обрабатывается в `App.tsx`.
+- **vendor chunk** — выделен через
+  `build.rolldownOptions.output.codeSplitting.groups` по `test: /node_modules/`.
+- **GSAP** — регистрация всех плагинов в `src/utils/initGsap.ts`
+  (`useGSAP`, `ScrollTrigger`, `SplitText`, `MorphSVGPlugin`,
+  `DrawSVGPlugin`, `MotionPathPlugin`), вызывается на модульном уровне
+  при импорте `App`. `GSDevTools` подключается в `SplashPage` только в DEV.
+- **SplashPage** — `splashStorage` (`localStorage`, ключ `splash_never_show`,
+  объект `{ neverShow, timestamp? }`). Skip-логика в `useSplashSkip`.
+- **Design Tokens** — `design-tokens/*.json` → `sd.config.js` (custom
+  transform `attribute/gradient-to-css`, `value/px-to-rem-conditional`) →
+  `src/styles/*.css`. `px` → `rem` (base 16).
+- **SVG** — `vite-plugin-svgr` + кастомный `svgoConfig`
+  (`cleanupIds: false`, `removeHiddenElems.displayNone: false`) ради
+  morph-путей в `Logo/LogoText`.
+- **Preloader** — inline в `index.html`, `window.hidePreloader()` вызывается
+  в `main.tsx` до `createRoot().render()`.
+- **Dev debug** — в DEV `main.tsx` регистрирует `window.splashDebug`
+  (reset/forceShow/forceHide/status) и `window.loggerDebug`
+  (setLevel/reset/status/levels).
+- **CI/CD** — `cp dist/index.html dist/404.html` в deploy.yml — хак для
+  React Router BrowserRouter на GitHub Pages.
 
-Роуты определены в `src/routes.tsx` и используют `React.lazy()` + `Suspense` для код-сплиттинга.
+## Документация (docs/)
 
-## SplashPage (анимация)
-
-- При переходе на `/` — App.tsx показывает **только** SplashPage (блокирует UI)
-- Проверяет `localStorage.getItem('splashShown')`
-- Если `true` — сразу редирект на `/home`
-- Если `false` — проигрывает GSAP анимацию, затем редирект + записывает `splashShown: true`
-
-## Стратегия GSAP
-
-- Используй хук `useGSAP` из `@gsap/react` — автоочистка при размонтировании
-- `gsap.registerPlugin(useGSAP)` один раз при входе в приложение
-- Ограничивай анимации с помощью `ref` и опции `scope`
-- `dependencies: [pathname]` + `revertOnUpdate: true` для реактивных переходов
-
-```tsx
-import { useGSAP } from '@gsap/react';
-
-useGSAP(
-  () => {
-    gsap.from('.element', { opacity: 0, y: 20 });
-  },
-  { scope: containerRef },
-);
-```
-
-## Система прелоадера
-
-1. Инлайн в `index.html` — показывается сразу при загрузке HTML
-2. Использует `performance.getEntriesByType('resource')` для счётчика прогресса
-3. `window.hidePreloader()` вызывается в `main.tsx` **до** `createRoot().render()`
-4. CSS transition 0.4s затухание, затем удаление из DOM
-
-## Перенаправление на GitHub Pages
-
-При разворачивании на Guthub pages вызывается операция `cp dist/index.html dist/404.html` Таким образом никакой дополнительно обработки 404 редиректов не требуется.
-
-## Процесс разработки
-
-1. Husky + lint-staged запускаются перед коммитом:
-   - `.ts/.tsx` → `eslint --fix` + `prettier --write`
-   - `.css` → `stylelint --fix` + `prettier --write`
+| Файл | Назначение |
+|---|---|
+| `docs/architecture.md` | Архитектура, роутинг, GSAP, стили, конфиги |
+| `docs/design-tokens.md` | Сборка design tokens, маппинг, градиенты |
+| `docs/preloader.md` | Preloader — описание работы |
+| `docs/logging-rules.md` | Соглашения по логгеру (теги, уровни) |
+| `docs/utils/logger.md` | API логгера |
+| `docs/Components/Logo.md` | Анимация логотипа (наковальня) |
+| `docs/Components/LogoText.md` | Анимация текста логотипа (SVG morph) |
+| `docs/Components/Tagline.md` | Анимация слогана (клавиатура) |
+| `docs/Pages/SplashPage.md` | Хореография Splash-анимации |
 
 ## Зависимости
 
-| Runtime      | Назначение          |
-| ------------ | ------------------- |
-| react        | UI-библиотека       |
-| react-dom    | Рендеринг в DOM     |
-| react-router | Клиентский роутинг  |
-| gsap         | Анимации            |
-| @gsap/react  | React-хуки для GSAP |
+### Runtime
+`react`, `react-dom`, `react-router` (v7), `gsap`, `@gsap/react`.
 
-| Dev          | Назначение           |
-| ------------ | -------------------- |
-| vite         | Инструмент сборки    |
-| typescript   | Типовая безопасность |
-| eslint       | Линтинг              |
-| prettier     | Форматирование       |
-| stylelint    | Линтинг CSS          |
-| husky        | Git-хуки             |
-| lightningcss | Трансформация CSS    |
+### Dev
+- **Сборка**: `vite`, `@vitejs/plugin-react`, `vite-plugin-svgr`,
+  `@svgr/plugin-svgo`, `browserslist`, `lightningcss`.
+- **Токены**: `style-dictionary`.
+- **TypeScript**: `typescript` (~5.9), `@types/{node,react,react-dom}`.
+- **ESLint**: `eslint`, `@eslint/js`, `typescript-eslint`,
+  `eslint-plugin-react`, `-react-hooks`, `-react-refresh`,
+  `eslint-config-prettier`, `globals`.
+- **Стиль**: `prettier`, `stylelint`, `stylelint-config-standard`.
+- **Git-хуки**: `husky`, `lint-staged`.
 
-## Соглашения по стилям
+## CI/CD
 
-- **CSS Modules** для scoped-стилей компонентов (`.module.css`)
-- **LightningCSS** трансформер (настроен в `vite.config.ts`)
-- **Design tokens** в `design-tokens/` в виде JSON-файлов, которые транслируются при помощи style-dictionary в css
-- **CSS-переменные** доступны в `src/styles/global.css`
-- **Breakpoint**: `design-tokens/breakpoints.json` которые транслируются в `src/styles/breakpoints.css`
+`.github/workflows/deploy.yml`:
+- Триггер: `push` в `main` (или `workflow_dispatch`).
+- `ubuntu-latest`, Node `24.12.0`, `npm ci`.
+- `npm run build` → `cp dist/index.html dist/404.html` →
+  `actions/configure-pages@v5` → `upload-pages-artifact@v3` →
+  `actions/deploy-pages@v4`.
+- `concurrency.group: "pages"`, `cancel-in-progress: true`.
 
-## Design Tokens
+## Заметки
 
-Design tokens хранятся в `design-tokens/` в виде JSON-файлов и обеспечивают согласованные значения по всему проекту.
+- `vite.config.ts`: `base: '/'` (привязан к кастомному домену),
+  `lightningcss` с `browserslistToTargets(browserslist('baseline 2020'))`,
+  `vite-plugin-svgr` с custom `svgoConfig`.
+- Stylelint: `selector-class-pattern: null` (CSS Modules генерируют хеши).
+- Проект WIP — `App.tsx`, `routes.tsx`, страницы будут дорабатываться.
+- Husky v8 + lint-staged, см. `package.json` секцию `lint-staged`.
 
-### Цвета
+## Соглашения по коммитам
 
-| Токен     | Пример значения | Использование             |
-| --------- | --------------- | ------------------------- |
-| `primary` | `#04bf8a` (500) | Основные действия, ссылки |
-| `purple`  | `#6866d4` (500) | Акцентные элементы        |
-| `gray`    | `#344054` (700) | Текст, границы            |
-| `success` | `#60b527` (500) | Состояния успеха          |
-| `error`   | `#ff3932` (500) | Состояния ошибки          |
+LLM должна следовать этим правилам при составлении commit message.
 
-Шкалы: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900
+**Subject (заголовок):**
+- 1–3 слова, Title Case (`LogoText`, `SplashPage`, `Design Tokens`).
+- Совпадает с именем затронутого компонента/фичи.
+- Без префиксов (`feat:`, `fix:`, `chore:`) и без точки в конце.
 
-### Типографика
+**Body (тело):**
+- Маркированный список на русском, тире `—` или `-` с пробелом.
+- Первое слово каждого пункта — с маленькой буквы.
+- Глаголы прошедшего времени совершенного вида:
+  `добавлен`, `обновлена`, `удалён`, `сделан`, `исправлен`.
+- Технические термины — как в коде: `GSAP`, `master timeline`,
+  `SVGR`, `useGSAP`, `localStorage`, `react-router`.
+- Без пустой строки между subject и body.
+- Без `Co-authored-by`, `Signed-off-by`, ссылок на issue, эмодзи.
+- Длина тела пропорциональна объёму изменений (1 пункт — мелкий фикс,
+  4–6 пунктов — крупный коммит).
 
-| Токен      | Значение                    | Использование             |
-| ---------- | --------------------------- | ------------------------- |
-| `logo`     | `"Playfair Display", serif` | Логотип, hero-заголовки   |
-| `headings` | `"Inter", sans-serif`       | Все уровни заголовков     |
-| `body`     | `"Open Sans", sans-serif`   | Параграфы, основной текст |
+**Пример:**
 
-Размеры: `xs` (12px), `sm` (14px), `base` (16px), `lg` (18px), `xl` (20px), `2xl` (24px), `3xl` (30px), `4xl` (36px), `5xl` (48px), `6xl` (60px)
-
-### Отступы
-
-| Токен | Значение | Использование                    |
-| ----- | -------- | -------------------------------- |
-| `xxs` | 4px      | Микроотступы                     |
-| `xs`  | 8px      | Компактные отступы в компонентах |
-| `sm`  | 12px     | Метки для инпутов                |
-| `md`  | 16px     | Стандартные между секциями       |
-| `lg`  | 24px     | Заголовки секций от контента     |
-| `xl`  | 32px     | Разделители крупных секций       |
-| `xxl` | 48px     | Отступы hero-секции              |
-
-### Брейкпоинты (min-width)
-
-| Токен     | Значение | Устройства               |
-| --------- | -------- | ------------------------ |
-| `phone`   | 0px      | Мобильные (по умолчанию) |
-| `tablet`  | 481px    | Планшеты                 |
-| `laptop`  | 769px    | Ноутбуки                 |
-| `desktop` | 1025px   | Десктопы                 |
-
-### Тени
-
-| Токен     | Значение                         | Использование               |
-| --------- | -------------------------------- | --------------------------- |
-| `level-1` | `0px 2px 4px rgb(0 0 0 / 5%)`    | Слегка приподнятые элементы |
-| `level-2` | `0px 4px 8px rgb(0 0 0 / 10%)`   | Карточки, выпадающие списки |
-| `level-3` | `0px 8px 16px rgb(0 0 0 / 15%)`  | Модалки, подсказки          |
-| `level-4` | `0px 12px 24px rgb(0 0 0 / 20%)` | Критические уведомления     |
-
-### Переходы
-
-| Длительность | Значение | Использование                      |
-| ------------ | -------- | ---------------------------------- |
-| `short`      | 150ms    | Ховеры кнопок, изменение состояний |
-| `medium`     | 300ms    | Появление/исчезновение элементов   |
-| `long`       | 500ms    | Открытие модалок, сложные переходы |
-
-Плавность: `easeInOut` (по умолчанию), `easeIn`, `easeOut`, `sharp`
-
-### Размеры элементов
-
-| Токен          | Значение | Использование             |
-| -------------- | -------- | ------------------------- |
-| `inputHeight`  | 40px     | Текстовые инпуты, селекты |
-| `buttonHeight` | 44px     | Стандартные кнопки        |
-| `avatarSize`   | 48px     | Аватары пользователей     |
-| `iconSize`     | 24px     | Иконки компонентов        |
-
-### Скругления
-
-| Токен  | Значение | Использование                 |
-| ------ | -------- | ----------------------------- |
-| `xs`   | 2px      | Маленькие иконки, микрокнопки |
-| `sm`   | 4px      | Инпуты, компактные кнопки     |
-| `md`   | 8px      | Карточки, модалки             |
-| `lg`   | 12px     | Баннеры, акцентные кнопки     |
-| `full` | 9999px   | Круглые элементы              |
-
-## Важные примечания
-
-- `vite.config.ts`: `base: '/'` так как привязан сторонник domain
-- `manualChunks`: vendor включает `react`, `react-dom`, `react-router`, `gsap`, `@gsap/react`
-- Dev-сервер привязан к `0.0.0.0:3005` (доступен из сети)
-- `selector-class-pattern: null` в stylelint (CSS Modules генерируют хешированные имена)
+```
+LogoText
+- доделал анимацию букв
+- добавление в svg траектории для гвоздя
+- синхронизировал тайминги букв и курсора
+```

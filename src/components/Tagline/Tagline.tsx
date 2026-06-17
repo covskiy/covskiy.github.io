@@ -7,15 +7,44 @@ import type { AnimationComponentProps } from '../../types/splash.types';
 import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import styles from './Tagline.module.css';
 
+const TAG = SPLASH_CHOREOGRAPHY.master.labels.TAGLINE;
+const {
+  C: letterC,
+  O: letterO,
+  V: letterV,
+  S: letterS,
+  K: letterK,
+  I: letterI,
+  Y: letterY,
+} = SPLASH_CHOREOGRAPHY.logoText;
+
 const KEY_MAP: readonly { selector: string; at: number }[] = [
-  { selector: '.key_c', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.C },
-  { selector: '.key_o', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.O },
-  { selector: '.key_v', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.V },
-  { selector: '.key_s', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.S },
-  { selector: '.key_k', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.K },
-  { selector: '.key_i', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.I },
-  { selector: '.key_y', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.Y },
-  { selector: '.key_enter', at: SPLASH_CHOREOGRAPHY.tagline.keyOffsets.ENTER },
+  { selector: '.key_c', at: letterC.phaseLetter.start - TAG },
+  {
+    selector: '.key_o',
+    at: letterO.phaseDash.start + letterO.phaseLetter.delay - TAG,
+  },
+  {
+    selector: '.key_v',
+    at: letterV.phaseDash.start + letterV.phaseLetter.delay - TAG,
+  },
+  {
+    selector: '.key_s',
+    at: letterS.phaseDash.start + letterS.phaseLetter.delay - TAG,
+  },
+  {
+    selector: '.key_k',
+    at: letterK.phaseDash.start + letterK.phaseLetter.delay - TAG,
+  },
+  {
+    selector: '.key_i',
+    at: letterI.phaseDash.start + letterI.phaseLetter.delay - TAG,
+  },
+  {
+    selector: '.key_y',
+    at: letterY.phaseDash.start + letterY.phaseLetter.delay - TAG,
+  },
+  { selector: '.key_enter', at: 3.0 },
 ];
 
 export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {

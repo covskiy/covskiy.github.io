@@ -150,22 +150,5 @@ export const SPLASH_CHOREOGRAPHY = {
       TEXT_REVEAL: 0.6,
       TEXT_STAGGER: 0.15,
     },
-    /**
-     * Абсолютные позиции подсветки клавиш на локальном таймлайне Tagline
-     * (master = local + master.TAGLINE = local + 1.0).
-     * Значения подобраны под моменты появления букв в LogoText:
-     *   C → LogoText.C.phaseLetter.start (1.9)
-     *   O..Y → LogoText.<X>.phaseDash.start (2.09, 2.45, 2.77, 3.1, 3.35, 3.6)
-     */
-    keyOffsets: {
-      C: 0.9,
-      O: 1.09,
-      V: 1.45,
-      S: 1.77,
-      K: 2.1,
-      I: 2.35,
-      Y: 2.6,
-      ENTER: 3.0,
-    },
   },
 } as const;

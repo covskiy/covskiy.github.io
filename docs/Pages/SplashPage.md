@@ -47,26 +47,30 @@ types/
 | ----------- | -------- | --------------------------------------------------------------------------------------------------------------- |
 | `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                   |
 | `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`) |
-| `1.0`       | Tagline  | Клавиатура влетает сверху, затем подсветка клавиш синхронно с началом морфинга букв в LogoText, в конце — SplitText   |
+| `1.5`       | Tagline  | Клавиатура влетает сверху (синхронно с морфом гвоздя → курсор в LogoText), затем подсветка клавиш синхронно с началом морфинга букв, в конце — SplitText |
 
 **Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `SPLASH_CHOREOGRAPHY` в `splashChoreography.ts`).
 
 ### Синхронизация Tagline ↔ LogoText
 
-Начиная с master `1.0` подсветка каждой клавиши в Tagline синхронизирована с началом морфинга соответствующей буквы в LogoText:
+Tagline зарегистрирован на master-таймлайне в позиции `1.0` (`master.labels.TAGLINE`) и привязан к двум событиям в LogoText:
 
-| Master-время | Tagline (подсветка клавиши) | LogoText (начало морфинга)                                       |
-| ------------ | --------------------------- | ---------------------------------------------------------------- |
-| 1.9          | C                           | C: `phaseLetter.start`                                           |
-| 2.59         | O                           | O: `phaseDash.start + phaseLetter.delay`                         |
-| 2.85         | V                           | V: `phaseDash.start + phaseLetter.delay`                         |
-| 3.07         | S                           | S: `phaseDash.start + phaseLetter.delay`                         |
-| 3.3          | K                           | K: `phaseDash.start + phaseLetter.delay`                         |
-| 3.45         | I                           | I: `phaseDash.start + phaseLetter.delay`                         |
-| 3.6          | Y                           | Y: `phaseDash.start + phaseLetter.delay`                         |
-| 4.0          | ENTER                       | — (хардкод 3.0 в `Tagline.tsx`; нет морф-аналога)                |
+- **Влёт клавиатуры** (master `1.5`) — синхронно с началом морфа гвоздя в курсор (`Cursor.phaseCaret.start`).
+- **Подсветка клавиш** (master `1.9`–`4.0`) — синхронно с началом морфа соответствующей буквы.
 
-Позиции подсветки вычисляются в `Tagline.tsx` программно из `SPLASH_CHOREOGRAPHY.logoText` (`C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`) с вычетом `master.labels.TAGLINE`.
+| Master-время | Tagline (событие)                | LogoText (начало морфинга)                                       |
+| ------------ | -------------------------------- | ---------------------------------------------------------------- |
+| 1.5          | Влёт клавиатуры                  | `Cursor.phaseCaret.start` (морф гвоздь → курсор)                 |
+| 1.9          | Подсветка `C`                    | C: `phaseLetter.start`                                           |
+| 2.59         | Подсветка `O`                    | O: `phaseDash.start + phaseLetter.delay`                         |
+| 2.85         | Подсветка `V`                    | V: `phaseDash.start + phaseLetter.delay`                         |
+| 3.07         | Подсветка `S`                    | S: `phaseDash.start + phaseLetter.delay`                         |
+| 3.3          | Подсветка `K`                    | K: `phaseDash.start + phaseLetter.delay`                         |
+| 3.45         | Подсветка `I`                    | I: `phaseDash.start + phaseLetter.delay`                         |
+| 3.6          | Подсветка `Y`                    | Y: `phaseDash.start + phaseLetter.delay`                         |
+| 4.0          | Подсветка `ENTER`                | — (хардкод 3.0 в `Tagline.tsx`; нет морф-аналога)                |
+
+Все позиции вычисляются в `Tagline.tsx` программно из `SPLASH_CHOREOGRAPHY.logoText` (`Cursor.phaseCaret.start`, `C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`) с вычетом `master.labels.TAGLINE`.
 
 ## Хореография (SPLASH_CHOREOGRAPHY)
 
@@ -103,7 +107,7 @@ types/
 
 ### Подсветка клавиш
 
-Tagline-local позиции подсветки клавиш вычисляются программно в `Tagline.tsx` из `SPLASH_CHOREOGRAPHY.logoText` с вычетом `master.labels.TAGLINE` (см. таблицу синхронизации выше). `ENTER` — хардкод `3.0` (морф-аналога в LogoText нет).
+Tagline-local позиции подсветки клавиш вычисляются программно в `Tagline.tsx` из `SPLASH_CHOREOGRAPHY.logoText` с вычетом `master.labels.TAGLINE` (см. таблицу синхронизации выше). `ENTER` — хардкод `3.0` (морф-аналога в LogoText нет). Влёт клавиатуры (`KEYBOARD_IN_LOCAL = 0.5`) вычисляется аналогично из `Cursor.phaseCaret.start`.
 
 - `C` — `logoText.C.phaseLetter.start - master.labels.TAGLINE` → `0.9`
 - `O` — `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay - master.labels.TAGLINE` → `1.59`

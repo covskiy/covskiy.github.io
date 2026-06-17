@@ -8,6 +8,8 @@ import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import styles from './Tagline.module.css';
 
 const TAG = SPLASH_CHOREOGRAPHY.master.labels.TAGLINE;
+const KEYBOARD_IN_LOCAL =
+  SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start - TAG;
 const {
   C: letterC,
   O: letterO,
@@ -44,14 +46,14 @@ const KEY_MAP: readonly { selector: string; at: number }[] = [
     selector: '.key_y',
     at: letterY.phaseDash.start + letterY.phaseLetter.delay - TAG,
   },
-  { selector: '.key_enter', at: 3.0 },
+  { selector: '.key_enter', at: 3.4 },
 ];
 
 export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
-  const { labels: L, durations: D } = SPLASH_CHOREOGRAPHY.tagline;
+  const { durations: D } = SPLASH_CHOREOGRAPHY.tagline;
 
   useGSAP(
     () => {
@@ -63,7 +65,7 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
       });
 
       // Метка старта Tagline на его собственном timeline
-      tl.addLabel('KEYBOARD_IN', L.KEYBOARD_IN);
+      tl.addLabel('KEYBOARD_IN', KEYBOARD_IN_LOCAL);
 
       const split = SplitText.create(textRef.current, { type: 'lines' });
       gsap.set(split.lines, { y: -20, opacity: 0 });

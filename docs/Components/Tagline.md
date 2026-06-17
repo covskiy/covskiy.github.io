@@ -8,7 +8,7 @@
 
 | Шаг | Действие                                                         | Длительность | Позиция в таймлайне |
 | --- | ---------------------------------------------------------------- | ------------ | ------------------- |
-| 1   | Клавиатура влетает сверху (`y: -120% → 0%`), проявляется         | 0.5s         | 0                   |
+| 1   | Клавиатура влетает сверху (`y: -120% → 0%`), проявляется         | 0.5s         | 0.5                 |
 | 2.1 | Подсветка клавиши **C** (`fill`, `opacity`, `scale: 1.2`)        | 0.3s         | 0.9                 |
 | 2.2 | Подсветка клавиши **O**                                          | 0.3s         | 1.59                |
 | 2.3 | Подсветка клавиши **V**                                          | 0.3s         | 1.85                |
@@ -20,30 +20,34 @@
 | 3   | Клавиатура уезжает вниз за контейнер (`y: 0% → 120%`), исчезает  | 0.4s         | `>0`                |
 | 4   | Две строки текста через SplitText: `y: -20 → 0`, `back.out(1.7)` | 0.6s + 0.15s | `>0`                |
 
-Позиции подсветки клавиш — **абсолютные** на собственном таймлайне Tagline; на master-таймлайне смещены на `master.TAGLINE = 1.0`.
+Позиции подсветки клавиш — **абсолютные** на собственном таймлайне Tagline; на master-таймлайне смещены на `master.TAGLINE = 1.0`. Старт клавиатуры синхронизирован с морфом гвоздя в курсор — см. ниже.
 
 Общая длительность: ~5.0s на собственном таймлайне (≈6.0s на master-таймлайне). Регистрируется в родительском таймлайне на позиции `1.0` через колбэк `onRegisterTimeline`.
 
 ## Синхронизация с LogoText
 
-Каждая клавиша в Tagline подсвечивается в тот же момент, когда соответствующая буква начинает морфинг в `LogoText`. Позиции вычисляются программно в `Tagline.tsx` из единого источника истины — `SPLASH_CHOREOGRAPHY.logoText` в `src/pages/SplashPage/splashChoreography.ts`:
+Tagline синхронизирован с двумя событиями в `LogoText`:
+
+1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start`). Позиция `KEYBOARD_IN` на локальном таймлайне Tagline = `Cursor.phaseCaret.start - master.labels.TAGLINE` = `0.5` (master 1.5s).
+2. **Подсветка клавиш** — каждая клавиша срабатывает в момент начала морфа соответствующей буквы. Позиции вычисляются программно в `Tagline.tsx` из единого источника истины — `SPLASH_CHOREOGRAPHY.logoText` в `src/pages/SplashPage/splashChoreography.ts`:
 
 - `C` — `C.phaseLetter.start - master.labels.TAGLINE`
 - `O..Y` — `X.phaseDash.start + X.phaseLetter.delay - master.labels.TAGLINE` (начало морфа = момент показа dash-плейсхолдера + задержка до старта `morphSVG`)
 - `ENTER` — хардкод `3.0` (нет морф-аналога в LogoText; смысловая пауза перед улётом клавиатуры)
 
-| Клавиша | Tagline-local | Master-время | Соответствующая буква | LogoText-метрика                                       |
-| ------- | ------------- | ------------ | --------------------- | ------------------------------------------------------ |
-| C       | 0.9           | 1.9          | C                     | `C.phaseLetter.start`                                  |
-| O       | 1.59          | 2.59         | O                     | `O.phaseDash.start + O.phaseLetter.delay`             |
-| V       | 1.85          | 2.85         | V                     | `V.phaseDash.start + V.phaseLetter.delay`             |
-| S       | 2.07          | 3.07         | S                     | `S.phaseDash.start + S.phaseLetter.delay`             |
-| K       | 2.3           | 3.3          | K                     | `K.phaseDash.start + K.phaseLetter.delay`             |
-| I       | 2.45          | 3.45         | I                     | `I.phaseDash.start + I.phaseLetter.delay`             |
-| Y       | 2.6           | 3.6          | Y                     | `Y.phaseDash.start + Y.phaseLetter.delay`             |
-| ENTER   | 3.0           | 4.0          | —                     | —                                                      |
+| Событие           | Tagline-local | Master-время | LogoText-метрика                                 |
+| ----------------- | ------------- | ------------ | ------------------------------------------------ |
+| Влёт клавиатуры   | 0.5           | 1.5          | `Cursor.phaseCaret.start` (морф гвоздь → курсор) |
+| Подсветка `C`     | 0.9           | 1.9          | `C.phaseLetter.start`                            |
+| Подсветка `O`     | 1.59          | 2.59         | `O.phaseDash.start + O.phaseLetter.delay`        |
+| Подсветка `V`     | 1.85          | 2.85         | `V.phaseDash.start + V.phaseLetter.delay`        |
+| Подсветка `S`     | 2.07          | 3.07         | `S.phaseDash.start + S.phaseLetter.delay`        |
+| Подсветка `K`     | 2.3           | 3.3          | `K.phaseDash.start + K.phaseLetter.delay`        |
+| Подсветка `I`     | 2.45          | 3.45         | `I.phaseDash.start + I.phaseLetter.delay`        |
+| Подсветка `Y`     | 2.6           | 3.6          | `Y.phaseDash.start + Y.phaseLetter.delay`        |
+| Подсветка `ENTER` | 3.4           | 4.4          | —                                                |
 
-Любое изменение тайминга морфинга букв в LogoText автоматически отражается в подсветке клавиш — отдельной синхронизации не требуется.
+Любое изменение таймингов в LogoText автоматически отражается в Tagline — отдельной синхронизации не требуется.
 
 ## Архитектура
 
@@ -76,7 +80,12 @@ SVG содержит пути с сохранёнными именами кла�
 
 ### Мапа клавиш в коде
 
-В `Tagline.tsx` определена константа `KEY_MAP` — массив пар `{ selector, at }`, где `at` вычисляется из `SPLASH_CHOREOGRAPHY.logoText` (для `C` — `phaseLetter.start`, для `O..Y` — `phaseDash.start + phaseLetter.delay`) с вычетом `master.labels.TAGLINE` для перевода в локальное время. `ENTER` хардкодится на `3.0`. Цикл `forEach` создаёт `tl.to(selector, { fill, opacity, scale }, at)` для каждой клавиши с абсолютной позицией. Это гарантирует, что каждая клавиша подсвечивается точно в нужный момент, без накопления ошибок от цепочки относительных позиций.
+В `Tagline.tsx` определены две программно вычисляемые константы:
+
+- `KEYBOARD_IN_LOCAL` — `SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start - master.labels.TAGLINE` (= `0.5`). Используется для метки `KEYBOARD_IN`, синхронизирующей влёт клавиатуры с морфом гвоздя в курсор.
+- `KEY_MAP` — массив пар `{ selector, at }`, где `at` вычисляется из `SPLASH_CHOREOGRAPHY.logoText` (для `C` — `phaseLetter.start`, для `O..Y` — `phaseDash.start + phaseLetter.delay`) с вычетом `master.labels.TAGLINE`. `ENTER` хардкодится на `3.0`.
+
+Цикл `forEach` создаёт `tl.to(selector, { fill, opacity, scale }, at)` для каждой клавиши с абсолютной позицией. Это гарантирует, что каждая клавиша подсвечивается точно в нужный момент, без накопления ошибок от цепочки относительных позиций.
 
 ### Использование SplitText
 
@@ -95,7 +104,7 @@ SVG содержит пути с сохранёнными именами кла�
 Базовые стили рассчитаны на мобильные устройства (phone, ≤480px):
 
 - `.container` — `max-width: min(90vw, 360px)`, `height: 10rem` (2:1 SVG помещается в 320px viewport), `flex-shrink: 0` (защита от сжатия во flex-контейнере SplashPage)
-- `.keyboard` — `display: flex; justify-content: center; align-items: center;`; SVG внутри — `width: 100%; height: 100%; max-width: 24rem; object-fit: contain` (сохраняет пропорции)
+- `.keyboard` — `display: flex; justify-content: center; align-items: center;`; SVG внутри — `width: 100%; height: 100%; max-width: 14rem; object-fit: contain; opacity: 0.75` (сохраняет пропорции, снижает визуальный вес)
 - `.text` — `font-size: 1.25rem`, `font-weight: 500`, `text-align: center`; позиционируется `position: absolute; top: 0` в верхней части контейнера, чтобы визуально прилегать к Logo (gap 2rem от SplashPage = 32px)
 - Отступы по бокам — `padding: 0 1rem` для безопасной зоны от края экрана
 

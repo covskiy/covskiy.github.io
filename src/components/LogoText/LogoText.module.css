@@ -3,7 +3,6 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 0 1rem;
   flex-shrink: 0;
 }
 
@@ -11,7 +10,7 @@
   display: block;
   width: 100%;
   height: auto;
-  max-width: min(90vw, 360px);
+  max-width: min(90vw, 420px);
 
   :global(#logoLetters) {
     display: none;

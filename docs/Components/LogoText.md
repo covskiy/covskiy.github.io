@@ -83,26 +83,30 @@ tl.from(selector, {
 
 ## Синхронизация с Tagline
 
-Моменты начала морфинга букв в LogoText синхронизированы с подсветкой клавиш в компоненте `Tagline`. Оба компонента опираются на единый источник истины — `src/pages/SplashPage/splashChoreography.ts`:
+Тайминги LogoText используются как источник истины для двух событий в `Tagline`:
 
-| Буква | Master-время начала морфинга | Источник в `SPLASH_CHOREOGRAPHY`                          | Соответствующая клавиша в Tagline |
-| ----- | ---------------------------- | --------------------------------------------------------- | --------------------------------- |
-| C     | 1.9                          | `logoText.C.phaseLetter.start`                            | `.key_c`                          |
-| O     | 2.59                         | `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay` | `.key_o`                          |
-| V     | 2.85                         | `logoText.V.phaseDash.start + logoText.V.phaseLetter.delay` | `.key_v`                          |
-| S     | 3.07                         | `logoText.S.phaseDash.start + logoText.S.phaseLetter.delay` | `.key_s`                          |
-| K     | 3.3                          | `logoText.K.phaseDash.start + logoText.K.phaseLetter.delay` | `.key_k`                          |
-| I     | 3.45                         | `logoText.I.phaseDash.start + logoText.I.phaseLetter.delay` | `.key_i`                          |
-| Y     | 3.6                          | `logoText.Y.phaseDash.start + logoText.Y.phaseLetter.delay` | `.key_y`                          |
+1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start = 1.5`). Tagline стартует на master-таймлайне в позиции `1.0`, поэтому `KEYBOARD_IN` на локальном таймлайне = `0.5`.
+2. **Подсветка клавиш** — привязана к началу морфа соответствующей буквы.
 
-Tagline стартует на master-таймлайне в позиции `1.0` (`SPLASH_CHOREOGRAPHY.master.labels.TAGLINE`); позиции подсветки клавиш вычисляются в `Tagline.tsx` как `morphStart - 1.0`. Подробности — в `docs/Components/Tagline.md`.
+| Master-время | Источник в `SPLASH_CHOREOGRAPHY`                              | Соответствующее событие в Tagline  |
+| ------------ | ------------------------------------------------------------- | ---------------------------------- |
+| 1.5          | `logoText.Cursor.phaseCaret.start`                            | Влёт клавиатуры                    |
+| 1.9          | `logoText.C.phaseLetter.start`                                | Подсветка `.key_c`                 |
+| 2.59         | `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay`   | Подсветка `.key_o`                 |
+| 2.85         | `logoText.V.phaseDash.start + logoText.V.phaseLetter.delay`   | Подсветка `.key_v`                 |
+| 3.07         | `logoText.S.phaseDash.start + logoText.S.phaseLetter.delay`   | Подсветка `.key_s`                 |
+| 3.3          | `logoText.K.phaseDash.start + logoText.K.phaseLetter.delay`   | Подсветка `.key_k`                 |
+| 3.45         | `logoText.I.phaseDash.start + logoText.I.phaseLetter.delay`   | Подсветка `.key_i`                 |
+| 3.6          | `logoText.Y.phaseDash.start + logoText.Y.phaseLetter.delay`   | Подсветка `.key_y`                 |
+
+Tagline стартует на master-таймлайне в позиции `1.0` (`SPLASH_CHOREOGRAPHY.master.labels.TAGLINE`); обе позиции (влёт клавиатуры, подсветка клавиш) вычисляются в `Tagline.tsx` как `master.время - 1.0`. Подробности — в `docs/Components/Tagline.md`.
 
 ## Mobile-first стили
 
 Базовые стили рассчитаны на мобильные устройства (phone, ≤480px):
 
 - `.container` — `padding: 0 1rem` для отступов по бокам, `flex-shrink: 0` (защита от сжатия в flex-контейнере SplashPage)
-- `.svg` — `max-width: min(90vw, 360px)`, вписывается в мобильный viewport
+- `.svg` — `max-width: min(90vw, 420px)`, вписывается в мобильный viewport
 - Высота определяется пропорцией исходного `viewBox` SVG (200×150 → 360×270)
 
 **Важно**: контейнер **не** имеет `height: 100%` — это сломало бы flex-layout в SplashPage (заставляло LogoText занимать 100vh и вытеснять Tagline). Контейнер sizing определяется контентом (SVG).

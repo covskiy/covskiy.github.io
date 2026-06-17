@@ -140,9 +140,6 @@ export const SPLASH_CHOREOGRAPHY = {
 
   /** Tagline — клавиатура + текстовый слоган */
   tagline: {
-    labels: {
-      KEYBOARD_IN: 0,
-    },
     durations: {
       KEYBOARD_IN: 0.5,
       KEY_HIGHLIGHT: 0.3,

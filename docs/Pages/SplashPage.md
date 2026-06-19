@@ -48,6 +48,8 @@ types/
 | `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                   |
 | `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`) |
 | `1.5`       | Tagline  | Клавиатура влетает сверху (синхронно с морфом гвоздя → курсор в LogoText), затем подсветка клавиш синхронно с началом морфинга букв, в конце — SplitText |
+| `4.2`       | LogoText | **Burst 1** — 1–3 sub-spawn'а искр из правого края канваса влево, видимы только внутри букв (canvas + SVG `<mask>`) |
+| `4.7`       | LogoText | **Burst 2** — новые искры + `boostAll(1.7)` к уже летящим из burst 1 (визуально «порыв ветра»)                  |
 
 **Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `SPLASH_CHOREOGRAPHY` в `splashChoreography.ts`).
 

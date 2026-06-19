@@ -79,11 +79,12 @@ covskiy.github.io/
 │   │   │   ├── Logo.module.css
 │   │   │   ├── anvil_md.svg
 │   │   │   └── index.ts
-│   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph)
-│   │   │   ├── LogoText.tsx
-│   │   │   ├── LogoText.module.css
-│   │   │   ├── LogoText.svg
-│   │   │   └── index.ts
+  │   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph + canvas sparks)
+  │   │   │   ├── LogoText.tsx
+  │   │   │   ├── LogoText.module.css
+  │   │   │   ├── LogoText.svg
+  │   │   │   ├── sparks.ts            # Particle system для искр
+  │   │   │   └── index.ts
 │   │   ├── Tagline/                  # Клавиатура (split + keyframes)
 │   │   │   ├── Tagline.tsx
 │   │   │   ├── Tagline.module.css
@@ -461,11 +462,11 @@ Skip-логика — хук `useSplashSkip(timeline, onSkip, skipDelay)`. В т
 
 ### 10.1 Vite
 
-`vite-plugin-svgr` + кастомный `svgoConfig` нужен, чтобы SVGO не вырезал
-скрытые элементы (`removeHiddenElems.displayNone: false`) и не
-переименовывал ID (`cleanupIds: false`) — это ломает morph-пути
-в `Logo`/`LogoText`. `cleanupAttrs: false` — чтобы сохранять `class`
-у импортируемых SVG.
+`vite-plugin-svgr` + кастомный `svgoConfig` нужен, чтобы SVGO не вырезал:
+
+- Скрытые элементы (`removeHiddenElems.displayNone: false`) — ломает morph-пути в `Logo`/`LogoText`
+- ID (`cleanupIds: false`) — ломает morph-пути в `Logo`/`LogoText`
+- `class` атрибуты (`cleanupAttrs: false`) — чтобы сохранять `class` у импортируемых SVG
 
 Полный конфиг — в `vite.config.ts`.
 

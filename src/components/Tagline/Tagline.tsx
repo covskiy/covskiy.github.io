@@ -121,9 +121,9 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         <KeyboardSvg />
       </div>
       <div ref={textRef} className={styles.text}>
-        Lorem ipsum dolor sit
+        WebDev fullstack разработка
         <br />
-        Amet consectetur adipiscing
+        Кузница ваших цифровых решений
       </div>
     </div>
   );

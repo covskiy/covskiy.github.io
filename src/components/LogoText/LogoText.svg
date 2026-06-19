@@ -11,9 +11,6 @@
     inkscape:document-units="px" inkscape:zoom="1" inkscape:cx="283" inkscape:cy="406.5" inkscape:window-width="1920"
     inkscape:window-height="1013" inkscape:window-x="-9" inkscape:window-y="-9" inkscape:window-maximized="1"
     inkscape:current-layer="logoLetters" showgrid="false" />
-  <defs id="defs1">
-    <pattern id="EMFhbasepattern" patternUnits="userSpaceOnUse" width="6" height="6" x="0" y="0" />
-  </defs>
   <g inkscape:label="Text" inkscape:groupmode="layer" id="logoLetters" style="display:none">
     <path
       d="m 156.32865,128.58872 c -1.79523,-0.81193 -1.76467,-0.5911 -1.73073,-12.50748 0.0262,-9.18389 0.10517,-11.07909 0.50087,-12.00887 1.04652,-2.45909 5.44338,-3.04557 7.09464,-0.94633 0.59707,0.75905 0.6155,1.13407 0.6155,12.52841 v 11.74594 l -0.76389,0.71762 c -0.62102,0.58343 -1.13943,0.7341 -2.77232,0.80574 -1.26652,0.0556 -2.35409,-0.0682 -2.94407,-0.33503 z m 1.1679,-29.275599 c -4.10422,-0.857938 -5.10171,-6.487852 -1.53391,-8.657554 1.6195,-0.984887 3.07053,-1.068143 4.66618,-0.267732 1.84486,0.925426 2.55048,1.949391 2.69549,3.911578 0.24957,3.376473 -2.46949,5.715717 -5.82776,5.013708 z"

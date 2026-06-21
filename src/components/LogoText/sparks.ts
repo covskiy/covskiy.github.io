@@ -4,6 +4,11 @@
  * Три слоя отрисовки на искру: TAIL (комета) → HALO (дым) → CORE (горящее ядро).
  */
 
+import { LETTER_BOUNDS, SVG_VIEW_H, SVG_VIEW_W } from './constants';
+
+/** Идентификатор пучка: 1 = первый пучок, 2 = второй (с boost). */
+export type BurstId = 1 | 2;
+
 type Spark = {
   /** Текущая позиция X (пиксели канваса). Интегрируется из vx. */
   x: number;
@@ -32,7 +37,7 @@ type Spark = {
   /** Базовый радиус ядра (px). Halo и хвост масштабируются от него. */
   size: number;
   /** Какой пучок выпустил искру (1 или 2) — определяет множитель яркости. */
-  burst: 1 | 2;
+  burst: BurstId;
 };
 
 export type SparkProfile = {
@@ -102,7 +107,7 @@ export type SparkShared = {
 };
 
 export type SparkSystem = {
-  emit: (originX: number, originY: number, n?: number, burst?: 1 | 2) => void;
+  emit: (originX: number, originY: number, n?: number, burst?: BurstId) => void;
   step: (
     dt: number,
     ctx: CanvasRenderingContext2D,
@@ -128,7 +133,7 @@ export function createSparkSystem(
   let destroyed = false;
 
   return {
-    emit(originX, originY, n = 1, burst = 1) {
+    emit(originX, originY, n = 1, burst: BurstId = 1) {
       if (destroyed) return;
       for (let i = 0; i < n; i++) {
         // Случайное отклонение угла внутри конуса от BASE_ANGLE.
@@ -181,15 +186,16 @@ export function createSparkSystem(
       const lastColorIdx = COLORS.length - 1;
 
       // === CULL: пропуск draw для sparks вне зоны букв ===
-      // Y-зона букв в viewBox: 94-140, X-зона: 18-186. Sparks за её пределами
-      // скрыты mask целиком — пропускаем draw (12 circles на искру = заметная экономия).
+      // Зона букв берётся из LETTER_BOUNDS (viewBox-координаты) и пересчитывается
+      // в доли ширины/высоты канваса. Sparks за её пределами скрыты mask целиком
+      // — пропускаем draw (12 circles на искру = заметная экономия).
       // Физика/жизнь продолжают идти: spark, вылетевший за зону, может вернуться.
       // Зазоры между буквами (внутри зоны) НЕ отсекаются — для точного cull
       // нужны 7 per-letter rects, это уже over-engineering.
-      const X_MIN = w * 0.09; // 18/200
-      const X_MAX = w * 0.93; // 186/200
-      const Y_MIN = h * 0.627; // 94/150
-      const Y_MAX = h * 0.933; // 140/150
+      const X_MIN = w * (LETTER_BOUNDS.xMin / SVG_VIEW_W);
+      const X_MAX = w * (LETTER_BOUNDS.xMax / SVG_VIEW_W);
+      const Y_MIN = h * (LETTER_BOUNDS.yMin / SVG_VIEW_H);
+      const Y_MAX = h * (LETTER_BOUNDS.yMax / SVG_VIEW_H);
 
       for (const s of sparks) {
         // === СОХРАНЕНИЕ ПОЗИЦИИ В ИСТОРИЮ ===

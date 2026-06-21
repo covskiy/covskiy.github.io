@@ -146,7 +146,7 @@ export const SPLASH_CHOREOGRAPHY = {
      * Один пучок = subSpawns порывов ветра через subSpawnInterval сек.
      * Один порыв = непрерывный поток count искр за burstDuration сек.
      * Итого искр в пучке = count × subSpawns.
-     * На burst2 ко всем живым искрам применяется boost (см. LogoText.tsx, BURST_BOOST_FACTOR).
+     * На burst2 ко всем живым искрам применяется boost (см. sparks.burstBoostFactor).
      *
      * ─── PER-BURST МНОЖИТЕЛИ ЯРКОСТИ ───
      * coreAlphaMultipliers.burst1 — для искр из burst1 (длиннее яркая фаза).
@@ -163,7 +163,7 @@ export const SPLASH_CHOREOGRAPHY = {
      * "Дольше яркая фаза"         → coreAlphaMultipliers.burst1/2
      * "Больше искр"               → profile.count
      * "Длиннее хвост"             → profile.tailLength
-     * "Сильнее порыв на burst2"   → BURST_BOOST_FACTOR (в LogoText.tsx)
+     * "Сильнее порыв на burst2"   → sparks.burstBoostFactor
      * "Больше порывов в пучке"    → profile.subSpawns, subSpawnInterval
      * "Круче наклон"              → profile.slopeMax
      * "Шире разброс в начале"     → shared.coneHalfAngle
@@ -203,6 +203,18 @@ export const SPLASH_CHOREOGRAPHY = {
     sparks: {
       burst1: 4.2,
       burst2: 4.7,
+      /** Множитель vx для уже летящих искр при выходе второго пучка. ↑ = сильнее рывок. */
+      burstBoostFactor: 1.7,
+      /**
+       * Геометрия эмиссии искр на правой границе канваса.
+       * yMinFrac/yMaxFrac — доли высоты (0.6..0.92 = нижняя половина, в районе полосы текста).
+       * xOffset — отступ от правого края в px (искры сразу летят влево, не залипают на краю).
+       */
+      emit: {
+        yMinFrac: 0.6,
+        yMaxFrac: 0.92,
+        xOffset: 4,
+      },
       coneHalfAngle: Math.PI * 0.1,
       colors: ['#fff7d6', '#ffd166', '#ff8c2a', '#ff4d1a'],
       smokeHalo: {

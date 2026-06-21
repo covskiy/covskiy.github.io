@@ -8,14 +8,17 @@
 
 | Файл                  | Назначение                                                              |
 | --------------------- | ----------------------------------------------------------------------- |
-| `LogoText.tsx`        | Логика компонента — GSAP timeline + импорт SVG + эмиссия искр + ResizeObserver канваса |
+| `LogoText.tsx`        | Компонент — GSAP timeline + оркестрация burst-эмиссии искр. Canvas/rAF/clipPath вынесены в `useSparkCanvas.ts`, timeline-билдеры — в `timelines.ts` |
 | `LogoText.svg`        | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины и для `morphSVG`, и для Path2D-клиппинга искр |
 | `LogoText.module.css` | Контейнер + глобальные CSS-переопределения для начального состояния SVG + стили канваса (bottom-anchored, `aspect-ratio`). Клиппинг искр делается в коде через `ctx.clip(Path2D)`, не через CSS-маску |
-| `sparks.ts`           | Particle system: физика искр, отрисовка 3 слоями (tail/halo/core), bounding box cull, per-burst множители яркости |
+| `constants.ts`        | Общие константы: viewBox-размеры (`SVG_VIEW_W/H`), `LETTER_BOUNDS`, `LETTER_IDS`/`OVSKIY_IDS`, хелперы `selectorFor`/`pathIdFor`/`morphSelectorFor` |
+| `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales) |
+| `useSparkCanvas.ts`   | Хук: canvas DPR-sync + ResizeObserver, Path2D-клиппинг по контурам букв, rAF-цикл отрисовки искр, API эмиссии (`emitOne`/`boostAll`/`sizeRef`/`profile`) |
+| `sparks.ts`           | Particle system: физика искр, отрисовка 3 слоями (tail/halo/core), bounding box cull (из `LETTER_BOUNDS`), per-burst множители яркости |
 
 ## Структура SVG
 
-Два слоя внутри `viewBox="0 0 200 150"`. `<defs>` отсутствует — клиппинг искр делается через `Path2D`/`ctx.clip()` в `LogoText.tsx`, отдельная SVG-маска не нужна.
+Два слоя внутри `viewBox="0 0 200 150"` (размеры — `SVG_VIEW_W`/`SVG_VIEW_H` в `constants.ts`). `<defs>` отсутствует — клиппинг искр делается через `Path2D`/`ctx.clip()` в `useSparkCanvas.ts`, отдельная SVG-маска не нужна.
 
 ### `#logoLetters` (скрыт, `style="display:none"`) — Финальные пути букв
 
@@ -111,7 +114,7 @@ Tagline стартует на master-таймлайне в позиции `1.0` 
 - **Канвас** (`<canvas>` внутри контейнера, после SVG в JSX) — оверлеится поверх SVG
 - **Particle system** (`sparks.ts`) — 30–100 искр, рисуются через `requestAnimationFrame` цикл, который стартует на первом burst'е и гаснет, когда все искры потухли
 - **Конфигурация** в `splashChoreography.ts → logoText.sparks` — общие параметры (coneHalfAngle, colors, smokeHalo, tailColor, coreAlphaMultipliers) + per-profile (mobile/tablet/desktop) с разными count/size/lifetime/friction/windX/ampY/periodY/slopeMax и т.д.
-- **Letter clip (Path2D)** — в `LogoText.tsx` из DOM читаются `d` финальных `#morphPath-C/O/V/S/K/I/Y`, объединяются в один `Path2D` через `addPath` и применяются к канвасу через `ctx.clip()` перед каждым `system.step()`. Подробности — в секции «Path2D clip» ниже.
+- **Letter clip (Path2D)** — в `useSparkCanvas.ts` из DOM читаются `d` финальных `#morphPath-C/O/V/S/K/I/Y` (идентификаторы — `LETTER_IDS`/`pathIdFor` в `constants.ts`), объединяются в один `Path2D` через `addPath` и применяются к канвасу через `ctx.clip()` перед каждым `system.step()`. Подробности — в секции «Path2D clip» ниже.
 - **Bounding box cull** — в `step()` пропускает draw для искр вне зоны букв (≈50–60% draw calls экономятся)
 
 ### Алгоритм искры
@@ -124,7 +127,7 @@ Tagline стартует на master-таймлайне в позиции `1.0` 
 - `y` — вычисляется через **наклонённую синусоиду**: `y = y0 + slope * (x - x0) + ampY * sin(omega * t + phase)`. Нет гравитации, нет шума — только sine + slope
 - `life` — линейный спад от 1 до 0 за `lifetime` секунд (per-spark с джиттером)
 - `history` — кольцевой буфер последних `tailLength` позиций для кометного хвоста
-- `burst: 1 | 2` — определяет per-burst множитель яркости
+- `burst: 1 | 2` (`BurstId` из `sparks.ts`) — определяет per-burst множитель яркости
 - `periodY` (per-spark), `ampY` (per-spark с джиттером), `phase` — разнообразят траектории
 
 ### Отрисовка: 3 слоя
@@ -161,18 +164,18 @@ Per-profile параметры (полная карта с диапазонам�
 
 ### Burst 2 — boostAll(1.7)
 
-При эмиссии burst2 дополнительно вызывается `system.boostAll(BURST_BOOST_FACTOR)` — все живые искры получают +70% к vx (разовый множитель, не постоянное ускорение). Визуально — «порыв ветра» подхватывает уже летящий рой. На desktop с 3 sub-spawn'ами в burst2 (4.70/4.85/5.00) это даёт ступенчатый разгон, как 3 порыва ветра подряд.
+При эмиссии burst2 дополнительно вызывается `system.boostAll(SPARKS.burstBoostFactor)` — все живые искры получают +70% к vx (разовый множитель, не постоянное ускорение). Визуально — «порыв ветра» подхватывает уже летящий рой. На desktop с 3 sub-spawn'ами в burst2 (4.70/4.85/5.00) это даёт ступенчатый разгон, как 3 порыва ветра подряд.
 
-`BURST_BOOST_FACTOR = 1.7` живёт в `LogoText.tsx` как константа — правка в одном месте.
+`sparks.burstBoostFactor = 1.7` живёт в `splashChoreography.ts` — правка в одном месте.
 
 ### Bounding box cull (оптимизация)
 
-В `step()` вычисляются 4 константы (один раз на кадр):
+В `step()` вычисляются 4 константы (один раз на кадр) из `LETTER_BOUNDS` и `SVG_VIEW_W/H` (`constants.ts`):
 ```ts
-const X_MIN = w * 0.09;   // 18/200 viewBox
-const X_MAX = w * 0.93;   // 186/200
-const Y_MIN = h * 0.627;  // 94/150
-const Y_MAX = h * 0.933;  // 140/150
+const X_MIN = w * (LETTER_BOUNDS.xMin / SVG_VIEW_W);   // 18/200
+const X_MAX = w * (LETTER_BOUNDS.xMax / SVG_VIEW_W);   // 186/200
+const Y_MIN = h * (LETTER_BOUNDS.yMin / SVG_VIEW_H);   // 94/150
+const Y_MAX = h * (LETTER_BOUNDS.yMax / SVG_VIEW_H);   // 140/150
 ```
 
 Перед отрисовкой каждой искры:
@@ -187,17 +190,13 @@ if (s.x < X_MIN || s.x > X_MAX || s.y < Y_MIN || s.y > Y_MAX) {
 
 ### Path2D clip
 
-Канвас с искрами клипуется по контурам букв **в коде**, без CSS-маски и без `<mask>` в SVG. В `LogoText.tsx` при инициализации:
+Канвас с искрами клипуется по контурам букв **в коде**, без CSS-маски и без `<mask>` в SVG. В `useSparkCanvas.ts` при инициализации:
 
 ```ts
-const LETTER_PATH_IDS = [
-  'morphPath-C', 'morphPath-O', 'morphPath-V',
-  'morphPath-S', 'morphPath-K', 'morphPath-I', 'morphPath-Y',
-] as const;
-
+// LETTER_IDS — ['C','O','V','S','K','I','Y'] из constants.ts
 const clipPath = new Path2D();
-for (const id of LETTER_PATH_IDS) {
-  const el = document.getElementById(id);
+for (const id of LETTER_IDS) {
+  const el = document.getElementById(pathIdFor(id)); // 'morphPath-C', ...
   if (el instanceof SVGPathElement) {
     const d = el.getAttribute('d');
     if (d) clipPath.addPath(new Path2D(d));
@@ -211,7 +210,7 @@ clipPathRef.current = clipPath;
 const dpr = dprRef.current;
 ctx2d.save();
 ctx2d.setTransform(
-  dpr * (w / 200), 0, 0, dpr * (h / 150), 0, 0,
+  dpr * (w / SVG_VIEW_W), 0, 0, dpr * (h / SVG_VIEW_H), 0, 0,
 );
 if (clipPathRef.current) ctx2d.clip(clipPathRef.current);
 ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -239,7 +238,7 @@ ctx2d.restore();
 
 ### Стартовые позиции и timing
 
-- **Эмиссия** всегда у правой границы канваса (`ox = w - 4`), случайный Y в нижней половине (`oyMin = 0.6 * h`, `oyMax = 0.92 * h`) — sparks стартуют примерно в полосе букв
+- **Эмиссия** всегда у правой границы канваса (`ox = w - sparks.emit.xOffset`), случайный Y в нижней половине (`oyMin = sparks.emit.yMinFrac * h`, `oyMax = sparks.emit.yMaxFrac * h`) — sparks стартуют примерно в полосе букв
 - **Burst 1** — master-время `4.2s`, длительность потока `burstDuration` (0.18–0.35s по профилю)
 - **Burst 2** — master-время `4.7s`, `boostAll(1.7)` к уже летящим
 - **Sub-spawns** (только desktop) — `subSpawns=3` через `subSpawnInterval=0.15s`, ступенчатый «продув» в течение 0.36s
@@ -257,7 +256,7 @@ ctx2d.restore();
 | Дольше яркая фаза burst1 | `coreAlphaMultipliers.burst1` (выше = дольше) |
 | Больше искр | `profile.count` |
 | Длиннее хвост | `profile.tailLength` |
-| Сильнее порыв на burst2 | `BURST_BOOST_FACTOR` в `LogoText.tsx` |
+| Сильнее порыв на burst2 | `sparks.burstBoostFactor` в `splashChoreography.ts` |
 | Больше порывов в пучке | `profile.subSpawns`, `subSpawnInterval` |
 | Круче наклон | `profile.slopeMax` |
 | Шире разброс в начале | `coneHalfAngle` |

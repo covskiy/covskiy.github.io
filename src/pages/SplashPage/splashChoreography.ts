@@ -62,6 +62,7 @@ export const SPLASH_CHOREOGRAPHY = {
         duration: 1.6,
       },
       scales: {
+        C: 1,
         O: 0.833,
         V: 0.667,
         S: 0.5,

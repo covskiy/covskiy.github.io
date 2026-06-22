@@ -79,11 +79,10 @@ covskiy.github.io/
 │   │   │   ├── Logo.module.css
 │   │   │   ├── anvil_md.svg
 │   │   │   └── index.ts
-  │   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph + canvas sparks)
+  │   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph)
   │   │   │   ├── LogoText.tsx
   │   │   │   ├── LogoText.module.css
   │   │   │   ├── LogoText.svg
-  │   │   │   ├── sparks.ts            # Particle system для искр
   │   │   │   └── index.ts
 │   │   ├── Tagline/                  # Клавиатура (split + keyframes)
 │   │   │   ├── Tagline.tsx

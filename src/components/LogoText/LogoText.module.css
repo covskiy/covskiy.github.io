@@ -24,3 +24,20 @@
     visibility: hidden;
   }
 }
+
+.canvas {
+  /* Размер и позиция — как у SVG: bottom-anchored, горизонтально центрирован,
+     те же max-width и пропорции. Это нужно, чтобы Path2D-клиппинг
+     (viewBox 200×150 → CSS-пиксели через scale) лёг 1:1 на SVG
+     и буквы в клипе совпали с реальными буквами.
+     viewBox 200×150 */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: min(90vw, 420px);
+  aspect-ratio: 200 / 150;
+  pointer-events: none;
+}

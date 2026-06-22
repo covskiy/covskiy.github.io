@@ -11,7 +11,10 @@
 | `LogoText.tsx`        | Компонент — GSAP timeline, оркестрация суб-таймлайнов букв и курсора. Timeline-билдеры — в `timelines.ts` |
 | `LogoText.svg`        | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины для `morphSVG` |
 | `LogoText.module.css` | Контейнер + глобальные CSS-переопределения для начального состояния SVG |
-| `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales) |
+| `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` + `scheduleSparksBoost` |
+| `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop |
+| `sparks.system.ts`    | Слой 2 — чистая SparkSystem (emit / update / draw / boostAll / clear) без знания React/GSAP/DOM |
+| `useSparkCanvas.ts`   | Слой 3 — хук канваса: DPR-синк, ResizeObserver, Path2D-клип из `#morphPath-*`, RAF-цикл, cleanup |
 
 ## Структура SVG
 
@@ -140,3 +143,87 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 - `gsap` (MorphSVGPlugin — зарегистрирован в `initGsap.ts`)
 - `@gsap/react` (хук `useGSAP` — автоочистка)
 - Vite SVGR (суффикс `?react` для импорта SVG)
+
+## Sparks — эффект искр внутри букв
+
+Эффект вылета искр из точки курсора на букве Y влево, привязанный к двум
+моментам локального таймлайна (`burst1.start = 4.2s`, `burst2.start = 4.6s`).
+Строгое разделение на три слоя:
+
+### Mobile-first архитектура профилей
+
+`MOBILE_PROFILE` — самостоятельный base (без `...SHARED_PROFILE`).
+`TABLET_PROFILE` и `DESKTOP_PROFILE` наследуются от mobile через spread
+и переопределяют только то, что должно расти с мощностью устройства:
+
+| Параметр | mobile (base) | tablet | desktop |
+|---|---|---|---|
+| `baseRadius` | 1.1 | 1.4 | 1.6 |
+| `tailLength` | 11 | 14 | 16 |
+| `speedMul` | 0.95 | 1.0 | 1.05 |
+| `burst1.count` | 20 | 30 | 35 |
+| `burst2.count` | 15 | 25 | 28 |
+| `boostFactor` | 1.4 | 1.5 | 1.7 |
+
+Глобально (одинаково на всех устройствах):
+- Тайминги burst'ов (`start`, `duration`) — часть хореографии
+- Визуал пучка (`brightnessMul`, `sizeMul`) — burst1 чуть скромнее burst2
+- Цвета, физика, jitter
+
+### Слой 1 — `sparks.config.ts`
+
+Все «магические числа» (цвета ядра/хвоста/дыма, физика, jitter, тайминги,
+профили `mobile` / `tablet` / `desktop`). Селектор профиля —
+`selectSparkProfile(innerWidth)` через пороги `768` / `1280`. Чтобы
+подкрутить визуал — правь только этот файл.
+
+`profileName(profile)` — возвращает `'mobile' | 'tablet' | 'desktop'`
+по ссылочной идентичности (профили — module-singletons).
+
+### Слой 2 — `sparks.system.ts`
+
+Чистая логика частиц, **не знающая** про React, GSAP и DOM. API:
+- `emit(origin, delta, burst, profile, config)` — создание частиц с jitter.
+- `update(dt, profile, config)` — физика (трение, ветер, синусоида по Y, старение).
+- `draw(ctx, clip, profile, bbox)` — 3-слойная отрисовка: дымный halo → кометный хвост (история позиций в `Float32Array`-кольце) → яркое ядро. Culling по bbox перед `arc()` для halo/core; хвост рисуется всегда, но автоматически клипается по `ctx.clip(clip)`.
+- `boostAll(factor)` — резкое увеличение `vel.x` для всех живых частиц.
+- `clear()` — сброс массива (используется при скрабе GSDevTools назад).
+
+### Слой 3 — `useSparkCanvas.ts` + интеграция в `LogoText.tsx`
+
+- Инициализация `<canvas>`, синхронизация DPR (`devicePixelRatio`).
+- `ResizeObserver` на канвас: пересборка `Path2D` из `getBBox()` всех
+  `#morphPath-*` (union контуров) + пересчёт профиля по `innerWidth`.
+- Трансформация контекста: `ctx.setTransform(scaleX * dpr, 0, 0, scaleY * dpr, 0, 0)`,
+  где `scaleX = cssWidth / 200`, `scaleY = cssHeight / 150`. Это позволяет
+  физике/отрисовке оперировать в **viewBox-пространстве** (200×150) —
+  инвариант к размеру канваса.
+- **RAF-цикл** (не `gsap.ticker`): стартует при `emit()`, сам останавливается
+  когда `aliveCount === 0`. Не зависит от паузы GSAP-мастера — искры
+  догорают в своём render-loop даже на `master.pause()`.
+- `createSparksTimeline(tl, config, getProfile, emitFn, onClear, onBurstStart)`:
+  два твина `progress.value: 0 → 1` на позициях `burst1.start` / `burst2.start`.
+  В `onUpdate` читается `getProfile()[label].count`, считается дельта
+  эмиссии и зовётся `emitFn(delta, label)`. При скрабе назад
+  (`progress.value < lastValue`) — `onClear()` сбрасывает систему.
+- `scheduleSparksBoost(tl, config, getProfile, boostFn)` — одноразовый
+  `tl.call()` на позиции `burst2.start`, дающий «пинок» живым искрам
+  первого пучка. Множитель читается из `getProfile().boostFactor`.
+
+### `prefers-reduced-motion`
+
+`useSparkCanvas` через `window.matchMedia('(prefers-reduced-motion: reduce)')`
+проверяет настройку при инициализации. Если reduce — `useEffect` ранний
+return, канвас не инициализируется, RAF-цикл недоступен. Хук возвращает
+`reducedMotion: true`, и `LogoText` пропускает регистрацию sparks-таймлайна.
+Доступность: пользователи с вестибулярными нарушениями не видят эффект.
+
+### Поведение при паузе/скипе
+
+- `master.pause()`: твины эмиссии встают → новые искры не летят. RAF-цикл
+  продолжает крутиться → летящие искры догорают.
+- `master.progress(1).kill()`: твины умирают. RAF цикл видит `aliveCount === 0`
+  и сам отменяется.
+- `useGSAP` cleanup на unmount (route change) → RAF отменяется,
+  `ResizeObserver` отключается, `system.clear()`.
+- StrictMode двойной маунт: cleanup-логика в `useEffect` идемпотентна.

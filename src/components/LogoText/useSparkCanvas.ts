@@ -1,218 +1,297 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
-import { logger } from '../../utils/logger';
-import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
-import { createSparkSystem, type BurstId, type SparkProfile } from './sparks';
-import { LETTER_IDS, pathIdFor, SVG_VIEW_H, SVG_VIEW_W } from './constants';
-
-type ProfileKey =
-  keyof (typeof SPLASH_CHOREOGRAPHY)['logoText']['sparks']['profiles'];
-
 /**
- * Брейкпоинты выбора профиля. Совпадают с design-tokens breakpoints
- * (481 = tablet, 1025 = desktop), laptop объединён с tablet.
+ * Хук канваса для эффекта искр.
+ *
+ * Ответственность:
+ * - Инициализация <canvas>, синхронизация с DPR и CSS-размером.
+ * - Сборка Path2D-клипа из контуров букв (#morphPath-*) с учётом масштаба.
+ * - Гибридный клиппинг: mobile = mask (destination-in + drawImage),
+ *   tablet/desktop = ctx.clip(Path2D).
+ * - Поддержка ResizeObserver: пересборка клипа, пересчёт профиля, ре-инит канваса.
+ * - RAF-цикл: system.update + clearRect + system.draw.
+ *   Цикл стартует при emit() и сам останавливается, когда aliveCount === 0.
+ *   Цикл не зависит от GSAP-таймлайна (голый RAF), поэтому пауза мастера
+ *   не глушит догорание частиц.
+ * - Полный cleanup при unmount.
  */
-function getActiveProfileKey(): ProfileKey {
-  const w = window.innerWidth;
-  if (w < 481) return 'mobile';
-  if (w < 1025) return 'tablet';
-  return 'desktop';
-}
 
-export type SparkCanvasApi = {
-  /** Эмиссия одной искры в заданных координатах. No-op если canvas не готов. */
-  emitOne: (ox: number, oy: number, burst: BurstId) => void;
-  /** Разовый множитель vx для всех живых искр («порыв ветра»). */
-  boostAll: (factor: number) => void;
-  /** CSS-размеры канваса (обновляются через ResizeObserver). */
-  sizeRef: RefObject<{ w: number; h: number }>;
-  /** Активный профиль искр (mobile/tablet/desktop). */
-  profile: SparkProfile;
+import { useEffect, useRef, useState } from 'react';
+import { logger } from '../../utils/logger';
+import {
+  SPARKS_CONFIG,
+  VIEWBOX,
+  profileName,
+  selectSparkProfile,
+  type SparkProfile,
+  type SparksConfig,
+} from './sparks.config';
+import { createSparkSystem, type SparkSystem } from './sparks.system';
+
+const MORPH_SELECTOR =
+  '#morphPath-C, #morphPath-O, #morphPath-V, #morphPath-S, #morphPath-K, #morphPath-I, #morphPath-Y';
+
+type LoopController = {
+  ensureRunning: () => void;
 };
 
-/**
- * Инкапсулирует canvas-setup, Path2D-клиппинг по контурам букв,
- * rAF-цикл отрисовки искр и API эмиссии.
- *
- * Система искр создаётся один раз (lazy useState) на основе профиля
- * для текущего брейкпоинта. rAF-цикл самоостанавливается, когда все
- * искры потухли, и перезапускается при следующей эмиссии.
- */
-export function useSparkCanvas(
-  canvasRef: RefObject<HTMLCanvasElement | null>,
-): SparkCanvasApi {
-  const sizeRef = useRef({ w: 0, h: 0 });
-  const dprRef = useRef(1);
-  const rafRef = useRef<number | null>(null);
-  const lastTimeRef = useRef(0);
-  const clipPathRef = useRef<Path2D | null>(null);
-  const loopRef = useRef<FrameRequestCallback | null>(null);
+export type UseSparkCanvasResult = {
+  system: SparkSystem;
+  /** Свежий профиль, пересчитывается при resize */
+  profile: SparkProfile;
+  /** Всегда актуальный профиль через ref — без stale closure */
+  getProfile: () => SparkProfile;
+  /** Контроллер RAF-цикла. ensureRunning() нужно звать при каждой эмиссии */
+  loop: LoopController;
+  /** true, если пользователь предпочитает уменьшенное движение (эффект отключён) */
+  reducedMotion: boolean;
+};
 
-  const [state] = useState(() => {
-    const SPARKS = SPLASH_CHOREOGRAPHY.logoText.sparks;
-    const profileKey = getActiveProfileKey();
-    const profile = SPARKS.profiles[profileKey];
-    const system = createSparkSystem(profile, {
-      coneHalfAngle: SPARKS.coneHalfAngle,
-      colors: SPARKS.colors,
-      smokeHalo: SPARKS.smokeHalo,
-      tailColor: SPARKS.tailColor,
-      coreAlphaMultipliers: SPARKS.coreAlphaMultipliers,
-    });
-    logger.info('LogoText', 'Spark profile locked', {
-      key: profileKey,
-      count: profile.count,
-      subSpawns: profile.subSpawns,
-    });
-    return { system, profile };
+export function useSparkCanvas(
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  config: SparksConfig = SPARKS_CONFIG,
+): UseSparkCanvasResult {
+  const [profile, setProfile] = useState<SparkProfile>(() =>
+    selectSparkProfile(window.innerWidth),
+  );
+
+  const [reducedMotion] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
 
-  const { system, profile } = state;
+  const systemRef = useRef<SparkSystem | null>(null);
+  if (systemRef.current === null) {
+    systemRef.current = createSparkSystem();
+    logger.info('useSparkCanvas', 'SparkSystem created');
+  }
+  // eslint-disable-next-line react-hooks/refs
+  const system = systemRef.current;
 
-  // Синхронизация размера канваса с CSS-размером (с учётом device pixel ratio).
-  // canvas.width/height — физические пиксели (× dpr для Retina).
-  // ctx.setTransform(dpr,0,0,dpr,0,0) — все draw-команды в CSS-пикселях.
-  // sizeRef хранит CSS-размеры для использования в step() и startSubSpawn().
+  const profileRef = useRef(profile);
+  // eslint-disable-next-line react-hooks/refs
+  profileRef.current = profile;
+
+  const loopRef = useRef<LoopController>({
+    ensureRunning: () => undefined,
+  });
+
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
+    const loop = loopRef.current;
 
-    const sync = () => {
-      canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
-      canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      dprRef.current = dpr;
-      sizeRef.current = { w: canvas.width / dpr, h: canvas.height / dpr };
-    };
-    sync();
-
-    // ResizeObserver — наблюдаем за канвасом (а не за контейнером), потому что
-    // канвас меньше контейнера (только SVG-зона, для выравнивания mask).
-    const ro = new ResizeObserver(sync);
-    ro.observe(canvas);
-    return () => ro.disconnect();
-  }, [canvasRef]);
-
-  // === Сборка Path2D для клиппинга искр по контурам букв ===
-  // Берём d у финальных morphPath-* в #logoLetters (display:none, но в DOM).
-  // Эти же пути используются для morphSVG — единый источник истины.
-  // Семь subpath'ей объединяются в один Path2D, потому что повторный
-  // ctx.clip() даёт ПЕРЕСЕЧЕНИЕ, а нам нужен UNION контуров букв.
-  //
-  // rAF-цикл отрисовки: dt clamp 0.1 — защита от огромных скачков при
-  // переключении вкладки (иначе физика взорвётся от накопленного dt).
-  //
-  // Клиппинг: setTransform(масштабированный) → clip → setTransform(dpr) → draw.
-  // 1) Под масштабированным CTM (dpr*w/200, dpr*h/150) viewBox-юниты Path2D
-  //    мапятся на device-координаты канваса, клип = контуры букв.
-  // 2) Сброс CTM к dpr перед step() — step() рисует в CSS-пикселях.
-  // 3) Клип переживает setTransform, restore() сбрасывает CTM и клип.
-  // Канвас имеет aspect-ratio: SVG_VIEW_W/SVG_VIEW_H → scaleX === scaleY.
-  useEffect(() => {
-    const clipPath = new Path2D();
-    let clipFound = 0;
-    for (const id of LETTER_IDS) {
-      const el = document.getElementById(pathIdFor(id));
-      if (el instanceof SVGPathElement) {
-        const d = el.getAttribute('d');
-        if (d) {
-          clipPath.addPath(new Path2D(d));
-          clipFound++;
-        }
-      }
-    }
-    if (clipFound === LETTER_IDS.length) {
-      clipPathRef.current = clipPath;
-      logger.info('LogoText', 'clip path built', { subpaths: clipFound });
-    } else {
-      clipPathRef.current = null;
-      logger.warn('LogoText', 'clip path incomplete, sparks may bleed', {
-        found: clipFound,
-        total: LETTER_IDS.length,
-      });
-    }
-
-    const canvas = canvasRef.current;
-    const ctx2d = canvas?.getContext('2d');
-    if (!ctx2d) {
-      logger.warn('LogoText', 'canvas 2d context unavailable, sparks disabled');
+    if (reducedMotion) {
+      logger.info('useSparkCanvas', 'Disabled by prefers-reduced-motion');
+      loop.ensureRunning = () => undefined;
       return;
     }
 
-    const loop: FrameRequestCallback = (t) => {
-      const dt = lastTimeRef.current
-        ? Math.min(0.1, (t - lastTimeRef.current) / 1000)
-        : 0;
-      lastTimeRef.current = t;
-      const { w, h } = sizeRef.current;
-      if (w > 0 && h > 0) {
-        const dpr = dprRef.current;
-        ctx2d.save();
-        ctx2d.setTransform(
-          dpr * (w / SVG_VIEW_W),
-          0,
-          0,
-          dpr * (h / SVG_VIEW_H),
-          0,
-          0,
-        );
-        const clip = clipPathRef.current;
-        if (clip) ctx2d.clip(clip);
-        ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
-        system.step(dt, ctx2d, w, h);
-        ctx2d.restore();
-      }
-      if (system.isAlive()) {
-        rafRef.current = requestAnimationFrame(loop);
-      } else {
-        // Все искры потухли — стоп цикл до следующего burst'а.
-        rafRef.current = null;
-        lastTimeRef.current = 0;
-      }
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) {
+      logger.warn('useSparkCanvas', 'container or canvas is null');
+      return;
+    }
+
+    const svg = container.querySelector('svg');
+    if (!svg) {
+      logger.warn('useSparkCanvas', 'SVG not found in container');
+      return;
+    }
+
+    const clipRef: { current: Path2D | null } = { current: null };
+    const maskRef: { current: HTMLCanvasElement | null } = { current: null };
+    const cullLineRef: { current: number } = { current: 0 };
+    const ctxRef: { current: CanvasRenderingContext2D | null } = {
+      current: null,
     };
-    loopRef.current = loop;
+    const rafRef: { current: number | null } = { current: null };
+    const lastTimeRef: { current: number } = { current: 0 };
+    const runningRef: { current: boolean } = { current: false };
+
+    const tick = (now: number): void => {
+      rafRef.current = null;
+      const ctx = ctxRef.current;
+      if (!ctx) {
+        runningRef.current = false;
+        return;
+      }
+      if (lastTimeRef.current === 0) {
+        lastTimeRef.current = now;
+      }
+      const dt = Math.min(
+        config.stage.maxDt,
+        (now - lastTimeRef.current) / 1000,
+      );
+      lastTimeRef.current = now;
+
+      if (system.aliveCount() === 0) {
+        ctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
+        runningRef.current = false;
+        return;
+      }
+
+      system.update(dt);
+      ctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
+
+      if (profileName(profileRef.current) === 'mobile') {
+        system.draw(ctx, cullLineRef.current, profileRef.current);
+        if (maskRef.current) {
+          ctx.globalCompositeOperation = 'destination-in';
+          ctx.drawImage(maskRef.current, 0, 0, VIEWBOX.w, VIEWBOX.h);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      } else {
+        if (clipRef.current) {
+          ctx.save();
+          ctx.clip(clipRef.current);
+        }
+        system.draw(ctx, cullLineRef.current, profileRef.current);
+        if (clipRef.current) {
+          ctx.restore();
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const ensureRunning = (): void => {
+      if (runningRef.current) return;
+      if (ctxRef.current === null) return;
+      runningRef.current = true;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    loop.ensureRunning = ensureRunning;
+
+    function syncCanvasSize(): void {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = Math.max(1, rect.width);
+      const cssH = Math.max(1, rect.height);
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const scaleX = (cssW / VIEWBOX.w) * dpr;
+      const scaleY = (cssH / VIEWBOX.h) * dpr;
+      ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+      ctxRef.current = ctx;
+    }
+
+    function rebuildMask(): void {
+      if (!clipRef.current) {
+        maskRef.current = null;
+        return;
+      }
+      let mask = maskRef.current;
+      if (!mask) {
+        mask = document.createElement('canvas');
+        mask.width = VIEWBOX.w;
+        mask.height = VIEWBOX.h;
+      }
+      const mctx = mask.getContext('2d');
+      if (!mctx) {
+        logger.warn(
+          'useSparkCanvas',
+          'Mask canvas getContext("2d") returned null',
+        );
+        maskRef.current = null;
+        return;
+      }
+      mctx.setTransform(1, 0, 0, 1, 0, 0);
+      mctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
+      mctx.fillStyle = '#fff';
+      mctx.globalAlpha = 1;
+      mctx.fill(clipRef.current);
+      maskRef.current = mask;
+    }
+
+    function rebuildClip(): void {
+      if (!svg) return;
+      const pathEls = svg.querySelectorAll<SVGPathElement>(MORPH_SELECTOR);
+      if (pathEls.length === 0) {
+        logger.warn('useSparkCanvas', 'No morphPath elements found');
+        clipRef.current = null;
+        maskRef.current = null;
+        cullLineRef.current = 0;
+        return;
+      }
+      const clip = new Path2D();
+      let letterTopY = Infinity;
+      for (const el of pathEls) {
+        const d = el.getAttribute('d');
+        if (d) clip.addPath(new Path2D(d));
+        const bbox = el.getBBox();
+        if (bbox.y < letterTopY) letterTopY = bbox.y;
+      }
+      clipRef.current = clip;
+      rebuildMask();
+      cullLineRef.current =
+        letterTopY === Infinity ? 0 : letterTopY - config.stage.cullMargin;
+    }
+
+    function onResize(): void {
+      syncCanvasSize();
+      const w = window.innerWidth;
+      const next = selectSparkProfile(w);
+      if (
+        next.baseRadius !== profileRef.current.baseRadius ||
+        next.lifetime !== profileRef.current.lifetime ||
+        next.speed !== profileRef.current.speed
+      ) {
+        logger.debug('useSparkCanvas', 'Profile changed', {
+          from: profileName(profileRef.current),
+          to: profileName(next),
+          width: w,
+        });
+        setProfile(next);
+      }
+    }
+
+    syncCanvasSize();
+    rebuildClip();
+    onResize();
+
+    const ro = new ResizeObserver(() => {
+      onResize();
+    });
+    ro.observe(canvas);
+
+    window.addEventListener('resize', onResize);
+
+    logger.info('useSparkCanvas', 'Canvas initialized', {
+      dpr: window.devicePixelRatio || 1,
+      profile: profileName(profileRef.current),
+      width: window.innerWidth,
+    });
 
     return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', onResize);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
-      // clear() вместо destroy(): StrictMode double-invokes эффекты
-      // (mount → cleanup → mount), и destroy() ставит флаг destroyed=true
-      // в системе, которая хранится в useState и переживает cleanup.
-      // На повторный mount искры бы не эмитились. clear() только обнуляет
-      // массив искр — система остаётся жива для re-mount. На реальном
-      // unmount система GC'ится вместе с компонентом.
+      runningRef.current = false;
+      loop.ensureRunning = () => undefined;
       system.clear();
-      clipPathRef.current = null;
-      loopRef.current = null;
+      const ctx = ctxRef.current;
+      if (ctx) ctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
+      ctxRef.current = null;
+      clipRef.current = null;
+      maskRef.current = null;
+      cullLineRef.current = 0;
     };
-  }, [canvasRef, system]);
+  }, [containerRef, canvasRef, system, config, reducedMotion]);
 
-  // Идемпотентный запуск rAF: если уже идёт — ничего не делаем.
-  // Нужен потому что первый emit может произойти из любого sub-spawn'а.
-  const emitOne = useCallback(
-    (ox: number, oy: number, burst: BurstId) => {
-      const loop = loopRef.current;
-      if (!loop) return; // canvas не готов
-      system.emit(ox, oy, 1, burst);
-      if (rafRef.current === null) {
-        lastTimeRef.current = 0;
-        rafRef.current = requestAnimationFrame(loop);
-      }
-    },
-    [system],
-  );
-
-  const boostAll = useCallback(
-    (factor: number) => {
-      system.boostAll(factor);
-    },
-    [system],
-  );
-
-  return { emitOne, boostAll, sizeRef, profile };
+  // getProfile и loop.ensureRunning читают refs в момент вызова (не рендера),
+  // это callbacks, передаваемые в onUpdate/onStart.
+  // eslint-disable-next-line react-hooks/refs
+  return {
+    system,
+    profile,
+    getProfile: () => profileRef.current,
+    loop: { ensureRunning: () => loopRef.current.ensureRunning() },
+    reducedMotion,
+  };
 }

@@ -1,6 +1,16 @@
 import { logger } from '../../utils/logger';
 import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
-import { morphSelectorFor, OVSKIY_IDS, selectorFor } from './constants';
+import type { SparksConfig } from './sparks.config';
+
+const OVSKIY_LETTERS = ['O', 'V', 'S', 'K', 'I', 'Y'] as const;
+
+type LetterId = 'C' | 'O' | 'V' | 'S' | 'K' | 'I' | 'Y';
+
+/** CSS-селектор элемента буквы в SVG: C → .img-c, O → .img-o, ... */
+const selectorFor = (id: LetterId): string => `.img-${id.toLowerCase()}`;
+
+/** GSAP/morphSVG-селектор финального контура (с #): C → #morphPath-C. */
+const morphSelectorFor = (id: LetterId): string => `#morphPath-${id}`;
 
 /**
  * Timeline с анимацией первой буквы C Intro страницы.
@@ -45,7 +55,7 @@ export function createCLetterTimeline(
 
 /**
  * Timeline с анимацией букв логотекста, кроме заглавной C.
- * Data-driven: итерация по OVSKIY_IDS, единый паттерн set(visible) → to(morphSVG).
+ * Data-driven: итерация по OVSKIY_LETTERS, единый паттерн set(visible) → to(morphSVG).
  * @param tl timeline на который будет регистрироваться анимация
  * @returns timeline с добавленными анимациями
  */
@@ -55,12 +65,12 @@ export function createOVSKIYTimeline(
   const logoText = SPLASH_CHOREOGRAPHY.logoText;
 
   const dashStarts: Record<string, number> = {};
-  for (const id of OVSKIY_IDS) {
+  for (const id of OVSKIY_LETTERS) {
     dashStarts[id] = logoText[id].phaseDash.start;
   }
   logger.debug('LogoText', 'Letters phaseDash starts', dashStarts);
 
-  for (const id of OVSKIY_IDS) {
+  for (const id of OVSKIY_LETTERS) {
     const letter = logoText[id];
     tl.set(
       selectorFor(id),
@@ -139,7 +149,7 @@ export function createCursorTimeline(
       letterO.phaseDash.start,
     );
 
-  for (const id of OVSKIY_IDS) {
+  for (const id of OVSKIY_LETTERS) {
     if (id === 'Y') continue;
     const letter = SPLASH_CHOREOGRAPHY.logoText[id];
     tl.to(
@@ -157,6 +167,89 @@ export function createCursorTimeline(
     },
     letterY.phaseDash.start,
   );
+
+  return tl;
+}
+
+/**
+ * Билдер твинов эмиссии искр (два пучка).
+ *
+ * Эмиссия растянута во времени: твин `progress.value: 0 → 1` дёргает
+ * `onUpdate`, в котором считается дельта эмиссии за шаг и вызывается
+ * `emitFn(delta)`. Это даёт «размазанный» по времени выброс,
+ * а не мгновенный залп.
+ *
+ * Кол-во искр берётся из активного профиля на момент эмиссии
+ * (`getProfile().emitCount`) — это позволяет per-profile варьировать
+ * плотность выброса. Тайминги (start, duration) — из burst-конфига.
+ *
+ * Поддерживает скраб GSDevTools: при движении tween-progress назад
+ * `onClear()` вызывается и локальный `emitted` сбрасывается — иначе
+ * повторный проход вперёд оставил бы «призраков».
+ *
+ * @param tl timeline, на который регистрируются твины
+ * @param config конфиг эффекта (глобальные тайминги burst'ов)
+ * @param getProfile getter активного профиля (читает emitCount)
+ * @param emitFn колбэк эмиссии: (delta) => void
+ * @param onClear колбэк очистки системы при скрабе назад
+ * @param onBurstStart колбэк старта пучка (например, дёрнуть RAF-цикл)
+ * @returns тот же timeline с добавленными твинами burst1, burst2
+ */
+export function createSparksTimeline(
+  tl: gsap.core.Timeline,
+  config: SparksConfig,
+  getProfile: () => SparksConfig['profiles']['mobile'],
+  emitFn: (delta: number) => void,
+  onClear: () => void,
+  onBurstStart: () => void,
+): gsap.core.Timeline {
+  function buildBurstTween(
+    parent: gsap.core.Timeline,
+    timing: SparksConfig['burst1'],
+  ): void {
+    const progress = { value: 0 };
+    let emitted = 0;
+    let lastValue = 0;
+    const duration = Math.max(0.01, timing.duration);
+    const onUpdate = (): void => {
+      const v = progress.value;
+      if (v < lastValue) {
+        onClear();
+        emitted = 0;
+      }
+      lastValue = v;
+      const count = getProfile().emitCount;
+      if (count <= 0) return;
+      const target = Math.floor(v * count);
+      const delta = target - emitted;
+      if (delta > 0) {
+        emitted = target;
+        emitFn(delta);
+        logger.trace('LogoText', 'emit batch', {
+          delta,
+          total: emitted,
+        });
+      }
+    };
+    parent.to(
+      progress,
+      {
+        value: 1,
+        duration,
+        ease: 'none',
+        onUpdate,
+        onStart: () => {
+          emitted = 0;
+          lastValue = 0;
+          onBurstStart();
+        },
+      },
+      timing.start,
+    );
+  }
+
+  buildBurstTween(tl, config.burst1);
+  buildBurstTween(tl, config.burst2);
 
   return tl;
 }

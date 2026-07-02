@@ -79,11 +79,17 @@ covskiy.github.io/
 │   │   │   ├── Logo.module.css
 │   │   │   ├── anvil_md.svg
 │   │   │   └── index.ts
-  │   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph + canvas sparks)
+  │   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph)
   │   │   │   ├── LogoText.tsx
   │   │   │   ├── LogoText.module.css
   │   │   │   ├── LogoText.svg
-  │   │   │   ├── sparks.ts            # Particle system для искр
+  │   │   │   ├── trajectory.ts         # Абстракция траектории (spiral/sinwave)
+  │   │   │   ├── spiral/               # Спиральная траектория
+  │   │   │   │   ├── SpiralConfig.ts
+  │   │   │   │   └── SpiralTrajectory.ts
+  │   │   │   ├── sinwave/              # Синусоидальная траектория
+  │   │   │   │   ├── SinWaveConfig.ts
+  │   │   │   │   └── SinWaveTrajectory.ts
   │   │   │   └── index.ts
 │   │   ├── Tagline/                  # Клавиатура (split + keyframes)
 │   │   │   ├── Tagline.tsx

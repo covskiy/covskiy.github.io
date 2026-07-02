@@ -4,6 +4,8 @@
  * Ответственность:
  * - Инициализация <canvas>, синхронизация с DPR и CSS-размером.
  * - Сборка Path2D-клипа из контуров букв (#morphPath-*) с учётом масштаба.
+ * - Гибридный клиппинг: mobile = mask (destination-in + drawImage),
+ *   tablet/desktop = ctx.clip(Path2D).
  * - Поддержка ResizeObserver: пересборка клипа, пересчёт профиля, ре-инит канваса.
  * - RAF-цикл: system.update + clearRect + system.draw.
  *   Цикл стартует при emit() и сам останавливается, когда aliveCount === 0.
@@ -16,28 +18,16 @@ import { useEffect, useRef, useState } from 'react';
 import { logger } from '../../utils/logger';
 import {
   SPARKS_CONFIG,
+  VIEWBOX,
   profileName,
   selectSparkProfile,
   type SparkProfile,
   type SparksConfig,
 } from './sparks.config';
-import {
-  createSparkSystem,
-  type BBox,
-  type SparkSystem,
-} from './sparks.system';
+import { createSparkSystem, type SparkSystem } from './sparks.system';
 
-const VIEWBOX_W = 200;
-const VIEWBOX_H = 150;
 const MORPH_SELECTOR =
   '#morphPath-C, #morphPath-O, #morphPath-V, #morphPath-S, #morphPath-K, #morphPath-I, #morphPath-Y';
-
-const EMPTY_BBOX: BBox = {
-  minX: 0,
-  minY: 0,
-  maxX: 0,
-  maxY: 0,
-};
 
 type LoopController = {
   ensureRunning: () => void;
@@ -69,8 +59,6 @@ export function useSparkCanvas(
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
 
-  // Lazy init: создаём систему один раз и храним в ref, чтобы не терять
-  // состояние частиц при ререндере.
   const systemRef = useRef<SparkSystem | null>(null);
   if (systemRef.current === null) {
     systemRef.current = createSparkSystem();
@@ -79,7 +67,6 @@ export function useSparkCanvas(
   // eslint-disable-next-line react-hooks/refs
   const system = systemRef.current;
 
-  // Синхронизация profile-state с ref для чтения из RAF-цикла.
   const profileRef = useRef(profile);
   // eslint-disable-next-line react-hooks/refs
   profileRef.current = profile;
@@ -89,8 +76,6 @@ export function useSparkCanvas(
   });
 
   useEffect(() => {
-    // Захватываем loopRef.current локально сразу — нужно и для раннего
-    // return при reducedMotion, и для основной ветки.
     const loop = loopRef.current;
 
     if (reducedMotion) {
@@ -113,7 +98,8 @@ export function useSparkCanvas(
     }
 
     const clipRef: { current: Path2D | null } = { current: null };
-    const bboxRef: { current: BBox } = { current: EMPTY_BBOX };
+    const maskRef: { current: HTMLCanvasElement | null } = { current: null };
+    const cullLineRef: { current: number } = { current: 0 };
     const ctxRef: { current: CanvasRenderingContext2D | null } = {
       current: null,
     };
@@ -131,18 +117,38 @@ export function useSparkCanvas(
       if (lastTimeRef.current === 0) {
         lastTimeRef.current = now;
       }
-      const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
+      const dt = Math.min(
+        config.stage.maxDt,
+        (now - lastTimeRef.current) / 1000,
+      );
       lastTimeRef.current = now;
 
       if (system.aliveCount() === 0) {
-        ctx.clearRect(0, 0, VIEWBOX_W, VIEWBOX_H);
+        ctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
         runningRef.current = false;
         return;
       }
 
-      system.update(dt, profileRef.current, config);
-      ctx.clearRect(0, 0, VIEWBOX_W, VIEWBOX_H);
-      system.draw(ctx, clipRef.current, profileRef.current, bboxRef.current);
+      system.update(dt);
+      ctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
+
+      if (profileName(profileRef.current) === 'mobile') {
+        system.draw(ctx, cullLineRef.current, profileRef.current);
+        if (maskRef.current) {
+          ctx.globalCompositeOperation = 'destination-in';
+          ctx.drawImage(maskRef.current, 0, 0, VIEWBOX.w, VIEWBOX.h);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      } else {
+        if (clipRef.current) {
+          ctx.save();
+          ctx.clip(clipRef.current);
+        }
+        system.draw(ctx, cullLineRef.current, profileRef.current);
+        if (clipRef.current) {
+          ctx.restore();
+        }
+      }
 
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -166,10 +172,38 @@ export function useSparkCanvas(
       canvas.height = Math.round(cssH * dpr);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      const scaleX = (cssW / VIEWBOX_W) * dpr;
-      const scaleY = (cssH / VIEWBOX_H) * dpr;
+      const scaleX = (cssW / VIEWBOX.w) * dpr;
+      const scaleY = (cssH / VIEWBOX.h) * dpr;
       ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
       ctxRef.current = ctx;
+    }
+
+    function rebuildMask(): void {
+      if (!clipRef.current) {
+        maskRef.current = null;
+        return;
+      }
+      let mask = maskRef.current;
+      if (!mask) {
+        mask = document.createElement('canvas');
+        mask.width = VIEWBOX.w;
+        mask.height = VIEWBOX.h;
+      }
+      const mctx = mask.getContext('2d');
+      if (!mctx) {
+        logger.warn(
+          'useSparkCanvas',
+          'Mask canvas getContext("2d") returned null',
+        );
+        maskRef.current = null;
+        return;
+      }
+      mctx.setTransform(1, 0, 0, 1, 0, 0);
+      mctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
+      mctx.fillStyle = '#fff';
+      mctx.globalAlpha = 1;
+      mctx.fill(clipRef.current);
+      maskRef.current = mask;
     }
 
     function rebuildClip(): void {
@@ -178,38 +212,22 @@ export function useSparkCanvas(
       if (pathEls.length === 0) {
         logger.warn('useSparkCanvas', 'No morphPath elements found');
         clipRef.current = null;
-        bboxRef.current = EMPTY_BBOX;
+        maskRef.current = null;
+        cullLineRef.current = 0;
         return;
       }
       const clip = new Path2D();
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
+      let letterTopY = Infinity;
       for (const el of pathEls) {
         const d = el.getAttribute('d');
-        if (!d) continue;
-        const p = new Path2D(d);
-        clip.addPath(p);
-        try {
-          const bb = el.getBBox();
-          if (bb.width > 0 && bb.height > 0) {
-            minX = Math.min(minX, bb.x);
-            minY = Math.min(minY, bb.y);
-            maxX = Math.max(maxX, bb.x + bb.width);
-            maxY = Math.max(maxY, bb.y + bb.height);
-          }
-        } catch {
-          /* getBBox может бросить в edge-cases (detached) */
-        }
-      }
-      if (minX === Infinity) {
-        clipRef.current = null;
-        bboxRef.current = EMPTY_BBOX;
-        return;
+        if (d) clip.addPath(new Path2D(d));
+        const bbox = el.getBBox();
+        if (bbox.y < letterTopY) letterTopY = bbox.y;
       }
       clipRef.current = clip;
-      bboxRef.current = { minX, minY, maxX, maxY };
+      rebuildMask();
+      cullLineRef.current =
+        letterTopY === Infinity ? 0 : letterTopY - config.stage.cullMargin;
     }
 
     function onResize(): void {
@@ -218,9 +236,8 @@ export function useSparkCanvas(
       const next = selectSparkProfile(w);
       if (
         next.baseRadius !== profileRef.current.baseRadius ||
-        next.tailLength !== profileRef.current.tailLength ||
         next.lifetime !== profileRef.current.lifetime ||
-        next.speedMul !== profileRef.current.speedMul
+        next.speed !== profileRef.current.speed
       ) {
         logger.debug('useSparkCanvas', 'Profile changed', {
           from: profileName(profileRef.current),
@@ -247,13 +264,6 @@ export function useSparkCanvas(
       profile: profileName(profileRef.current),
       width: window.innerWidth,
     });
-    logger.debug('useSparkCanvas', 'Initial profile params', {
-      profile: profileName(profileRef.current),
-      baseRadius: profileRef.current.baseRadius,
-      tailLength: profileRef.current.tailLength,
-      lifetime: profileRef.current.lifetime,
-      speedMul: profileRef.current.speedMul,
-    });
 
     return () => {
       ro.disconnect();
@@ -266,10 +276,11 @@ export function useSparkCanvas(
       loop.ensureRunning = () => undefined;
       system.clear();
       const ctx = ctxRef.current;
-      if (ctx) ctx.clearRect(0, 0, VIEWBOX_W, VIEWBOX_H);
+      if (ctx) ctx.clearRect(0, 0, VIEWBOX.w, VIEWBOX.h);
       ctxRef.current = null;
       clipRef.current = null;
-      bboxRef.current = EMPTY_BBOX;
+      maskRef.current = null;
+      cullLineRef.current = 0;
     };
   }, [containerRef, canvasRef, system, config, reducedMotion]);
 

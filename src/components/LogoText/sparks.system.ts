@@ -1,39 +1,61 @@
 /**
- * Чистая система частиц для эффекта искр.
+ * Система частиц для эффекта искр.
  *
- * Не знает ни про React, ни про GSAP, ни про DOM — только Canvas 2D context
+ * Не знает ни про React, ни про DOM, ни про GSAP — только Canvas 2D context
  * и числовые параметры профиля. Это позволяет юнит-тестировать физику
  * изолированно и подменять профиль на лету (resize, смена device).
  *
  * Координаты везде в viewBox-пространстве (200×150) — инвариант к размеру
  * канваса и DPR. Преобразование в CSS-пиксели — снаружи, в хуке канваса.
+ *
+ * Каждая искра летит по одной из двух траекторий (spiral / sinwave),
+ * выбор траектории и параметров случаен на каждую искру в момент эмиссии.
+ * Подробности — в trajectory.ts.
  */
 
-import type {
-  SparkBurstConfig,
-  SparkProfile,
-  SparksConfig,
+import {
+  DEFAULT_TAIL,
+  type SparkProfile,
+  type SparksConfig,
 } from './sparks.config';
+import {
+  createTrajectory,
+  lerp,
+  type Trajectory,
+  type TrajectoryKind,
+} from './trajectory';
 
 type Vec2 = { x: number; y: number };
 
+/**
+ * Внутреннее состояние одной искры.
+ * Создаётся в makeSpark(), умирает когда age >= lifetime.
+ */
 type Spark = {
+  /** Текущая позиция (viewBox-координаты). Копия trajectory.pos на момент update(). */
   pos: Vec2;
-  vel: Vec2;
+  /** Траектория, по которой летит искра (spiral или sinwave). */
+  trajectory: Trajectory;
+  /** Прожитое время (сек). Растёт в update(). */
   age: number;
+  /** Полное время жизни (сек). Рандомизировано при создании. */
   lifetime: number;
-  /** Фаза синусоиды (для рассинхрона колебаний между искрами) */
-  sinPhase: number;
-  /** Множитель яркости (из burst-конфига) */
-  brightnessMul: number;
-  /** Множитель радиуса ядра (из burst-конфига) */
+  /**
+   * Множитель радиуса для разнообразия размеров искр.
+   * Рандомизируется в profile.visual.sizeMul при создании.
+   */
   sizeMul: number;
-  /** Кольцевой буфер позиций для кометного хвоста: позиции [0..head-1] валидны */
-  history: Float32Array;
-  /** Длина заполненной части буфера (растёт до tailLength) */
-  historyFilled: number;
-  /** Указатель записи в кольцевой буфер (0..tailLength-1) */
-  historyHead: number;
+  /**
+   * Множитель яркости (alpha) для разнообразия искр.
+   * Рандомизируется в [brightnessMin, brightnessMax] из trajectory.ranges.
+   */
+  brightnessMul: number;
+  /**
+   * История позиций для шлейфа (трейла).
+   * Заполняется в update() после перемещения.
+   * Размер ограничен config.tail.length.
+   */
+  history: Vec2[];
 };
 
 export type BBox = { minX: number; minY: number; maxX: number; maxY: number };
@@ -46,85 +68,88 @@ export function createSparkSystem(): {
   emit: (
     origin: Vec2,
     count: number,
-    burst: SparkBurstConfig,
     profile: SparkProfile,
     config: SparksConfig,
   ) => void;
-  update: (dt: number, profile: SparkProfile, config: SparksConfig) => void;
+  update: (dt: number) => void;
+  /** draw — отрисовка всех живых искр на Canvas 2D. cullLineY — отсечение по y (0 = выключено). */
   draw: (
     ctx: CanvasRenderingContext2D,
-    clip: Path2D | null,
+    cullLineY: number,
     profile: SparkProfile,
-    bbox: BBox,
   ) => void;
-  boostAll: (factor: number) => void;
+  /** Мгновенно удаляет все искры (без затухания). */
   clear: () => void;
+  /** Количество живых искр в данный момент. */
   aliveCount: () => number;
-  /** Только для отладки/тестов: snapshot текущего массива */
+  /**
+   * Тип траектории последней эмитированной искры (для live-индикатора и отладки).
+   * null, если ни одной искры ещё не было.
+   */
+  readonly lastKind: TrajectoryKind | null;
+  /** Только для отладки/тестов: snapshot текущего массива. */
   readonly sparks: readonly Spark[];
 } {
   const sparks: Spark[] = [];
+  let lastEmittedKind: TrajectoryKind | null = null;
+
+  let currentTail = { ...DEFAULT_TAIL, length: 0 };
 
   function makeSpark(
     origin: Vec2,
-    burst: SparkBurstConfig,
     profile: SparkProfile,
     config: SparksConfig,
   ): Spark {
     const jitter = config.jitter;
-    const angleBase = Math.PI;
-    const angle = angleBase + (Math.random() - 0.5) * 2 * jitter.angle;
-    const speedMul =
-      profile.speedMul * (1 + (Math.random() - 0.5) * 2 * jitter.speed);
-    const speed = profile.baseSpeed * speedMul;
-    const tailLen = Math.max(2, Math.floor(profile.tailLength));
-    return {
-      pos: {
-        x: origin.x + (Math.random() - 0.5) * 2 * jitter.x,
-        y: origin.y + (Math.random() - 0.5) * 2 * jitter.y,
-      },
-      vel: {
-        x: Math.cos(angle) * speed,
-        y: Math.sin(angle) * speed,
-      },
-      age: 0,
-      lifetime: profile.lifetime * (0.85 + Math.random() * 0.3),
-      sinPhase: Math.random() * profile.sinPhaseJitter,
-      brightnessMul: burst.brightnessMul,
-      sizeMul: burst.sizeMul,
-      history: new Float32Array(tailLen * 2),
-      historyFilled: 0,
-      historyHead: 0,
+    const startPos: Vec2 = {
+      x: origin.x + (Math.random() - 0.5) * 2 * jitter.x,
+      y: origin.y + (Math.random() - 0.5) * 2 * jitter.y,
     };
-  }
-
-  function pushHistory(spark: Spark): void {
-    const len = spark.history.length / 2;
-    const i = spark.historyHead;
-    spark.history[i * 2] = spark.pos.x;
-    spark.history[i * 2 + 1] = spark.pos.y;
-    spark.historyHead = (i + 1) % len;
-    if (spark.historyFilled < len) spark.historyFilled++;
+    const created = createTrajectory({
+      baseSpeed: profile.speed,
+      origin: startPos,
+      params: config.trajectory.params,
+      ranges: config.trajectory.ranges,
+      mix: config.trajectory.mix,
+    });
+    return {
+      pos: created.trajectory.pos,
+      trajectory: created.trajectory,
+      age: 0,
+      lifetime:
+        profile.lifetime *
+        lerp(
+          profile.visual.lifetimeMul.min,
+          profile.visual.lifetimeMul.max,
+          Math.random(),
+        ),
+      sizeMul:
+        profile.baseRadius *
+        lerp(
+          profile.visual.sizeMul.min,
+          profile.visual.sizeMul.max,
+          Math.random(),
+        ),
+      brightnessMul: created.brightnessMul,
+      history: [],
+    };
   }
 
   function emit(
     origin: Vec2,
     count: number,
-    burst: SparkBurstConfig,
     profile: SparkProfile,
     config: SparksConfig,
   ): void {
+    currentTail = config.tail;
     for (let i = 0; i < count; i++) {
-      sparks.push(makeSpark(origin, burst, profile, config));
+      const spark = makeSpark(origin, profile, config);
+      lastEmittedKind = spark.trajectory.kind;
+      sparks.push(spark);
     }
   }
 
-  function update(
-    dt: number,
-    profile: SparkProfile,
-    config: SparksConfig,
-  ): void {
-    const frictionFactor = Math.max(0, 1 - profile.friction * dt);
+  function update(dt: number): void {
     for (let i = sparks.length - 1; i >= 0; i--) {
       const s = sparks[i];
       s.age += dt;
@@ -132,103 +157,77 @@ export function createSparkSystem(): {
         sparks.splice(i, 1);
         continue;
       }
-      s.vel.x = s.vel.x * frictionFactor + config.jitter.x * 0 + profile.wind;
-      const t = s.age * profile.sinFrequency + s.sinPhase;
-      const sinOffset = Math.sin(t) * profile.sinAmplitude;
-      s.pos.x += s.vel.x * dt;
-      s.pos.y += s.vel.y * dt + sinOffset * dt;
-      pushHistory(s);
+      s.trajectory.step(dt);
+      s.pos.x = s.trajectory.pos.x;
+      s.pos.y = s.trajectory.pos.y;
+      if (currentTail.length > 0) {
+        s.history.push({ x: s.pos.x, y: s.pos.y });
+        if (s.history.length > currentTail.length) {
+          s.history.shift();
+        }
+      }
     }
-  }
-
-  function isInBBox(p: Vec2, bbox: BBox): boolean {
-    return (
-      p.x >= bbox.minX &&
-      p.x <= bbox.maxX &&
-      p.y >= bbox.minY &&
-      p.y <= bbox.maxY
-    );
   }
 
   function draw(
     ctx: CanvasRenderingContext2D,
-    clip: Path2D | null,
+    cullLineY: number,
     profile: SparkProfile,
-    bbox: BBox,
   ): void {
     if (sparks.length === 0) return;
-
-    if (clip) {
-      ctx.save();
-      ctx.clip(clip);
-    }
-
-    const smokeAlpha = profile.smokeAlpha;
 
     for (const s of sparks) {
       const life = 1 - s.age / s.lifetime;
       if (life <= 0) continue;
-      const inBBox = isInBBox(s.pos, bbox);
+      if (cullLineY > 0 && s.pos.y < cullLineY) continue;
 
-      if (s.historyFilled >= 2) {
-        const len = s.history.length / 2;
-        const baseTailAlpha = 0.75 * life * s.brightnessMul;
-        const tailWidth = profile.baseRadius * s.sizeMul * 0.9 * (0.4 + life);
-        ctx.lineWidth = tailWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        for (let i = 1; i < s.historyFilled; i++) {
-          const fromIdx = (s.historyHead - i + len) % len;
-          const toIdx = (s.historyHead - i - 1 + len) % len;
-          const fx = s.history[fromIdx * 2];
-          const fy = s.history[fromIdx * 2 + 1];
-          const tx = s.history[toIdx * 2];
-          const ty = s.history[toIdx * 2 + 1];
-          const segProgress = i / s.historyFilled;
-          const segAlpha =
-            baseTailAlpha * (1 - segProgress) * (1 - segProgress);
-          if (segAlpha < 0.01) continue;
-          ctx.strokeStyle = profile.tailColorStart;
-          ctx.globalAlpha = segAlpha;
-          ctx.beginPath();
-          ctx.moveTo(fx, fy);
-          ctx.lineTo(tx, ty);
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-      }
+      const coreRadius = s.sizeMul * life;
+      const v = profile.visual;
+      const alpha = Math.min(1, life * v.alphaAttack) * s.brightnessMul;
 
-      if (inBBox) {
-        const haloRadius =
-          profile.baseRadius * s.sizeMul * (3.5 + 3 * (1 - life));
-        const haloAlpha = smokeAlpha * life * life * s.brightnessMul;
-        if (haloAlpha > 0.02) {
-          ctx.fillStyle = profile.smokeColor;
-          ctx.globalAlpha = haloAlpha;
+      if (currentTail.length > 0 && s.history.length > 0) {
+        for (let i = 0; i < s.history.length; i++) {
+          const t = i / s.history.length;
+          const trailAlpha =
+            (currentTail.startAlpha + (1 - currentTail.startAlpha) * t) * life;
+          const trailSize =
+            coreRadius *
+            (currentTail.startSize + (1 - currentTail.startSize) * t);
+
+          ctx.globalAlpha = trailAlpha;
+          ctx.fillStyle = currentTail.color;
           ctx.beginPath();
-          ctx.arc(s.pos.x, s.pos.y, haloRadius, 0, Math.PI * 2);
+          ctx.arc(s.history[i].x, s.history[i].y, trailSize, 0, Math.PI * 2);
           ctx.fill();
         }
-
-        const coreRadius =
-          profile.baseRadius * s.sizeMul * (0.55 + 0.45 * life);
-        const coreAlpha = Math.min(1, life * 1.4) * s.brightnessMul;
-        ctx.fillStyle = profile.coreColor;
-        ctx.globalAlpha = coreAlpha;
-        ctx.beginPath();
-        ctx.arc(s.pos.x, s.pos.y, coreRadius, 0, Math.PI * 2);
-        ctx.fill();
       }
+
+      ctx.globalAlpha = alpha * v.glow.alphaMul;
+      ctx.fillStyle = profile.glowColor;
+      ctx.beginPath();
+      ctx.arc(s.pos.x, s.pos.y, coreRadius * v.glow.radiusMul, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = profile.coreColor;
+      ctx.beginPath();
+      ctx.arc(s.pos.x, s.pos.y, coreRadius * v.core.radiusMul, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = profile.centerColor;
+      ctx.beginPath();
+      ctx.arc(
+        s.pos.x,
+        s.pos.y,
+        coreRadius * v.center.radiusMul,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
     }
 
     ctx.globalAlpha = 1;
-    if (clip) ctx.restore();
-  }
-
-  function boostAll(factor: number): void {
-    for (const s of sparks) {
-      s.vel.x *= factor;
-    }
   }
 
   function clear(): void {
@@ -239,9 +238,11 @@ export function createSparkSystem(): {
     emit,
     update,
     draw,
-    boostAll,
     clear,
     aliveCount: () => sparks.length,
+    get lastKind(): TrajectoryKind | null {
+      return lastEmittedKind;
+    },
     sparks,
   };
 }

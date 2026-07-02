@@ -8,7 +8,6 @@ import {
   createCursorTimeline,
   createOVSKIYTimeline,
   createSparksTimeline,
-  scheduleSparksBoost,
 } from './timelines';
 import { SPARKS_CONFIG, profileName } from './sparks.config';
 import { useSparkCanvas } from './useSparkCanvas';
@@ -44,8 +43,6 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
       const cursorTl = gsap.timeline({ id: 'Nail tl' });
       createCursorTimeline(cursorTl);
 
-      // Суб-таймлайн искр: эмиссия burst1/burst2 + boostAll на burst2.
-      // Пропускается при prefers-reduced-motion: reduce.
       if (reducedMotion) {
         logger.info('LogoText', 'Sparks disabled by prefers-reduced-motion');
       } else {
@@ -54,17 +51,18 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
           sparksTl,
           SPARKS_CONFIG,
           getProfile,
-          (delta, burstLabel) => {
+          (delta) => {
             const profile = getProfile();
-            const burstVisual = SPARKS_CONFIG[burstLabel];
+            const { viewbox, spawn } = SPARKS_CONFIG;
             loop.ensureRunning();
-            system.emit(
-              SPARKS_CONFIG.emissionOrigin,
-              delta,
-              burstVisual,
-              profile,
-              SPARKS_CONFIG,
-            );
+            for (let i = 0; i < delta; i++) {
+              system.emit(
+                { x: Math.random() * viewbox.w, y: viewbox.h - spawn.yOffset },
+                1,
+                profile,
+                SPARKS_CONFIG,
+              );
+            }
           },
           () => {
             system.clear();
@@ -74,13 +72,9 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
             logger.debug('LogoText', 'Burst start, active profile', {
               profile: profileName(getProfile()),
               width: window.innerWidth,
-              boostFactor: getProfile().boostFactor,
             });
           },
         );
-        scheduleSparksBoost(sparksTl, SPARKS_CONFIG, getProfile, (factor) => {
-          system.boostAll(factor);
-        });
         localTimeline.add(sparksTl, 0);
       }
 

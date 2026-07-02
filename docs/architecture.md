@@ -83,6 +83,13 @@ covskiy.github.io/
   │   │   │   ├── LogoText.tsx
   │   │   │   ├── LogoText.module.css
   │   │   │   ├── LogoText.svg
+  │   │   │   ├── trajectory.ts         # Абстракция траектории (spiral/sinwave)
+  │   │   │   ├── spiral/               # Спиральная траектория
+  │   │   │   │   ├── SpiralConfig.ts
+  │   │   │   │   └── SpiralTrajectory.ts
+  │   │   │   ├── sinwave/              # Синусоидальная траектория
+  │   │   │   │   ├── SinWaveConfig.ts
+  │   │   │   │   └── SinWaveTrajectory.ts
   │   │   │   └── index.ts
 │   │   ├── Tagline/                  # Клавиатура (split + keyframes)
 │   │   │   ├── Tagline.tsx

@@ -11,10 +11,15 @@
 | `LogoText.tsx`        | Компонент — GSAP timeline, оркестрация суб-таймлайнов букв и курсора. Timeline-билдеры — в `timelines.ts` |
 | `LogoText.svg`        | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины для `morphSVG` |
 | `LogoText.module.css` | Контейнер + глобальные CSS-переопределения для начального состояния SVG |
-| `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` + `scheduleSparksBoost` |
-| `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop |
-| `sparks.system.ts`    | Слой 2 — чистая SparkSystem (emit / update / draw / boostAll / clear) без знания React/GSAP/DOM |
-| `useSparkCanvas.ts`   | Слой 3 — хук канваса: DPR-синк, ResizeObserver, Path2D-клип из `#morphPath-*`, RAF-цикл, cleanup |
+| `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` |
+| `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop + тайминги burst'ов |
+| `sparks.system.ts`    | Слой 2 — чистая SparkSystem (emit / update / draw / clear) без знания React/GSAP/DOM. Trajectory-based (spiral/sinwave) |
+| `useSparkCanvas.ts`   | Слой 3 — хук канваса: DPR-синк, ResizeObserver, гибридный клиппинг (mobile=mask, tablet/desktop=clip), RAF-цикл, cleanup |
+| `trajectory.ts`       | Абстракция траектории: интерфейс `Trajectory`, фабрика `createTrajectory()`, выбор spiral/sinwave по весам |
+| `spiral/SpiralConfig.ts` | Интерфейс конфигурации спиральной траектории |
+| `spiral/SpiralTrajectory.ts` | Класс спиральной траектории (точка на окружности с движущимся центром) |
+| `sinwave/SinWaveConfig.ts` | Интерфейс конфигурации синусоидальной траектории |
+| `sinwave/SinWaveTrajectory.ts` | Класс синусоидальной траектории (колебание перпендикулярно направлению движения) |
 
 ## Структура SVG
 
@@ -146,8 +151,12 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 
 ## Sparks — эффект искр внутри букв
 
-Эффект вылета искр из точки курсора на букве Y влево, привязанный к двум
+Эффект подъёма искр снизу вверх (из нижней части viewBox), привязанный к двум
 моментам локального таймлайна (`burst1.start = 4.2s`, `burst2.start = 4.6s`).
+Каждая искра летит по одной из двух траекторий: **spiral** (спираль) или
+**sinwave** (синусоида). Выбор траектории и параметров случаен на каждую искру
+в момент эмиссии.
+
 Строгое разделение на три слоя:
 
 ### Mobile-first архитектура профилей
@@ -158,36 +167,57 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 
 | Параметр | mobile (base) | tablet | desktop |
 |---|---|---|---|
-| `baseRadius` | 1.1 | 1.4 | 1.6 |
-| `tailLength` | 11 | 14 | 16 |
-| `speedMul` | 0.95 | 1.0 | 1.05 |
-| `burst1.count` | 20 | 30 | 35 |
-| `burst2.count` | 15 | 25 | 28 |
-| `boostFactor` | 1.4 | 1.5 | 1.7 |
+| `baseRadius` | 1.9 | 2.2 | 2.2 |
+| `lifetime` | 2.0 | 2.0 | 2.5 |
+| `speed` | 30 | 30 | 30 |
+| `emitCount` | 30 | 40 | 65 |
+| `visual.sizeMul` | {min: 0.7, max: 1.3} | (наслед.) | (наслед.) |
+| `visual.lifetimeMul` | {min: 0.8, max: 1.2} | (наслед.) | (наслед.) |
 
 Глобально (одинаково на всех устройствах):
 - Тайминги burst'ов (`start`, `duration`) — часть хореографии
-- Визуал пучка (`brightnessMul`, `sizeMul`) — burst1 чуть скромнее burst2
-- Цвета, физика, jitter
+- Цвета (glowColor, coreColor, centerColor)
+- Jitter, tail, trajectory params/ranges/mix
 
 ### Слой 1 — `sparks.config.ts`
 
-Все «магические числа» (цвета ядра/хвоста/дыма, физика, jitter, тайминги,
-профили `mobile` / `tablet` / `desktop`). Селектор профиля —
+Все «магические числа» (цвета, профили `mobile` / `tablet` / `desktop`,
+тайминги burst'ов, параметры траекторий, настройки шлейфа). Селектор профиля —
 `selectSparkProfile(innerWidth)` через пороги `768` / `1280`. Чтобы
 подкрутить визуал — правь только этот файл.
 
 `profileName(profile)` — возвращает `'mobile' | 'tablet' | 'desktop'`
 по ссылочной идентичности (профили — module-singletons).
 
+**Структура конфига:**
+- `viewbox` — размеры viewBox SVG (200×150)
+- `jitter` — разброс начальной позиции искры
+- `tail` — настройки шлейфа (length, color, startAlpha, startSize)
+- `spawn` — точка эмиссии (yOffset от низа viewBox)
+- `stage` — параметры stage-уровня (cullMargin, maxDt)
+- `trajectory` — глобальные настройки траекторий (mix, params, ranges)
+- `profiles` — mobile/tablet/desktop
+- `burst1`, `burst2` — тайминги пучков (start, duration)
+
 ### Слой 2 — `sparks.system.ts`
 
 Чистая логика частиц, **не знающая** про React, GSAP и DOM. API:
-- `emit(origin, delta, burst, profile, config)` — создание частиц с jitter.
-- `update(dt, profile, config)` — физика (трение, ветер, синусоида по Y, старение).
-- `draw(ctx, clip, profile, bbox)` — 3-слойная отрисовка: дымный halo → кометный хвост (история позиций в `Float32Array`-кольце) → яркое ядро. Culling по bbox перед `arc()` для halo/core; хвост рисуется всегда, но автоматически клипается по `ctx.clip(clip)`.
-- `boostAll(factor)` — резкое увеличение `vel.x` для всех живых частиц.
+- `emit(origin, count, profile, config)` — создание частиц с jitter. Каждая искра
+  получает случайную траекторию (spiral/sinwave) через `createTrajectory()`.
+- `update(dt)` — продвижение траекторий, старение, удаление мёртвых искр.
+- `draw(ctx, cullLineY, profile)` — 3-слойная отрисовка: свечение (glow) →
+  ядро (core) → центр (center). Шлейф (trail) рисуется как последовательность
+  затухающих кругов по истории позиций. Culling по `cullLineY` (искры выше
+  верхней кромки букв не рисуются).
 - `clear()` — сброс массива (используется при скрабе GSDevTools назад).
+
+**Траектории:**
+- `spiral` — точка на окружности с движущимся центром. Параметры: radius,
+  angularSpeed, clockwise.
+- `sinwave` — колебание перпендикулярно направлению движения. Параметры:
+  amplitude, frequency, phase.
+
+Выбор траектории — по весам `trajectory.mix` (spiral: 0.35, sinwave: 0.65).
 
 ### Слой 3 — `useSparkCanvas.ts` + интеграция в `LogoText.tsx`
 
@@ -198,17 +228,21 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
   где `scaleX = cssWidth / 200`, `scaleY = cssHeight / 150`. Это позволяет
   физике/отрисовке оперировать в **viewBox-пространстве** (200×150) —
   инвариант к размеру канваса.
+- **Гибридный клиппинг**: mobile-профиль использует быстрый mask через
+  `destination-in` + `drawImage(mask)`, tablet/desktop — `ctx.clip(Path2D)`.
+  Маска пре-рендерится в OffscreenCanvas viewBox-размера белой заливкой клип-пути.
+- **Culling**: `cullLineY` вычисляется по `getBBox()` морф-путей (верхняя кромка
+  букв + margin). Искры и шлейф выше этой линии не рисуются (анти-«нож» на CSS-клипе).
 - **RAF-цикл** (не `gsap.ticker`): стартует при `emit()`, сам останавливается
   когда `aliveCount === 0`. Не зависит от паузы GSAP-мастера — искры
   догорают в своём render-loop даже на `master.pause()`.
 - `createSparksTimeline(tl, config, getProfile, emitFn, onClear, onBurstStart)`:
   два твина `progress.value: 0 → 1` на позициях `burst1.start` / `burst2.start`.
-  В `onUpdate` читается `getProfile()[label].count`, считается дельта
-  эмиссии и зовётся `emitFn(delta, label)`. При скрабе назад
+  В `onUpdate` читается `getProfile().emitCount`, считается дельта
+  эмиссии и зовётся `emitFn(delta)`. При скрабе назад
   (`progress.value < lastValue`) — `onClear()` сбрасывает систему.
-- `scheduleSparksBoost(tl, config, getProfile, boostFn)` — одноразовый
-  `tl.call()` на позиции `burst2.start`, дающий «пинок» живым искрам
-  первого пучка. Множитель читается из `getProfile().boostFactor`.
+- Точка эмиссии: `{ x: Math.random() * viewbox.w, y: viewbox.h - spawn.yOffset }` —
+  случайный X по всей ширине viewBox, Y — отступ от низа (сразу в зоне букв).
 
 ### `prefers-reduced-motion`
 

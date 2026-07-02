@@ -176,21 +176,21 @@ export function createCursorTimeline(
  *
  * Эмиссия растянута во времени: твин `progress.value: 0 → 1` дёргает
  * `onUpdate`, в котором считается дельта эмиссии за шаг и вызывается
- * `emitFn(delta, burstLabel)`. Это даёт «размазанный» по времени выброс,
+ * `emitFn(delta)`. Это даёт «размазанный» по времени выброс,
  * а не мгновенный залп.
  *
  * Кол-во искр берётся из активного профиля на момент эмиссии
- * (`getProfile()[label].count`) — это позволяет per-profile варьировать
- * плотность выброса. Тайминги (start, duration) — глобальные.
+ * (`getProfile().emitCount`) — это позволяет per-profile варьировать
+ * плотность выброса. Тайминги (start, duration) — из burst-конфига.
  *
  * Поддерживает скраб GSDevTools: при движении tween-progress назад
  * `onClear()` вызывается и локальный `emitted` сбрасывается — иначе
  * повторный проход вперёд оставил бы «призраков».
  *
  * @param tl timeline, на который регистрируются твины
- * @param config конфиг эффекта (глобальные тайминги и визуал burst'ов)
- * @param getProfile getter активного профиля (читает count)
- * @param emitFn колбэк эмиссии: (delta, burstLabel) => void
+ * @param config конфиг эффекта (глобальные тайминги burst'ов)
+ * @param getProfile getter активного профиля (читает emitCount)
+ * @param emitFn колбэк эмиссии: (delta) => void
  * @param onClear колбэк очистки системы при скрабе назад
  * @param onBurstStart колбэк старта пучка (например, дёрнуть RAF-цикл)
  * @returns тот же timeline с добавленными твинами burst1, burst2
@@ -199,14 +199,13 @@ export function createSparksTimeline(
   tl: gsap.core.Timeline,
   config: SparksConfig,
   getProfile: () => SparksConfig['profiles']['mobile'],
-  emitFn: (delta: number, burstLabel: 'burst1' | 'burst2') => void,
+  emitFn: (delta: number) => void,
   onClear: () => void,
   onBurstStart: () => void,
 ): gsap.core.Timeline {
   function buildBurstTween(
     parent: gsap.core.Timeline,
     timing: SparksConfig['burst1'],
-    burstLabel: 'burst1' | 'burst2',
   ): void {
     const progress = { value: 0 };
     let emitted = 0;
@@ -219,14 +218,14 @@ export function createSparksTimeline(
         emitted = 0;
       }
       lastValue = v;
-      const count = getProfile()[burstLabel].count;
+      const count = getProfile().emitCount;
       if (count <= 0) return;
       const target = Math.floor(v * count);
       const delta = target - emitted;
       if (delta > 0) {
         emitted = target;
-        emitFn(delta, burstLabel);
-        logger.trace('LogoText', `${burstLabel} emit batch`, {
+        emitFn(delta);
+        logger.trace('LogoText', 'emit batch', {
           delta,
           total: emitted,
         });
@@ -249,30 +248,8 @@ export function createSparksTimeline(
     );
   }
 
-  buildBurstTween(tl, config.burst1, 'burst1');
-  buildBurstTween(tl, config.burst2, 'burst2');
+  buildBurstTween(tl, config.burst1);
+  buildBurstTween(tl, config.burst2);
 
   return tl;
-}
-
-/**
- * Регистрирует на таймлайне одноразовый boostAll на позиции `burst2.start`.
- * «Пинок» всем ещё живым искрам из первого пучка при срабатывании второго.
- * Множитель берётся из активного профиля (per-profile).
- */
-export function scheduleSparksBoost(
-  tl: gsap.core.Timeline,
-  config: SparksConfig,
-  getProfile: () => SparksConfig['profiles']['mobile'],
-  boostFn: (factor: number) => void,
-): void {
-  tl.call(
-    () => {
-      const factor = getProfile().boostFactor;
-      boostFn(factor);
-      logger.debug('LogoText', 'boostAll applied', { factor });
-    },
-    [],
-    config.burst2.start,
-  );
 }

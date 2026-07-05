@@ -181,14 +181,15 @@ export function createCursorTimeline(
  *
  * Кол-во искр берётся из активного профиля на момент эмиссии
  * (`getProfile().emitCount`) — это позволяет per-profile варьировать
- * плотность выброса. Тайминги (start, duration) — из burst-конфига.
+ * плотность выброса. Тайминги старта — из хореографии, окно эмиссии —
+ * из конфига частиц.
  *
  * Поддерживает скраб GSDevTools: при движении tween-progress назад
  * `onClear()` вызывается и локальный `emitted` сбрасывается — иначе
  * повторный проход вперёд оставил бы «призраков».
  *
  * @param tl timeline, на который регистрируются твины
- * @param config конфиг эффекта (глобальные тайминги burst'ов)
+ * @param emissionWindow окно эмиссии (сек) — время размазывания выброса
  * @param getProfile getter активного профиля (читает emitCount)
  * @param emitFn колбэк эмиссии: (delta) => void
  * @param onClear колбэк очистки системы при скрабе назад
@@ -197,20 +198,22 @@ export function createCursorTimeline(
  */
 export function createSparksTimeline(
   tl: gsap.core.Timeline,
-  config: SparksConfig,
+  emissionWindow: number,
   getProfile: () => SparksConfig['profiles']['mobile'],
   emitFn: (delta: number) => void,
   onClear: () => void,
   onBurstStart: () => void,
 ): gsap.core.Timeline {
+  const { sparks } = SPLASH_CHOREOGRAPHY.logoText;
+
   function buildBurstTween(
     parent: gsap.core.Timeline,
-    timing: SparksConfig['burst1'],
+    startTime: number,
   ): void {
     const progress = { value: 0 };
     let emitted = 0;
     let lastValue = 0;
-    const duration = Math.max(0.01, timing.duration);
+    const duration = Math.max(0.01, emissionWindow);
     const onUpdate = (): void => {
       const v = progress.value;
       if (v < lastValue) {
@@ -244,12 +247,12 @@ export function createSparksTimeline(
           onBurstStart();
         },
       },
-      timing.start,
+      startTime,
     );
   }
 
-  buildBurstTween(tl, config.burst1);
-  buildBurstTween(tl, config.burst2);
+  buildBurstTween(tl, sparks.burst1);
+  buildBurstTween(tl, sparks.burst2);
 
   return tl;
 }

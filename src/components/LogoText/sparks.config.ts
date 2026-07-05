@@ -225,15 +225,7 @@ export type StageConfig = {
   maxDt: number;
 };
 
-/** Тайминги пучка (одинаковые на всех устройствах — часть хореографии) */
-export type SparkBurstTiming = {
-  /** Локальная позиция старта на localTimeline (сек) */
-  start: number;
-  /** Длительность эмиссии (сек). 0 = мгновенный выброс */
-  duration: number;
-};
-
-/** Глобальный конфиг эффекта: размеры + джиттер + шлейф + точка спавна + stage + траектории + профили + burst-тайминги. */
+/** Глобальный конфиг эффекта: размеры + джиттер + шлейф + точка спавна + stage + траектории + профили + окно эмиссии. */
 export type SparksConfig = {
   /** Размеры viewBox SVG (200×150 по умолчанию). */
   viewbox: ViewBox;
@@ -255,10 +247,11 @@ export type SparksConfig = {
     tablet: SparkProfile;
     desktop: SparkProfile;
   };
-  /** Тайминги пучка 1 (GSAP-хореография) */
-  burst1: SparkBurstTiming;
-  /** Тайминги пучка 2 (GSAP-хореография) */
-  burst2: SparkBurstTiming;
+  /**
+   * Окно эмиссии (сек). Время, за которое размазывается выброс искр внутри одного burst'а.
+   * 0 = мгновенный залп. Единое значение для всех burst'ов.
+   */
+  emissionWindow: number;
 };
 
 /** Общий джиттер для всех профилей (позиционный разброс). */
@@ -413,14 +406,7 @@ export const SPARKS_CONFIG: SparksConfig = {
     tablet: TABLET_PROFILE,
     desktop: DESKTOP_PROFILE,
   },
-  burst1: {
-    start: 4.2,
-    duration: 0.6,
-  },
-  burst2: {
-    start: 4.6,
-    duration: 0.5,
-  },
+  emissionWindow: 0.6,
 };
 
 /**

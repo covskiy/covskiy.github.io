@@ -9,7 +9,7 @@ export const SPLASH_CHOREOGRAPHY = {
     labels: {
       LOGO: 0,
       LOGO_TEXT: 0,
-      TAGLINE: 1.0,
+      TAGLINE: 0,
     },
   },
 
@@ -34,6 +34,10 @@ export const SPLASH_CHOREOGRAPHY = {
   /** LogoText — сборка букв "COVSKIY", гвоздь -> курсор */
   logoText: {
     start: 0,
+    sparks: {
+      burst1: 4.2,
+      burst2: 4.6,
+    },
     C: {
       phaseShoe: {
         start: 0,

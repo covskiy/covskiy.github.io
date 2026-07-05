@@ -53,7 +53,7 @@ types/
 
 ### Синхронизация Tagline ↔ LogoText
 
-Tagline зарегистрирован на master-таймлайне в позиции `1.0` (`master.labels.TAGLINE`) и привязан к двум событиям в LogoText:
+Tagline зарегистрирован на master-таймлайне в позиции `0` (`master.labels.TAGLINE`) и привязан к двум событиям в LogoText:
 
 - **Влёт клавиатуры** (master `1.5`) — синхронно с началом морфа гвоздя в курсор (`Cursor.phaseCaret.start`).
 - **Подсветка клавиш** (master `1.9`–`4.0`) — синхронно с началом морфа соответствующей буквы.
@@ -68,9 +68,9 @@ Tagline зарегистрирован на master-таймлайне в поз�
 | 3.3          | Подсветка `K`                    | K: `phaseDash.start + phaseLetter.delay`                         |
 | 3.45         | Подсветка `I`                    | I: `phaseDash.start + phaseLetter.delay`                         |
 | 3.6          | Подсветка `Y`                    | Y: `phaseDash.start + phaseLetter.delay`                         |
-| 4.0          | Подсветка `ENTER`                | — (хардкод 3.0 в `Tagline.tsx`; нет морф-аналога)                |
+| 4.2          | Подсветка `ENTER`                | `logoText.sparks.burst1` (первая эмиссия частиц)                   |
 
-Все позиции вычисляются в `Tagline.tsx` программно из `SPLASH_CHOREOGRAPHY.logoText` (`Cursor.phaseCaret.start`, `C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`) с вычетом `master.labels.TAGLINE`.
+Все позиции вычисляются в `Tagline.tsx` программно из `SPLASH_CHOREOGRAPHY.logoText` (`Cursor.phaseCaret.start`, `C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`). `ENTER` привязан к `logoText.sparks.burst1`.
 
 ## Хореография (SPLASH_CHOREOGRAPHY)
 
@@ -80,7 +80,7 @@ Tagline зарегистрирован на master-таймлайне в поз�
 
 - `LOGO`: `0` (Logo и LogoText вкладываются в начало)
 - `LOGO_TEXT`: `0`
-- `TAGLINE`: `1.0` (Tagline вкладывается через 1 секунду)
+- `TAGLINE`: `0` (Tagline вкладывается в начало)
 
 ### logo.durations
 
@@ -107,16 +107,16 @@ Tagline зарегистрирован на master-таймлайне в поз�
 
 ### Подсветка клавиш
 
-Tagline-local позиции подсветки клавиш вычисляются программно в `Tagline.tsx` из `SPLASH_CHOREOGRAPHY.logoText` с вычетом `master.labels.TAGLINE` (см. таблицу синхронизации выше). `ENTER` — хардкод `3.0` (морф-аналога в LogoText нет). Влёт клавиатуры (`KEYBOARD_IN_LOCAL = 0.5`) вычисляется аналогично из `Cursor.phaseCaret.start`.
+Позиции подсветки клавиш вычисляются программно в `Tagline.tsx` из `SPLASH_CHOREOGRAPHY.logoText` (см. таблицу синхронизации выше). `ENTER` привязан к `logoText.sparks.burst1` (первая эмиссия частиц). Влёт клавиатуры (`KEYBOARD_IN_LOCAL = 1.5`) вычисляется из `Cursor.phaseCaret.start`.
 
-- `C` — `logoText.C.phaseLetter.start - master.labels.TAGLINE` → `0.9`
-- `O` — `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay - master.labels.TAGLINE` → `1.59`
-- `V` — `…V…` → `1.85`
-- `S` — `…S…` → `2.07`
-- `K` — `…K…` → `2.3`
-- `I` — `…I…` → `2.45`
-- `Y` — `…Y…` → `2.6`
-- `ENTER` — `3.0`
+- `C` — `logoText.C.phaseLetter.start` → `1.9`
+- `O` — `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay` → `2.59`
+- `V` — `…V…` → `2.85`
+- `S` — `…S…` → `3.07`
+- `K` — `…K…` → `3.3`
+- `I` — `…I…` → `3.45`
+- `Y` — `…Y…` → `3.6`
+- `ENTER` — `logoText.sparks.burst1` → `4.2`
 
 **Примечание**: Метки и длительности используются в дочерних компонентах (`Logo.tsx`, `LogoText.tsx`, `Tagline.tsx`) для создания локальных таймлайнов.
 

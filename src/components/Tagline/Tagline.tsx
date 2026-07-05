@@ -7,9 +7,7 @@ import type { AnimationComponentProps } from '../../types/splash.types';
 import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
 import styles from './Tagline.module.css';
 
-const TAG = SPLASH_CHOREOGRAPHY.master.labels.TAGLINE;
-const KEYBOARD_IN_LOCAL =
-  SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start - TAG;
+const KEYBOARD_IN_LOCAL = SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start;
 const {
   C: letterC,
   O: letterO,
@@ -21,32 +19,35 @@ const {
 } = SPLASH_CHOREOGRAPHY.logoText;
 
 const KEY_MAP: readonly { selector: string; at: number }[] = [
-  { selector: '.key_c', at: letterC.phaseLetter.start - TAG },
+  { selector: '.key_c', at: letterC.phaseLetter.start },
   {
     selector: '.key_o',
-    at: letterO.phaseDash.start + letterO.phaseLetter.delay - TAG,
+    at: letterO.phaseDash.start + letterO.phaseLetter.delay,
   },
   {
     selector: '.key_v',
-    at: letterV.phaseDash.start + letterV.phaseLetter.delay - TAG,
+    at: letterV.phaseDash.start + letterV.phaseLetter.delay,
   },
   {
     selector: '.key_s',
-    at: letterS.phaseDash.start + letterS.phaseLetter.delay - TAG,
+    at: letterS.phaseDash.start + letterS.phaseLetter.delay,
   },
   {
     selector: '.key_k',
-    at: letterK.phaseDash.start + letterK.phaseLetter.delay - TAG,
+    at: letterK.phaseDash.start + letterK.phaseLetter.delay,
   },
   {
     selector: '.key_i',
-    at: letterI.phaseDash.start + letterI.phaseLetter.delay - TAG,
+    at: letterI.phaseDash.start + letterI.phaseLetter.delay,
   },
   {
     selector: '.key_y',
-    at: letterY.phaseDash.start + letterY.phaseLetter.delay - TAG,
+    at: letterY.phaseDash.start + letterY.phaseLetter.delay,
   },
-  { selector: '.key_enter', at: 3.4 },
+  {
+    selector: '.key_enter',
+    at: SPLASH_CHOREOGRAPHY.logoText.sparks.burst1,
+  },
 ];
 
 export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
@@ -121,9 +122,9 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         <KeyboardSvg />
       </div>
       <div ref={textRef} className={styles.text}>
-        WebDev fullstack разработка
+        Цифровая кузница
         <br />
-        Кузница ваших цифровых решений
+        ваших решений
       </div>
     </div>
   );

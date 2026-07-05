@@ -12,7 +12,7 @@
 | `LogoText.svg`        | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины для `morphSVG` |
 | `LogoText.module.css` | Контейнер + глобальные CSS-переопределения для начального состояния SVG |
 | `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` |
-| `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop + тайминги burst'ов |
+| `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop + emissionWindow |
 | `sparks.system.ts`    | Слой 2 — чистая SparkSystem (emit / update / draw / clear) без знания React/GSAP/DOM. Trajectory-based (spiral/sinwave) |
 | `useSparkCanvas.ts`   | Слой 3 — хук канваса: DPR-синк, ResizeObserver, гибридный клиппинг (mobile=mask, tablet/desktop=clip), RAF-цикл, cleanup |
 | `trajectory.ts`       | Абстракция траектории: интерфейс `Trajectory`, фабрика `createTrajectory()`, выбор spiral/sinwave по весам |
@@ -94,7 +94,7 @@ tl.from(selector, {
 
 Тайминги LogoText используются как источник истины для двух событий в `Tagline`:
 
-1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start = 1.5`). Tagline стартует на master-таймлайне в позиции `1.0`, поэтому `KEYBOARD_IN` на локальном таймлайне = `0.5`.
+1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start = 1.5`). Tagline стартует на master-таймлайне в позиции `0`, поэтому `KEYBOARD_IN` на локальном таймлайне = `1.5`.
 2. **Подсветка клавиш** — привязана к началу морфа соответствующей буквы.
 
 | Master-время | Источник в `SPLASH_CHOREOGRAPHY`                              | Соответствующее событие в Tagline  |
@@ -108,7 +108,7 @@ tl.from(selector, {
 | 3.45         | `logoText.I.phaseDash.start + logoText.I.phaseLetter.delay`   | Подсветка `.key_i`                 |
 | 3.6          | `logoText.Y.phaseDash.start + logoText.Y.phaseLetter.delay`   | Подсветка `.key_y`                 |
 
-Tagline стартует на master-таймлайне в позиции `1.0` (`SPLASH_CHOREOGRAPHY.master.labels.TAGLINE`); обе позиции (влёт клавиатуры, подсветка клавиш) вычисляются в `Tagline.tsx` как `master.время - 1.0`. Подробности — в `docs/Components/Tagline.md`.
+Tagline стартует на master-таймлайне в позиции `0` (`SPLASH_CHOREOGRAPHY.master.labels.TAGLINE`); позиции событий совпадают с абсолютными временами из LogoText. Подробности — в `docs/Components/Tagline.md`.
 
 ## Mobile-first стили
 
@@ -152,7 +152,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 ## Sparks — эффект искр внутри букв
 
 Эффект подъёма искр снизу вверх (из нижней части viewBox), привязанный к двум
-моментам локального таймлайна (`burst1.start = 4.2s`, `burst2.start = 4.6s`).
+моментам локального таймлайна (`SPLASH_CHOREOGRAPHY.logoText.sparks.burst1 = 4.2s`, `burst2 = 4.6s`).
 Каждая искра летит по одной из двух траекторий: **spiral** (спираль) или
 **sinwave** (синусоида). Выбор траектории и параметров случаен на каждую искру
 в момент эмиссии.
@@ -175,14 +175,15 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 | `visual.lifetimeMul` | {min: 0.8, max: 1.2} | (наслед.) | (наслед.) |
 
 Глобально (одинаково на всех устройствах):
-- Тайминги burst'ов (`start`, `duration`) — часть хореографии
+- Тайминги старта burst'ов — часть хореографии (`splashChoreography.ts`)
+- `emissionWindow` — время размазывания выброса внутри burst'а
 - Цвета (glowColor, coreColor, centerColor)
 - Jitter, tail, trajectory params/ranges/mix
 
 ### Слой 1 — `sparks.config.ts`
 
 Все «магические числа» (цвета, профили `mobile` / `tablet` / `desktop`,
-тайминги burst'ов, параметры траекторий, настройки шлейфа). Селектор профиля —
+`emissionWindow`, параметры траекторий, настройки шлейфа). Селектор профиля —
 `selectSparkProfile(innerWidth)` через пороги `768` / `1280`. Чтобы
 подкрутить визуал — правь только этот файл.
 
@@ -197,7 +198,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 - `stage` — параметры stage-уровня (cullMargin, maxDt)
 - `trajectory` — глобальные настройки траекторий (mix, params, ranges)
 - `profiles` — mobile/tablet/desktop
-- `burst1`, `burst2` — тайминги пучков (start, duration)
+- `emissionWindow` — время размазывания выброса внутри burst'а (сек)
 
 ### Слой 2 — `sparks.system.ts`
 
@@ -236,9 +237,9 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 - **RAF-цикл** (не `gsap.ticker`): стартует при `emit()`, сам останавливается
   когда `aliveCount === 0`. Не зависит от паузы GSAP-мастера — искры
   догорают в своём render-loop даже на `master.pause()`.
-- `createSparksTimeline(tl, config, getProfile, emitFn, onClear, onBurstStart)`:
-  два твина `progress.value: 0 → 1` на позициях `burst1.start` / `burst2.start`.
-  В `onUpdate` читается `getProfile().emitCount`, считается дельта
+- `createSparksTimeline(tl, emissionWindow, getProfile, emitFn, onClear, onBurstStart)`:
+  два твина `progress.value: 0 → 1` на позициях из `SPLASH_CHOREOGRAPHY.logoText.sparks`
+  (`burst1` / `burst2`). В `onUpdate` читается `getProfile().emitCount`, считается дельта
   эмиссии и зовётся `emitFn(delta)`. При скрабе назад
   (`progress.value < lastValue`) — `onClear()` сбрасывает систему.
 - Точка эмиссии: `{ x: Math.random() * viewbox.w, y: viewbox.h - spawn.yOffset }` —

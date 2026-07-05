@@ -49,7 +49,7 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
         const sparksTl = gsap.timeline({ id: 'Sparks tl' });
         createSparksTimeline(
           sparksTl,
-          SPARKS_CONFIG,
+          SPARKS_CONFIG.emissionWindow,
           getProfile,
           (delta) => {
             const profile = getProfile();

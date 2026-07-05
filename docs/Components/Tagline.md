@@ -8,44 +8,44 @@
 
 | Шаг | Действие                                                         | Длительность | Позиция в таймлайне |
 | --- | ---------------------------------------------------------------- | ------------ | ------------------- |
-| 1   | Клавиатура влетает сверху (`y: -120% → 0%`), проявляется         | 0.5s         | 0.5                 |
-| 2.1 | Подсветка клавиши **C** (`fill`, `opacity`, `scale: 1.2`)        | 0.3s         | 0.9                 |
-| 2.2 | Подсветка клавиши **O**                                          | 0.3s         | 1.59                |
-| 2.3 | Подсветка клавиши **V**                                          | 0.3s         | 1.85                |
-| 2.4 | Подсветка клавиши **S**                                          | 0.3s         | 2.07                |
-| 2.5 | Подсветка клавиши **K**                                          | 0.3s         | 2.3                 |
-| 2.6 | Подсветка клавиши **I**                                          | 0.3s         | 2.45                |
-| 2.7 | Подсветка клавиши **Y**                                          | 0.3s         | 2.6                 |
-| 2.8 | Подсветка клавиши **Enter**                                      | 0.3s         | 3.0                 |
+| 1   | Клавиатура влетает сверху (`y: -120% → 0%`), проявляется         | 0.5s         | 1.5                 |
+| 2.1 | Подсветка клавиши **C** (`fill`, `opacity`, `scale: 1.2`)        | 0.3s         | 1.9                 |
+| 2.2 | Подсветка клавиши **O**                                          | 0.3s         | 2.59                |
+| 2.3 | Подсветка клавиши **V**                                          | 0.3s         | 2.85                |
+| 2.4 | Подсветка клавиши **S**                                          | 0.3s         | 3.07                |
+| 2.5 | Подсветка клавиши **K**                                          | 0.3s         | 3.3                 |
+| 2.6 | Подсветка клавиши **I**                                          | 0.3s         | 3.45                |
+| 2.7 | Подсветка клавиши **Y**                                          | 0.3s         | 3.6                 |
+| 2.8 | Подсветка клавиши **Enter**                                      | 0.3s         | 4.2                 |
 | 3   | Клавиатура уезжает вниз за контейнер (`y: 0% → 120%`), исчезает  | 0.4s         | `>0`                |
 | 4   | Две строки текста через SplitText: `y: -20 → 0`, `back.out(1.7)` | 0.6s + 0.15s | `>0`                |
 
-Позиции подсветки клавиш — **абсолютные** на собственном таймлайне Tagline; на master-таймлайне смещены на `master.TAGLINE = 1.0`. Старт клавиатуры синхронизирован с морфом гвоздя в курсор — см. ниже.
+Позиции подсветки клавиш — **абсолютные** на собственном таймлайне Tagline. Старт клавиатуры синхронизирован с морфом гвоздя в курсор — см. ниже.
 
-Общая длительность: ~5.0s на собственном таймлайне (≈6.0s на master-таймлайне). Регистрируется в родительском таймлайне на позиции `1.0` через колбэк `onRegisterTimeline`.
+Общая длительность: ~5.5s. Регистрируется в родительском таймлайне на позиции `0` через колбэк `onRegisterTimeline`.
 
 ## Синхронизация с LogoText
 
 Tagline синхронизирован с двумя событиями в `LogoText`:
 
-1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start`). Позиция `KEYBOARD_IN` на локальном таймлайне Tagline = `Cursor.phaseCaret.start - master.labels.TAGLINE` = `0.5` (master 1.5s).
+1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start`). Позиция `KEYBOARD_IN` на локальном таймлайне Tagline = `Cursor.phaseCaret.start` = `1.5`.
 2. **Подсветка клавиш** — каждая клавиша срабатывает в момент начала морфа соответствующей буквы. Позиции вычисляются программно в `Tagline.tsx` из единого источника истины — `SPLASH_CHOREOGRAPHY.logoText` в `src/pages/SplashPage/splashChoreography.ts`:
 
-- `C` — `C.phaseLetter.start - master.labels.TAGLINE`
-- `O..Y` — `X.phaseDash.start + X.phaseLetter.delay - master.labels.TAGLINE` (начало морфа = момент показа dash-плейсхолдера + задержка до старта `morphSVG`)
-- `ENTER` — хардкод `3.0` (нет морф-аналога в LogoText; смысловая пауза перед улётом клавиатуры)
+- `C` — `C.phaseLetter.start`
+- `O..Y` — `X.phaseDash.start + X.phaseLetter.delay` (начало морфа = момент показа dash-плейсхолдера + задержка до старта `morphSVG`)
+- `ENTER` — `logoText.sparks.burst1` (первая эмиссия частиц)
 
-| Событие           | Tagline-local | Master-время | LogoText-метрика                                 |
-| ----------------- | ------------- | ------------ | ------------------------------------------------ |
-| Влёт клавиатуры   | 0.5           | 1.5          | `Cursor.phaseCaret.start` (морф гвоздь → курсор) |
-| Подсветка `C`     | 0.9           | 1.9          | `C.phaseLetter.start`                            |
-| Подсветка `O`     | 1.59          | 2.59         | `O.phaseDash.start + O.phaseLetter.delay`        |
-| Подсветка `V`     | 1.85          | 2.85         | `V.phaseDash.start + V.phaseLetter.delay`        |
-| Подсветка `S`     | 2.07          | 3.07         | `S.phaseDash.start + S.phaseLetter.delay`        |
-| Подсветка `K`     | 2.3           | 3.3          | `K.phaseDash.start + K.phaseLetter.delay`        |
-| Подсветка `I`     | 2.45          | 3.45         | `I.phaseDash.start + I.phaseLetter.delay`        |
-| Подсветка `Y`     | 2.6           | 3.6          | `Y.phaseDash.start + Y.phaseLetter.delay`        |
-| Подсветка `ENTER` | 3.4           | 4.4          | —                                                |
+| Событие           | Позиция | LogoText-метрика                                 |
+| ----------------- | ------- | ------------------------------------------------ |
+| Влёт клавиатуры   | 1.5     | `Cursor.phaseCaret.start` (морф гвоздь → курсор) |
+| Подсветка `C`     | 1.9     | `C.phaseLetter.start`                            |
+| Подсветка `O`     | 2.59    | `O.phaseDash.start + O.phaseLetter.delay`        |
+| Подсветка `V`     | 2.85    | `V.phaseDash.start + V.phaseLetter.delay`        |
+| Подсветка `S`     | 3.07    | `S.phaseDash.start + S.phaseLetter.delay`        |
+| Подсветка `K`     | 3.3     | `K.phaseDash.start + K.phaseLetter.delay`        |
+| Подсветка `I`     | 3.45    | `I.phaseDash.start + I.phaseLetter.delay`        |
+| Подсветка `Y`     | 3.6     | `Y.phaseDash.start + Y.phaseLetter.delay`        |
+| Подсветка `ENTER` | 4.2     | `logoText.sparks.burst1`                         |
 
 Любое изменение таймингов в LogoText автоматически отражается в Tagline — отдельной синхронизации не требуется.
 
@@ -82,8 +82,8 @@ SVG содержит пути с сохранёнными именами кла�
 
 В `Tagline.tsx` определены две программно вычисляемые константы:
 
-- `KEYBOARD_IN_LOCAL` — `SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start - master.labels.TAGLINE` (= `0.5`). Используется для метки `KEYBOARD_IN`, синхронизирующей влёт клавиатуры с морфом гвоздя в курсор.
-- `KEY_MAP` — массив пар `{ selector, at }`, где `at` вычисляется из `SPLASH_CHOREOGRAPHY.logoText` (для `C` — `phaseLetter.start`, для `O..Y` — `phaseDash.start + phaseLetter.delay`) с вычетом `master.labels.TAGLINE`. `ENTER` хардкодится на `3.0`.
+- `KEYBOARD_IN_LOCAL` — `SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start` (= `1.5`). Используется для метки `KEYBOARD_IN`, синхронизирующей влёт клавиатуры с морфом гвоздя в курсор.
+- `KEY_MAP` — массив пар `{ selector, at }`, где `at` вычисляется из `SPLASH_CHOREOGRAPHY.logoText` (для `C` — `phaseLetter.start`, для `O..Y` — `phaseDash.start + phaseLetter.delay`). `ENTER` привязан к `logoText.sparks.burst1`.
 
 Цикл `forEach` создаёт `tl.to(selector, { fill, opacity, scale }, at)` для каждой клавиши с абсолютной позицией. Это гарантирует, что каждая клавиша подсвечивается точно в нужный момент, без накопления ошибок от цепочки относительных позиций.
 

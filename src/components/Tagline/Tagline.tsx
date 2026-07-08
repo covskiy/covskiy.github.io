@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { SplitText } from 'gsap/SplitText';
+import { CustomEase } from 'gsap/CustomEase';
 import KeyboardSvg from './keyboard.svg?react';
 import type { AnimationComponentProps } from '../../types/splash.types';
 import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
@@ -18,7 +18,20 @@ const {
   Y: letterY,
 } = SPLASH_CHOREOGRAPHY.logoText;
 
-const KEY_MAP: readonly { selector: string; at: number }[] = [
+type AnimationItem = { selector: string; at: number };
+
+const TAGLINE_MAP: readonly AnimationItem[] = [
+  {
+    selector: `.${styles.lineOne}`,
+    at: SPLASH_CHOREOGRAPHY.tagline.text.lineOne,
+  },
+  {
+    selector: `.${styles.lineTwo}`,
+    at: SPLASH_CHOREOGRAPHY.tagline.text.lineTwo,
+  },
+];
+
+const KEY_MAP: readonly AnimationItem[] = [
   { selector: '.key_c', at: letterC.phaseLetter.start },
   {
     selector: '.key_o',
@@ -46,7 +59,7 @@ const KEY_MAP: readonly { selector: string; at: number }[] = [
   },
   {
     selector: '.key_enter',
-    at: SPLASH_CHOREOGRAPHY.logoText.sparks.burst1,
+    at: SPLASH_CHOREOGRAPHY.tagline.enterKey.start,
   },
 ];
 
@@ -68,14 +81,34 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
       // Метка старта Tagline на его собственном timeline
       tl.addLabel('KEYBOARD_IN', KEYBOARD_IN_LOCAL);
 
-      const split = SplitText.create(textRef.current, { type: 'lines' });
-      gsap.set(split.lines, { y: -20, opacity: 0 });
+      TAGLINE_MAP.forEach(({ selector }) => {
+        tl.set(selector, {
+          autoAlpha: 0,
+          y: -80,
+        });
+      });
 
-      tl.fromTo(
+      tl.set(keyboardRef.current, { y: -120, autoAlpha: 0 });
+
+      tl.to(
         keyboardRef.current,
-        { y: '-120%' },
-        { y: '0%', opacity: 1, duration: D.KEYBOARD_IN },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: D.KEYBOARD_IN,
+        },
         'KEYBOARD_IN',
+      );
+
+      tl.to(
+        keyboardRef.current,
+        {
+          y: 120,
+          autoAlpha: 0,
+          duration: D.KEYBOARD_OUT,
+          ease: 'power2.in',
+        },
+        SPLASH_CHOREOGRAPHY.tagline.enterKey.start,
       );
 
       KEY_MAP.forEach(({ selector, at }) => {
@@ -92,24 +125,23 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         );
       });
 
-      tl.to(keyboardRef.current, {
-        y: '120%',
-        opacity: 0,
-        duration: D.KEYBOARD_OUT,
-        ease: 'power2.in',
-      });
-
-      tl.fromTo(
-        split.lines,
-        { y: -20 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: D.TEXT_REVEAL,
-          ease: 'back.out(1.7)',
-          stagger: D.TEXT_STAGGER,
-        },
+      const customBounce = CustomEase.create(
+        'custom',
+        'M0,0 C0.069,0 0.303,0.261 0.46,0.511 0.617,0.761 0.698,1.001 0.7,1.011 0.7,1.005 0.758,0.895 0.849,0.895 0.936,0.895 1,1.011 1,1.011 ',
       );
+
+      TAGLINE_MAP.forEach(({ selector, at }) => {
+        tl.to(
+          selector,
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: D.TEXT_REVEAL,
+            ease: customBounce,
+          },
+          at,
+        );
+      });
 
       onRegisterTimeline(tl, SPLASH_CHOREOGRAPHY.master.labels.TAGLINE);
     },
@@ -122,9 +154,9 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         <KeyboardSvg />
       </div>
       <div ref={textRef} className={styles.text}>
-        Цифровая кузница
-        <br />
-        ваших решений
+        {/* <p className={`${styles.textLine} ${styles.lineOne}`}> */}
+        <p className={`${styles.lineOne}`}>Цифровая кузница</p>
+        <p className={`${styles.textLine} ${styles.lineTwo}`}>ваших решений</p>
       </div>
     </div>
   );

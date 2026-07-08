@@ -10,6 +10,7 @@
 
 .keyboard {
   opacity: 0;
+  visibility: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -22,7 +23,6 @@
   height: 100%;
   max-width: 14rem;
   object-fit: contain;
-  opacity: 0.75;
 }
 
 .text {
@@ -30,12 +30,26 @@
   top: 0;
   left: 0;
   width: 100%;
-  text-align: center;
   font-size: 1.25rem;
   line-height: 1.4;
   font-weight: 500;
   color: var(--text, #fff);
-  padding: 0 1rem;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.textLine {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.lineOne {
+  align-self: flex-start;
+}
+
+.lineTwo {
+  align-self: flex-end;
 }
 
 .container :global(.svg-board-key) {

@@ -35,8 +35,8 @@ export const SPLASH_CHOREOGRAPHY = {
   logoText: {
     start: 0,
     sparks: {
-      burst1: 4.2,
-      burst2: 4.6,
+      burst1: 4.5,
+      burst2: 4.9,
     },
     C: {
       phaseShoe: {
@@ -145,11 +145,18 @@ export const SPLASH_CHOREOGRAPHY = {
 
   /** Tagline — клавиатура + текстовый слоган */
   tagline: {
+    enterKey: {
+      start: 4.2,
+    },
+    text: {
+      lineOne: 4.0,
+      lineTwo: 4.4,
+    },
     durations: {
       KEYBOARD_IN: 0.5,
       KEY_HIGHLIGHT: 0.3,
       KEYBOARD_OUT: 0.4,
-      TEXT_REVEAL: 0.6,
+      TEXT_REVEAL: 1,
       TEXT_STAGGER: 0.15,
     },
   },

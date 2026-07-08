@@ -23,6 +23,7 @@ const MODULE_COLORS: Record<string, string> = {
   App: '#344054',
   Logo: '#04bf8a',
   Tagline: '#60b527',
+  useSparkCanvas: '#04b3bf',
 };
 
 const warnedModules = new Set<string>();

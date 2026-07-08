@@ -65,6 +65,10 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
             }
           },
           () => {
+            logger.debug(
+              'LogoText',
+              'Invoking clear function for sparks system',
+            );
             system.clear();
           },
           () => {

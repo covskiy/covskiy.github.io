@@ -3,13 +3,6 @@
  */
 
 :root {
-  --typography-logo: 700 3rem/2 "Playfair Display", serif;
-  --typography-hero-description: 500 1.875rem/1.4 "Playfair Display", serif;
-  --typography-heading-h1: 800 2.25rem/1.4 "Inter", sans-serif;
-  --typography-heading-h2: 700 1.875rem/1.4 "Inter", sans-serif;
-  --typography-heading-h3: 600 1.5rem/1.4 "Inter", sans-serif;
-  --typography-paragraph: 400 1rem/1.6 "Open Sans", sans-serif;
-  --typography-small-text: 300 0.875rem/1.6 "Open Sans", sans-serif;
   --font-families-logo: "Playfair Display", serif; /** Элегантный шрифт с засечками для логотипа и hero‑описания. Создаёт премиальное впечатление. */
   --font-families-headings: "Inter", sans-serif; /** Современный гротеск для заголовков всех уровней. Хорошая читаемость и чёткие формы. */
   --font-families-body: "Open Sans", sans-serif; /** Универсальный шрифт без засечек для основного текста, параграфов, подписей и мелких элементов. */
@@ -37,4 +30,11 @@
   --letter-spacings-tight: -0.025em; /** Сжатый трекинг для крупных заголовков. */
   --letter-spacings-normal: normal; /** Нормальный трекинг. */
   --letter-spacings-wide: 0.05em; /** Расширенный трекинг для логотипов и акцентированных надписей. */
+  --typography-logo: 700 3rem/2 "Playfair Display", serif;
+  --typography-hero-description: 500 1.875rem/1.4 "Playfair Display", serif;
+  --typography-heading-h1: 800 2.25rem/1.4 "Inter", sans-serif;
+  --typography-heading-h2: 700 1.875rem/1.4 "Inter", sans-serif;
+  --typography-heading-h3: 600 1.5rem/1.4 "Inter", sans-serif;
+  --typography-paragraph: 400 1rem/1.6 "Open Sans", sans-serif;
+  --typography-small-text: 300 0.875rem/1.6 "Open Sans", sans-serif;
 }

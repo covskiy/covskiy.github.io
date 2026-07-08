@@ -1,4 +1,10 @@
 .splashContainer {
+  --splash-logo-size: 120px;
+  --splash-logo-text-max-w: 420px;
+  --splash-tagline-max-w: 360px;
+  --splash-tagline-h: 10rem;
+  --splash-keyboard-svg-max-w: 14rem;
+
   position: fixed;
   inset: 0;
   display: flex;
@@ -8,7 +14,7 @@
   align-items: center;
 
   /* gap: 2rem; */
-  padding: 1rem;
+  padding: var(--spacing-md);
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   z-index: 9999;
 }

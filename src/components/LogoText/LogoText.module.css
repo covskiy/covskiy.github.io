@@ -12,7 +12,7 @@
   display: block;
   width: 100%;
   height: auto;
-  max-width: min(90vw, 420px);
+  max-width: min(90vw, var(--splash-logo-text-max-w, 420px));
 
   :global(#logoLetters) {
     display: none;
@@ -37,7 +37,7 @@
   right: 0;
   margin: 0 auto;
   width: 100%;
-  max-width: min(90vw, 420px);
+  max-width: min(90vw, var(--splash-logo-text-max-w, 420px));
   aspect-ratio: 200 / 150;
   pointer-events: none;
 }

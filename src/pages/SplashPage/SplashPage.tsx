@@ -1,8 +1,8 @@
 import { useCallback, useRef } from 'react';
 import gsap from 'gsap';
 import { GSDevTools } from 'gsap/GSDevTools';
-import { Logo, LogoText, Tagline } from '../../components';
-import { useSplashSkip } from './hooks';
+import { LogoText, Tagline } from '../../components';
+// import { useSplashSkip } from './hooks';
 import type { SplashPageProps } from '../../types/splash.types';
 import styles from './SplashPage.module.css';
 import { useGSAP } from '@gsap/react';
@@ -11,7 +11,7 @@ gsap.registerPlugin(GSDevTools);
 
 export type registerFunc = (masterTimeline: gsap.core.Timeline) => void;
 
-export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
+export function SplashPage({ onComplete }: SplashPageProps) {
   const timelineContainerRef = useRef<HTMLDivElement | null>(null);
   const childTimelinesRegistrationRef = useRef<Set<registerFunc>>(new Set());
   const masterTimelineRef = useRef<gsap.core.Timeline | null>(null);
@@ -63,7 +63,6 @@ export function SplashPage({ onComplete, skipDelay = 1000 }: SplashPageProps) {
 
   return (
     <div className={styles.splashContainer} ref={timelineContainerRef}>
-      {/* <Logo onRegisterTimeline={handleRegisterTimeline} /> */}
       <LogoText onRegisterTimeline={handleRegisterTimeline} />
       <Tagline onRegisterTimeline={handleRegisterTimeline} />
 

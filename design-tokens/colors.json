@@ -76,25 +76,25 @@
         "$value": "#fcfcfdff"
       },
       "50": {
-        "v$alue": "#f9fafbff"
+        "$value": "#f9fafbff"
       },
       "100": {
         "$value": "#f2f4f7ff"
       },
       "200": {
-        "v$alue": "#e4e7ecff"
+        "$value": "#e4e7ecff"
       },
       "300": {
         "$value": "#d0d5ddff"
       },
       "400": {
-        "v$alue": "#98a2b3ff"
+        "$value": "#98a2b3ff"
       },
       "500": {
-        "v$alue": "#667085ff"
+        "$value": "#667085ff"
       },
       "600": {
-        "v$alue": "#475467ff"
+        "$value": "#475467ff"
       },
       "700": {
         "$value": "#344054ff"

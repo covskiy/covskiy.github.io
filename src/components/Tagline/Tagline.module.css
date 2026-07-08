@@ -2,10 +2,16 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  max-width: min(90vw, var(--splash-tagline-max-w, 360px));
-  height: var(--splash-tagline-h, 10rem);
-  padding: 0 var(--spacing-md);
+  max-width: min(95vw, 280px);
+  height: 8rem;
+  padding: 0 var(--spacing-sm);
   flex-shrink: 0;
+
+  @media (width >= 481px) {
+    max-width: min(90vw, var(--splash-tagline-max-w, 360px));
+    height: var(--splash-tagline-h, 10rem);
+    padding: 0 var(--spacing-md);
+  }
 }
 
 .keyboard {
@@ -30,13 +36,22 @@
   top: 0;
   left: 0;
   width: 100%;
-  font-size: var(--font-sizes-xl);
+  font-family: Montserrat, sans-serif;
+  font-size: var(--font-sizes-xs);
   line-height: var(--line-heights-normal);
-  font-weight: var(--font-weights-medium);
-  color: var(--text, #fff);
-  padding: 0 var(--spacing-xl);
+  font-weight: var(--font-weights-light);
+  color: var(--color-primary-800, #016d6e);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  padding: 0 var(--spacing-md);
   display: flex;
   flex-direction: column;
+
+  @media (width >= 481px) {
+    font-size: var(--font-sizes-sm);
+    letter-spacing: 0.3em;
+    padding: 0 var(--spacing-xl);
+  }
 }
 
 .textLine {

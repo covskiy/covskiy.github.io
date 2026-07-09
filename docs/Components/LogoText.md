@@ -10,7 +10,7 @@
 | --------------------- | ----------------------------------------------------------------------- |
 | `LogoText.tsx`        | Компонент — GSAP timeline, оркестрация суб-таймлайнов букв и курсора. Timeline-билдеры — в `timelines.ts` |
 | `LogoText.svg`        | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины для `morphSVG` |
-| `LogoText.module.css` | Контейнер + глобальные CSS-переопределения для начального состояния SVG |
+| `LogoText.module.css` | Frame-обёртка (riveted-стиль: фон, бордюр, клёпки) + контейнер + глобальные CSS-переопределения для начального состояния SVG |
 | `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` |
 | `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop + emissionWindow |
 | `sparks.system.ts`    | Слой 2 — чистая SparkSystem (emit / update / draw / clear) без знания React/GSAP/DOM. Trajectory-based (spiral/sinwave) |
@@ -114,13 +114,20 @@ Tagline стартует на master-таймлайне в позиции `0` (`
 
 Базовые стили рассчитаны на мобильные устройства (phone, ≤480px):
 
-- `.container` — `padding: 0 1rem` для отступов по бокам, `flex-shrink: 0` (защита от сжатия в flex-контейнере SplashPage)
+- `.frame` — декоративная обёртка в стиле заклёпанной металлической пластины:
+  тёплый золотистый фон (`--color-glow-25`), бордюр `--color-glow-700`,
+  4 клёпки по углам (radial-gradient, box-shadow), скругление 8px
+- `.container` — `padding: 0 1rem` для отступов по бокам, `flex-shrink: 0`
+  (защита от сжатия в flex-контейнере SplashPage)
 - `.svg` — `max-width: min(90vw, 420px)`, вписывается в мобильный viewport
 - Высота определяется пропорцией исходного `viewBox` SVG (200×150 → 360×270)
 
-**Важно**: контейнер **не** имеет `height: 100%` — это сломало бы flex-layout в SplashPage (заставляло LogoText занимать 100vh и вытеснять Tagline). Контейнер sizing определяется контентом (SVG).
+**Важно**: контейнер **не** имеет `height: 100%` — это сломало бы flex-layout
+в SplashPage (заставляло LogoText занимать 100vh и вытеснять Tagline).
+Контейнер sizing определяется контентом (SVG).
 
-Брейкпоинты для планшетов/десктопов пока не заданы — будут добавлены отдельной задачей.
+Брейкпоинты для планшетов/десктопов пока не заданы — будут добавлены
+отдельной задачей.
 
 ## Архитектура регистрации
 

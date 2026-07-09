@@ -7,6 +7,45 @@
   flex-shrink: 0;
 }
 
+.frame {
+  position: relative;
+  display: inline-flex;
+  background: var(--color-glow-25, #fffef5);
+  border: 2px solid var(--color-glow-700, #ccac2b);
+  border-radius: 8px;
+  box-shadow: 0 2px 16px rgb(0 0 0 / 25%);
+}
+
+.rivet {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--color-glow-300), var(--color-glow-600));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  z-index: 1;
+}
+
+.rivetTopLeft {
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+.rivetTopRight {
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.rivetBottomLeft {
+  bottom: 0.5rem;
+  left: 0.5rem;
+}
+
+.rivetBottomRight {
+  bottom: 0.5rem;
+  right: 0.5rem;
+}
+
 .svg {
   display: block;
   width: 100%;

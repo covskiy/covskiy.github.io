@@ -40,7 +40,7 @@
   font-size: var(--font-sizes-xs);
   line-height: var(--line-heights-normal);
   font-weight: var(--font-weights-light);
-  color: var(--color-primary-800, #016d6e);
+  color: var(--color-core-800, #994d13);
   text-transform: uppercase;
   letter-spacing: 0.2em;
   padding: 0 var(--spacing-md);

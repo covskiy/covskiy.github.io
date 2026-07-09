@@ -31,7 +31,7 @@
   :global(.img-i),
   :global(.img-y),
   :global(.img-nail) {
-    fill: var(--color-gray-900, #101828);
+    fill: var(--color-gray-900, #121316);
   }
 
   @media (width >= 481px) {

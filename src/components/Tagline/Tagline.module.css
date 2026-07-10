@@ -2,10 +2,14 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  max-width: min(90vw, var(--splash-tagline-max-w, 360px));
-  height: var(--splash-tagline-h, 10rem);
-  padding: 0 var(--spacing-md);
+  max-width: min(95vw, 320px);
+  height: 10rem;
   flex-shrink: 0;
+
+  @media (width >= 481px) {
+    max-width: min(90vw, var(--splash-tagline-max-w, 360px));
+    height: var(--splash-tagline-h, 10rem);
+  }
 }
 
 .keyboard {
@@ -30,13 +34,22 @@
   top: 0;
   left: 0;
   width: 100%;
-  font-size: var(--font-sizes-xl);
+  font-family: Montserrat, sans-serif;
+  font-size: var(--font-sizes-base);
   line-height: var(--line-heights-normal);
-  font-weight: var(--font-weights-medium);
-  color: var(--text, #fff);
-  padding: 0 var(--spacing-xl);
+  font-weight: var(--font-weights-semibold);
+  color: var(--color-core-400);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  padding-top: var(--spacing-md);
   display: flex;
   flex-direction: column;
+
+  @media (width >= 481px) {
+    font-size: var(--font-sizes-lg);
+    letter-spacing: 0.3em;
+    padding: 0;
+  }
 }
 
 .textLine {
@@ -50,6 +63,7 @@
 
 .lineTwo {
   align-self: flex-end;
+  padding-top: var(--spacing-md);
 }
 
 .container :global(.svg-board-key) {

@@ -101,9 +101,15 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
   );
 
   return (
-    <div ref={containerRef} className={styles.container}>
-      <LogoSvg className={styles.svg} />
-      <canvas ref={canvasRef} className={styles.canvas} />
+    <div className={styles.frame}>
+      <span className={`${styles.rivet} ${styles.rivetTopLeft}`} />
+      <span className={`${styles.rivet} ${styles.rivetTopRight}`} />
+      <span className={`${styles.rivet} ${styles.rivetBottomLeft}`} />
+      <span className={`${styles.rivet} ${styles.rivetBottomRight}`} />
+      <div ref={containerRef} className={styles.container}>
+        <LogoSvg className={styles.svg} />
+        <canvas ref={canvasRef} className={styles.canvas} />
+      </div>
     </div>
   );
 }

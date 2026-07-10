@@ -3,65 +3,89 @@
  */
 
 :root {
-  --color-primary-25: #eafeeb;
-  --color-primary-50: #dfffe3;
-  --color-primary-100: #cafbda;
-  --color-primary-200: #97f8c0;
-  --color-primary-300: #61eba9;
-  --color-primary-400: #39d89c;
-  --color-primary-500: #04bf8a;
-  --color-primary-600: #02a486;
-  --color-primary-700: #02897d;
-  --color-primary-800: #016d6e;
-  --color-primary-900: #00525b;
-  --color-purple-25: #fbfbfe;
-  --color-purple-50: #ebebf9;
-  --color-purple-100: #e3e2fc;
-  --color-purple-200: #c7c6fa;
-  --color-purple-300: #a8a6f2;
-  --color-purple-400: #8d8ce5;
-  --color-purple-500: #6866d4;
-  --color-purple-600: #4c4ab6;
-  --color-purple-700: #343398;
-  --color-purple-800: #21207a;
-  --color-purple-900: #141365;
-  --color-gray-25: #fcfcfd;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f2f4f7;
-  --color-gray-200: #e4e7ec;
-  --color-gray-300: #d0d5dd;
-  --color-gray-400: #98a2b3;
-  --color-gray-500: #667085;
-  --color-gray-600: #475467;
-  --color-gray-700: #344054;
-  --color-gray-800: #1d2939;
-  --color-gray-900: #101828;
-  --color-success-25: #f9ffef;
-  --color-success-50: #ecfbd3;
-  --color-success-100: #e6fbc7;
-  --color-success-200: #d6f7a9;
-  --color-success-300: #b4e87b;
-  --color-success-400: #8fd256;
-  --color-success-500: #60b527;
-  --color-success-600: #489b1c;
-  --color-success-700: #338213;
-  --color-success-800: #21680c;
-  --color-success-900: #145607;
-  --color-error-25: #fffcfa;
-  --color-error-50: #fff4ef;
-  --color-error-100: #ffe5d6;
-  --color-error-200: #ffc4ad;
-  --color-error-300: #ff9d83;
-  --color-error-400: #ff7765;
-  --color-error-500: #ff3932;
-  --color-error-600: #db242d;
-  --color-error-700: #b7192e;
-  --color-error-800: #930f2c;
-  --color-error-900: #7a092b;
-  --color-gradient-primary-900-600-45-deg: linear-gradient(45deg, #00525b 0%, #02a486 100%);
-  --color-gradient-primary-800-700-26-5-deg: linear-gradient(26.5deg, #016d6e 0%, #02897d 100%);
-  --color-gradient-primary-800-600-90-deg: linear-gradient(90deg, #016d6e 0%, #02a486 100%);
-  --color-gradient-primary-800-600-45-deg: linear-gradient(45deg, #016d6e 0%, #02a486 100%);
-  --color-gradient-primary-700-600-45-deg: linear-gradient(45deg, #02897d 0%, #02a486 100%);
-  --color-gradient-primary-600-500-90-deg: linear-gradient(90deg, #02a486 0%, #04bf8a 100%);
+  --color-core-25: #fff7f0; /** Дымка — почти белый с тёплым подтоном */
+  --color-core-50: #fff0e3; /** Пепел — светлый фон для акцентных блоков */
+  --color-core-100: #ffe0c7; /** Тёплый туман — мягкий фон для карточек */
+  --color-core-200: #ffc999; /** Рассвет — светлый оранжевый для бордеров */
+  --color-core-300: #ffb06b; /** Янтарь — средний тон для иконок */
+  --color-core-400: #ffa259; /** Медь — насыщенный оранжевый */
+  --color-core-500: #ff9447; /** Пламя — основной цвет CTA */
+  --color-core-600: #e67d33; /** Жар — тёмный оранжевый для hover */
+  --color-core-700: #cc6620; /** Тлеющий уголь — глубокий акцент */
+  --color-core-800: #994d13; /** Глубокий огонь — для текста на светлом фоне */
+  --color-core-900: #66330a; /** Обугленный — самый тёмный, для контраста */
+  --color-glow-25: #fffef5; /** Светлая искра — почти белый с золотистым оттенком */
+  --color-glow-50: #fffcf0; /** Утренняя заря — очень светлый золотистый фон */
+  --color-glow-100: #fffae6; /** Солнечный свет — мягкий золотистый фон */
+  --color-glow-200: #fff4cc; /** Медовый — светлый золотистый для бордеров */
+  --color-glow-300: #feeeb3; /** Пшеничный — средний золотистый тон */
+  --color-glow-400: #fee899; /** Золото — насыщенный жёлтый */
+  --color-glow-500: #fed85d; /** Искра — основной золотистый цвет для hover */
+  --color-glow-600: #e6c244; /** Бронза — тёмный золотистый для акцентов */
+  --color-glow-700: #ccac2b; /** Старое золото — глубокий тон для текста */
+  --color-glow-800: #998112; /** Латунь — тёмный металлический оттенок */
+  --color-glow-900: #665600; /** Патина — самый тёмный золотистый */
+  --color-center-25: #fffafa; /** Розовая дымка — почти белый с лёгким розовым */
+  --color-center-50: #fff5f5; /** Утренняя роза — очень светлый розовый фон */
+  --color-center-100: #ffebeb; /** Нежная роза — мягкий розовый фон */
+  --color-center-200: #ffd6d6; /** Лососёвый — светлый розовый для бордеров */
+  --color-center-300: #ffc7c7; /** Бело-розовый — основной светлый акцент */
+  --color-center-400: #ffb3b3; /** Коралловый — насыщенный розовый */
+  --color-center-500: #f99; /** Розовый кварц — средний тон для иконок */
+  --color-center-600: #e68080; /** Тёмный коралл — для hover-эффектов */
+  --color-center-700: #c66; /** Закат — глубокий розовый акцент */
+  --color-center-800: #994d4d; /** Винный — тёмный розовый для текста */
+  --color-center-900: #633; /** Бордовый — самый тёмный розовый */
+  --color-gray-25: #f8fafc; /** Стальной свет — очень светлый серый для фона */
+  --color-gray-50: #f1f5f9; /** Серебристый туман — светлый фон для карточек */
+  --color-gray-100: #e2e8f0; /** Стальной — основной светлый текст */
+  --color-gray-200: #cbd5e1; /** Серебро — средний тон для вторичного текста */
+  --color-gray-300: #94a3b8; /** Приглушённый серый — для подписей и muted-текста */
+  --color-gray-400: #64748b; /** Сланец — тёмный серый для границ */
+  --color-gray-500: #475569; /** Графит — глубокий серый для акцентов */
+  --color-gray-600: #334155; /** Угольный — тёмный фон для элементов */
+  --color-gray-700: #1e293b; /** Ночной — очень тёмный фон */
+  --color-gray-800: #1a1c23; /** Глубокий графит — фон карточек и блоков */
+  --color-gray-900: #121316; /** Угольный — основной тёмный фон страницы */
+  --color-gradient-core-900-600-45-deg: linear-gradient(
+    45deg,
+    #66330a 0%,
+    #e67d33 100%
+  ); /** Глубокий жар — переход от тёмных углей к среднему пламени */
+
+  --color-gradient-core-800-600-45-deg: linear-gradient(
+    45deg,
+    #994d13 0%,
+    #e67d33 100%
+  ); /** Тлеющий уголь — насыщенный переход в диапазоне огня */
+
+  --color-gradient-core-700-500-45-deg: linear-gradient(
+    45deg,
+    #cc6620 0%,
+    #ff9447 100%
+  ); /** Раскалённое пламя — яркий переход для активных элементов */
+
+  --color-gradient-glow-800-600-90-deg: linear-gradient(
+    90deg,
+    #998112 0%,
+    #e6c244 100%
+  ); /** Мерцание искр — горизонтальный переход золотых оттенков */
+
+  --color-gradient-glow-700-500-45-deg: linear-gradient(
+    45deg,
+    #ccac2b 0%,
+    #fed85d 100%
+  ); /** Золотое сияние — диагональный переход для hover */
+
+  --color-gradient-mixed-core-800-glow-500-45-deg: linear-gradient(
+    45deg,
+    #994d13 0%,
+    #fed85d 100%
+  ); /** Огонь и золото — переход от оранжевого к жёлтому */
+
+  --color-gradient-mixed-center-300-core-500-90-deg: linear-gradient(
+    90deg,
+    #ffc7c7 0%,
+    #ff9447 100%
+  ); /** Ядро горна — от бело-розового к огненному (как в h1 forge) */
 }

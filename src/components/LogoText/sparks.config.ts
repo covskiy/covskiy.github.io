@@ -347,7 +347,7 @@ const MOBILE_PROFILE: SparkProfile = {
   lifetime: 2.0,
   glowColor: '#fed85d2b',
   coreColor: '#ff9447',
-  centerColor: '#fff',
+  centerColor: '#ffc7c7',
   speed: 30,
   emitCount: 30,
   /**

@@ -20,12 +20,10 @@ function App() {
   const handleSplashComplete = () => {
     console.log(`setShowSplash(false);`);
     // TODO dev return;
-    return;
+    // return;
     setShowSplash(false);
     void navigate('/home', { replace: true });
   };
-
-  return <SplashPage onComplete={handleSplashComplete} skipDelay={800} />;
 
   return (
     <div className={styles.app}>

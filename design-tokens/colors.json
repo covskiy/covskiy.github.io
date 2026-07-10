@@ -1,185 +1,199 @@
 {
   "color": {
     "$type": "color",
-    "primary": {
+    "core": {
+      "$description": "Огненная палитра — от тлеющих углей до раскалённого пламени. Для CTA, акцентов, фокуса.",
       "25": {
-        "$value": "#eafeebff"
+        "$value": "#fff7f0ff",
+        "$description": "Дымка — почти белый с тёплым подтоном"
       },
       "50": {
-        "$value": "#dfffe3ff"
+        "$value": "#fff0e3ff",
+        "$description": "Пепел — светлый фон для акцентных блоков"
       },
       "100": {
-        "$value": "#cafbdaff"
+        "$value": "#ffe0c7ff",
+        "$description": "Тёплый туман — мягкий фон для карточек"
       },
       "200": {
-        "$value": "#97f8c0ff"
+        "$value": "#ffc999ff",
+        "$description": "Рассвет — светлый оранжевый для бордеров"
       },
       "300": {
-        "$value": "#61eba9ff"
+        "$value": "#ffb06bff",
+        "$description": "Янтарь — средний тон для иконок"
       },
       "400": {
-        "$value": "#39d89cff"
+        "$value": "#ffa259ff",
+        "$description": "Медь — насыщенный оранжевый"
       },
       "500": {
-        "$value": "#04bf8aff"
+        "$value": "#ff9447ff",
+        "$description": "Пламя — основной цвет CTA"
       },
       "600": {
-        "$value": "#02a486ff"
+        "$value": "#e67d33ff",
+        "$description": "Жар — тёмный оранжевый для hover"
       },
       "700": {
-        "$value": "#02897dff"
+        "$value": "#cc6620ff",
+        "$description": "Тлеющий уголь — глубокий акцент"
       },
       "800": {
-        "$value": "#016d6eff"
+        "$value": "#994d13ff",
+        "$description": "Глубокий огонь — для текста на светлом фоне"
       },
       "900": {
-        "$value": "#00525bff"
+        "$value": "#66330aff",
+        "$description": "Обугленный — самый тёмный, для контраста"
       }
     },
-    "purple": {
+    "glow": {
+      "$description": "Золотая палитра — искры и отблески кузнечного горна. Для hover-эффектов, иконок, вторичных акцентов.",
       "25": {
-        "$value": "#fbfbfeff"
+        "$value": "#fffef5ff",
+        "$description": "Светлая искра — почти белый с золотистым оттенком"
       },
       "50": {
-        "$value": "#ebebf9ff"
+        "$value": "#fffcf0ff",
+        "$description": "Утренняя заря — очень светлый золотистый фон"
       },
       "100": {
-        "$value": "#e3e2fcff"
+        "$value": "#fffae6ff",
+        "$description": "Солнечный свет — мягкий золотистый фон"
       },
       "200": {
-        "$value": "#c7c6faff"
+        "$value": "#fff4ccff",
+        "$description": "Медовый — светлый золотистый для бордеров"
       },
       "300": {
-        "$value": "#a8a6f2ff"
+        "$value": "#feeeb3ff",
+        "$description": "Пшеничный — средний золотистый тон"
       },
       "400": {
-        "$value": "#8d8ce5ff"
+        "$value": "#fee899ff",
+        "$description": "Золото — насыщенный жёлтый"
       },
       "500": {
-        "$value": "#6866d4ff"
+        "$value": "#fed85dff",
+        "$description": "Искра — основной золотистый цвет для hover"
       },
       "600": {
-        "$value": "#4c4ab6ff"
+        "$value": "#e6c244ff",
+        "$description": "Бронза — тёмный золотистый для акцентов"
       },
       "700": {
-        "$value": "#343398ff"
+        "$value": "#ccac2bff",
+        "$description": "Старое золото — глубокий тон для текста"
       },
       "800": {
-        "$value": "#21207aff"
+        "$value": "#998112ff",
+        "$description": "Латунь — тёмный металлический оттенок"
       },
       "900": {
-        "$value": "#141365ff"
+        "$value": "#665600ff",
+        "$description": "Патина — самый тёмный золотистый"
+      }
+    },
+    "center": {
+      "$description": "Розовая палитра — бело-розовое ядро раскалённого металла. Для светлых акцентов, текста на тёмном фоне.",
+      "25": {
+        "$value": "#fffafaff",
+        "$description": "Розовая дымка — почти белый с лёгким розовым"
+      },
+      "50": {
+        "$value": "#fff5f5ff",
+        "$description": "Утренняя роза — очень светлый розовый фон"
+      },
+      "100": {
+        "$value": "#ffebebff",
+        "$description": "Нежная роза — мягкий розовый фон"
+      },
+      "200": {
+        "$value": "#ffd6d6ff",
+        "$description": "Лососёвый — светлый розовый для бордеров"
+      },
+      "300": {
+        "$value": "#ffc7c7ff",
+        "$description": "Бело-розовый — основной светлый акцент"
+      },
+      "400": {
+        "$value": "#ffb3b3ff",
+        "$description": "Коралловый — насыщенный розовый"
+      },
+      "500": {
+        "$value": "#ff9999ff",
+        "$description": "Розовый кварц — средний тон для иконок"
+      },
+      "600": {
+        "$value": "#e68080ff",
+        "$description": "Тёмный коралл — для hover-эффектов"
+      },
+      "700": {
+        "$value": "#cc6666ff",
+        "$description": "Закат — глубокий розовый акцент"
+      },
+      "800": {
+        "$value": "#994d4dff",
+        "$description": "Винный — тёмный розовый для текста"
+      },
+      "900": {
+        "$value": "#663333ff",
+        "$description": "Бордовый — самый тёмный розовый"
       }
     },
     "gray": {
+      "$description": "Угольная палитра — от пепельно-серого до глубокого графита. Для фонов, текста, границ.",
       "25": {
-        "$value": "#fcfcfdff"
+        "$value": "#f8fafcff",
+        "$description": "Стальной свет — очень светлый серый для фона"
       },
       "50": {
-        "$value": "#f9fafbff"
+        "$value": "#f1f5f9ff",
+        "$description": "Серебристый туман — светлый фон для карточек"
       },
       "100": {
-        "$value": "#f2f4f7ff"
+        "$value": "#e2e8f0ff",
+        "$description": "Стальной — основной светлый текст"
       },
       "200": {
-        "$value": "#e4e7ecff"
+        "$value": "#cbd5e1ff",
+        "$description": "Серебро — средний тон для вторичного текста"
       },
       "300": {
-        "$value": "#d0d5ddff"
+        "$value": "#94a3b8ff",
+        "$description": "Приглушённый серый — для подписей и muted-текста"
       },
       "400": {
-        "$value": "#98a2b3ff"
+        "$value": "#64748bff",
+        "$description": "Сланец — тёмный серый для границ"
       },
       "500": {
-        "$value": "#667085ff"
+        "$value": "#475569ff",
+        "$description": "Графит — глубокий серый для акцентов"
       },
       "600": {
-        "$value": "#475467ff"
+        "$value": "#334155ff",
+        "$description": "Угольный — тёмный фон для элементов"
       },
       "700": {
-        "$value": "#344054ff"
+        "$value": "#1e293bff",
+        "$description": "Ночной — очень тёмный фон"
       },
       "800": {
-        "$value": "#1d2939ff"
+        "$value": "#1a1c23ff",
+        "$description": "Глубокий графит — фон карточек и блоков"
       },
       "900": {
-        "$value": "#101828ff"
-      }
-    },
-    "success": {
-      "25": {
-        "$value": "#f9ffefff"
-      },
-      "50": {
-        "$value": "#ecfbd3ff"
-      },
-      "100": {
-        "$value": "#e6fbc7ff"
-      },
-      "200": {
-        "$value": "#d6f7a9ff"
-      },
-      "300": {
-        "$value": "#b4e87bff"
-      },
-      "400": {
-        "$value": "#8fd256ff"
-      },
-      "500": {
-        "$value": "#60b527ff"
-      },
-      "600": {
-        "$value": "#489b1cff"
-      },
-      "700": {
-        "$value": "#338213ff"
-      },
-      "800": {
-        "$value": "#21680cff"
-      },
-      "900": {
-        "$value": "#145607ff"
-      }
-    },
-    "error": {
-      "25": {
-        "$value": "#fffcfaff"
-      },
-      "50": {
-        "$value": "#fff4efff"
-      },
-      "100": {
-        "$value": "#ffe5d6ff"
-      },
-      "200": {
-        "$value": "#ffc4adff"
-      },
-      "300": {
-        "$value": "#ff9d83ff"
-      },
-      "400": {
-        "$value": "#ff7765ff"
-      },
-      "500": {
-        "$value": "#ff3932ff"
-      },
-      "600": {
-        "$value": "#db242dff"
-      },
-      "700": {
-        "$value": "#b7192eff"
-      },
-      "800": {
-        "$value": "#930f2cff"
-      },
-      "900": {
-        "$value": "#7a092bff"
+        "$value": "#121316ff",
+        "$description": "Угольный — основной тёмный фон страницы"
       }
     }
   },
   "color-gradient": {
-    "primary": {
+    "core": {
       "$type": "custom-gradient",
+      "$description": "Огненные градиенты — переходы в диапазоне от тлеющих углей до раскалённого пламени.",
       "900 -> 600 (45 deg)": {
         "$value": {
           "gradientType": "linear",
@@ -187,99 +201,125 @@
           "stops": [
             {
               "position": 0,
-              "color": "#00525bff"
+              "color": "#66330aff"
             },
             {
               "position": 1,
-              "color": "#02a486ff"
+              "color": "#e67d33ff"
             }
           ]
-        }
-      },
-      "800 -> 700 (26,5 deg)": {
-        "type": "custom-gradient",
-        "$value": {
-          "gradientType": "linear",
-          "rotation": 26.5,
-          "stops": [
-            {
-              "position": 0,
-              "color": "#016d6eff"
-            },
-            {
-              "position": 1,
-              "color": "#02897dff"
-            }
-          ]
-        }
-      },
-      "800 -> 600 (90 deg)": {
-        "type": "custom-gradient",
-        "$value": {
-          "gradientType": "linear",
-          "rotation": 90,
-          "stops": [
-            {
-              "position": 0,
-              "color": "#016d6eff"
-            },
-            {
-              "position": 1,
-              "color": "#02a486ff"
-            }
-          ]
-        }
+        },
+        "$description": "Глубокий жар — переход от тёмных углей к среднему пламени"
       },
       "800 -> 600 (45 deg)": {
-        "type": "custom-gradient",
         "$value": {
           "gradientType": "linear",
           "rotation": 45,
           "stops": [
             {
               "position": 0,
-              "color": "#016d6eff"
+              "color": "#994d13ff"
             },
             {
               "position": 1,
-              "color": "#02a486ff"
+              "color": "#e67d33ff"
             }
           ]
-        }
+        },
+        "$description": "Тлеющий уголь — насыщенный переход в диапазоне огня"
       },
-      "700 -> 600 (45 deg)": {
-        "type": "custom-gradient",
+      "700 -> 500 (45 deg)": {
         "$value": {
           "gradientType": "linear",
           "rotation": 45,
           "stops": [
             {
               "position": 0,
-              "color": "#02897dff"
+              "color": "#cc6620ff"
             },
             {
               "position": 1,
-              "color": "#02a486ff"
+              "color": "#ff9447ff"
             }
           ]
-        }
-      },
-      "600 -> 500 (90 deg)": {
-        "type": "custom-gradient",
+        },
+        "$description": "Раскалённое пламя — яркий переход для активных элементов"
+      }
+    },
+    "glow": {
+      "$type": "custom-gradient",
+      "$description": "Золотые градиенты — переходы искр и отблесков кузнечного горна.",
+      "800 -> 600 (90 deg)": {
         "$value": {
           "gradientType": "linear",
           "rotation": 90,
           "stops": [
             {
               "position": 0,
-              "color": "#02a486ff"
+              "color": "#998112ff"
             },
             {
               "position": 1,
-              "color": "#04bf8aff"
+              "color": "#e6c244ff"
             }
           ]
-        }
+        },
+        "$description": "Мерцание искр — горизонтальный переход золотых оттенков"
+      },
+      "700 -> 500 (45 deg)": {
+        "$value": {
+          "gradientType": "linear",
+          "rotation": 45,
+          "stops": [
+            {
+              "position": 0,
+              "color": "#ccac2bff"
+            },
+            {
+              "position": 1,
+              "color": "#fed85dff"
+            }
+          ]
+        },
+        "$description": "Золотое сияние — диагональный переход для hover"
+      }
+    },
+    "mixed": {
+      "$type": "custom-gradient",
+      "$description": "Смешанные градиенты — комбинации огня, золота и розового ядра.",
+      "core-800 -> glow-500 (45 deg)": {
+        "$value": {
+          "gradientType": "linear",
+          "rotation": 45,
+          "stops": [
+            {
+              "position": 0,
+              "color": "#994d13ff"
+            },
+            {
+              "position": 1,
+              "color": "#fed85dff"
+            }
+          ]
+        },
+        "$description": "Огонь и золото — переход от оранжевого к жёлтому"
+      },
+      "center-300 -> core-500 (90 deg)": {
+        "$value": {
+          "gradientType": "linear",
+          "rotation": 90,
+          "stops": [
+            {
+              "position": 0,
+              "color": "#ffc7c7ff"
+            },
+            {
+              "position": 1,
+              "color": "#ff9447ff"
+            }
+          ]
+        },
+        "$description": "Ядро горна — от бело-розового к огненному (как в h1 forge)"
       }
     }
   }

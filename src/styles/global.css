@@ -8,6 +8,7 @@
 @import url('./spacing.css');
 @import url('./transitions.css');
 @import url('./typography.css');
+@import url('./fonts.css');
 
 body {
   margin: 0;

@@ -1,1 +1,0 @@
-export { useSplashSkip } from './useSplashSkip';

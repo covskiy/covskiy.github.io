@@ -4,24 +4,22 @@
 
 ## Управление состоянием
 
-| Флаг        | Хранилище      | Механизм                                  |
-| ----------- | -------------- | ----------------------------------------- |
-| `neverShow` | `localStorage` | Неактивен (закомментирован для переписи)  |
-| `skipDelay` | Пропс          | Таймер показа кнопки пропуска (неактивен) |
+| Флаг             | Хранилище      | Механизм                                   |
+| ---------------- | -------------- | ------------------------------------------ |
+| `showSplash`     | `App.tsx`      | Инициализируется из `splashStorage.getNeverShow()` |
+| `showSkipButton` | `SplashPage`   | Таймер показа кнопки пропуска              |
+| `neverShowAgain` | `SplashPage`   | Чекбокс "Больше не показывать"             |
 
-**Примечание**: Логика `useSplashSkip`, `splashStorage.getNeverShow()`, `shouldBypass` временно закомментирована в `SplashPage.tsx` и будет переписана позже. Компонент всегда рендерится.
+**Примечание**: Логика skip инлайнена в `SplashPage.tsx`. Решение о показе splash принимается в `App.tsx` на основе `splashStorage.getNeverShow()`.
 
 ## Архитектура
 
 ```
 pages/SplashPage/
 ├── index.ts                    # Barrel: SplashPage, splashStorage
-├── SplashPage.tsx              # Создаёт мастер-таймлайн + координирует регистрацию
+├── SplashPage.tsx              # Создаёт мастер-таймлайн + skip-логика (инлайн)
 ├── SplashPage.module.css       # Стили контейнера (fixed overlay)
 ├── splashChoreography.ts       # Константы времени и длительностей анимаций
-├── hooks/
-│   ├── index.ts                # Отсутствует (useSplashSkip импортируется напрямую)
-│   └── useSplashSkip.ts        # Закомментирован (待 перепись)
 └── utils/
     ├── index.ts
     └── splashStorage.ts        # Работа с localStorage (ключ: splash_never_show)
@@ -149,7 +147,7 @@ function App() {
 }
 ```
 
-**Примечание**: Условный рендеринг `showSplash` управляется состоянием и `splashStorage.getNeverShow()`.
+**Примечание**: Условный рендеринг `showSplash` управляется состоянием и `splashStorage.getNeverShow()`. Если пользователь ранее выбрал "Больше не показывать", splash не отображается.
 
 ## Отладка (dev-mode)
 
@@ -170,5 +168,6 @@ function App() {
 - **`childTimelinesRegistrationRef`** — `ref`-контейнер (Set), который содержит в себе коллбеки с регистрацией локальных таймлайнов
 - **Отсутствие гонки регистраций** гарантируется самим механизмом React, создание компонент происходит от потомков к родителю. В момент когда будет выполняться асинхронный useGSAP родителя, в childTimelinesRegistrationRef уже будут лежать коллбеки регистрации потомков
 - **Исходные стили** скрыты через `visibility: hidden`, GSAP переключает на `visible`
-- **Пропуск** (закомментирован,待 перепись): `timeline.progress(1).kill()` без `gsap.set`/`clearProps`
+- **Пропуск**: `handleSkip` вызывает `masterTimelineRef.current?.progress(1).kill()`, затем `onComplete()`
+- **Кнопка пропуска** появляется через `skipDelay` мс (передаётся из `App.tsx`), fade-in анимация
 - **`useGSAP`** из `@gsap/react` гарантирует безопасную работу в `StrictMode` и автоочистку

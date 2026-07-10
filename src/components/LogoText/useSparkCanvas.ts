@@ -14,7 +14,7 @@
  * - Полный cleanup при unmount.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { logger } from '../../utils/logger';
 import {
   SPARKS_CONFIG,
@@ -29,7 +29,24 @@ import { createSparkSystem, type SparkSystem } from './sparks.system';
 const MORPH_SELECTOR =
   '#morphPath-C, #morphPath-O, #morphPath-V, #morphPath-S, #morphPath-K, #morphPath-I, #morphPath-Y';
 
+/**
+ * Контроллер RAF-цикла отрисовки искр.
+ *
+ * Цикл стартует при первом {@link ensureRunning} и сам останавливается,
+ * когда {@link SparkSystem.aliveCount} === 0. Не зависит от GSAP-таймлайна
+ * (голый `requestAnimationFrame`), поэтому пауза мастера не глушит
+ * догорание частиц.
+ *
+ * Контроллер спроектирован как объект с одним методом, а не голая функция,
+ * по двум причинам:
+ * 1. Семантика на месте вызова (`loop.ensureRunning()`) — читается
+ *    как «контроллер, обеспечь выполнение», а не анонимный callback.
+ * 2. Устойчивость к расширению — при необходимости можно добавить
+ *    методы `pause()`, `restart()` и т.д. без изменения сигнатуры
+ *    потребителей.
+ */
 type LoopController = {
+  /** Запускает RAF-цикл, если он ещё не запущен. Безопасен для многократного вызова. */
   ensureRunning: () => void;
 };
 
@@ -284,14 +301,25 @@ export function useSparkCanvas(
     };
   }, [containerRef, canvasRef, system, config, reducedMotion]);
 
-  // getProfile и loop.ensureRunning читают refs в момент вызова (не рендера),
-  // это callbacks, передаваемые в onUpdate/onStart.
+  // Стабилизированные ссылки через useCallback/useMemo с пустыми deps.
+  // Это безопасно: getProfile и loop.ensureRunning читают refs в момент
+  // вызова (не рендера), поэтому всегда возвращают актуальные значения
+  // независимо от того, в каком рендере были созданы.
+  const getProfileStable = useCallback(() => profileRef.current, []);
+  const loopStable = useMemo<LoopController>(
+    () => ({ ensureRunning: () => loopRef.current.ensureRunning() }),
+    [],
+  );
+
+  // system тоже читается из ref (ленивый синглтон), нереактивное состояние —
+  // намеренно вынесено из React-стейта, чтобы мутации SparkSystem
+  // не вызывали ререндеры.
   // eslint-disable-next-line react-hooks/refs
   return {
     system,
     profile,
-    getProfile: () => profileRef.current,
-    loop: { ensureRunning: () => loopRef.current.ensureRunning() },
+    getProfile: getProfileStable,
+    loop: loopStable,
     reducedMotion,
   };
 }

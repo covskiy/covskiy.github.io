@@ -8,9 +8,6 @@ export type AnimationComponentProps = {
 };
 
 export type SkipControlsProps = {
-  // timeline: gsap.core.Timeline | null;
-  onNeverShowAgain: (value: boolean) => void;
-  neverShowAgain: boolean;
   onSkip: () => void;
 };
 

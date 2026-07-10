@@ -1,39 +1,67 @@
 .skipControls {
   position: absolute;
-  bottom: var(--spacing-xl);
+  bottom: var(--spacing-md);
+  right: var(--spacing-md);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+  animation: skip-fade-in var(--transitions-duration-medium)
+    var(--transitions-easing-ease-out) forwards;
+}
+
+@keyframes skip-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .skipButton {
-  padding: var(--spacing-xs) var(--spacing-lg);
-  border: 1px solid rgb(255 255 255 / 30%);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-core-500);
   border-radius: var(--border-radius-md);
-  background: rgb(255 255 255 / 10%);
-  color: white;
+  background: transparent;
+  color: var(--color-core-500);
+  font-family: var(--font-families-body);
   font-size: var(--font-sizes-sm);
+  font-weight: var(--font-weights-medium);
   cursor: pointer;
   transition:
-    background var(--transitions-duration-medium),
-    border-color var(--transitions-duration-medium);
+    background var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out),
+    border-color var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out),
+    color var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out);
 }
 
 .skipButton:hover {
-  background: rgb(255 255 255 / 20%);
-  border-color: rgb(255 255 255 / 50%);
+  background: rgb(255 148 71 / 10%);
+  border-color: var(--color-core-600);
+  color: var(--color-core-600);
 }
 
 .checkboxLabel {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  color: rgb(255 255 255 / 60%);
+  color: rgb(255 255 255 / 50%);
   font-size: var(--font-sizes-xs);
   cursor: pointer;
 }
 
 .checkboxText {
   user-select: none;
+}
+
+@media (width >= 481px) {
+  .skipControls {
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    gap: var(--spacing-sm);
+  }
 }

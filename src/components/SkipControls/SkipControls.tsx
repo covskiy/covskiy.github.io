@@ -1,11 +1,18 @@
+import { useState } from 'react';
 import type { SkipControlsProps } from '../../types/splash.types';
+import { splashStorage } from '../../pages/SplashPage';
 import styles from './SkipControls.module.css';
 
-export function SkipControls({
-  onNeverShowAgain,
-  neverShowAgain,
-  onSkip,
-}: SkipControlsProps) {
+export function SkipControls({ onSkip }: SkipControlsProps) {
+  const [neverShowAgain, setNeverShowAgain] = useState(() =>
+    splashStorage.getNeverShow(),
+  );
+
+  const handleChange = (checked: boolean) => {
+    setNeverShowAgain(checked);
+    splashStorage.setNeverShow(checked);
+  };
+
   return (
     <div className={styles.skipControls}>
       <button
@@ -20,7 +27,7 @@ export function SkipControls({
         <input
           type="checkbox"
           checked={neverShowAgain}
-          onChange={(e) => onNeverShowAgain(e.target.checked)}
+          onChange={(e) => handleChange(e.target.checked)}
         />
         <span className={styles.checkboxText}>
           Больше не показывать при запуске

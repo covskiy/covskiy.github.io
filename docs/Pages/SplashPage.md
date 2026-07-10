@@ -82,6 +82,10 @@ Tagline зарегистрирован на master-таймлайне в поз�
 - `LOGO_TEXT`: `0`
 - `TAGLINE`: `0` (Tagline вкладывается в начало)
 
+### master.holdDuration
+
+- `1.5s` — пауза после завершения всех дочерних анимаций перед вызовом `onComplete`
+
 ### logo.durations
 
 - `GLOW_DRAW`: `1.5s`

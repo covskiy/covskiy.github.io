@@ -11,6 +11,7 @@ export const SPLASH_CHOREOGRAPHY = {
       LOGO_TEXT: 0,
       TAGLINE: 0,
     },
+    holdDuration: 1.5,
   },
 
   /** Logo — анимация рисования SVG anvil */

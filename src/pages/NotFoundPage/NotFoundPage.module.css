@@ -32,7 +32,8 @@
   color: var(--accent);
   border: 1px solid var(--accent-border);
   border-radius: var(--border-radius-md);
-  transition: background-color var(--transitions-duration-short) var(--transitions-easing-ease-out);
+  transition: background-color var(--transitions-duration-short)
+    var(--transitions-easing-ease-out);
 }
 
 .link:hover {

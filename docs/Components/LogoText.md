@@ -6,20 +6,20 @@
 
 ## Файлы
 
-| Файл                  | Назначение                                                              |
-| --------------------- | ----------------------------------------------------------------------- |
-| `LogoText.tsx`        | Компонент — GSAP timeline, оркестрация суб-таймлайнов букв и курсора. Timeline-билдеры — в `timelines.ts` |
-| `LogoText.svg`        | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины для `morphSVG` |
-| `LogoText.module.css` | Frame-обёртка (riveted-стиль: фон, бордюр, клёпки) + контейнер + глобальные CSS-переопределения для начального состояния SVG |
-| `timelines.ts`        | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` |
-| `sparks.config.ts`    | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop + emissionWindow |
-| `sparks.system.ts`    | Слой 2 — чистая SparkSystem (emit / update / draw / clear) без знания React/GSAP/DOM. Trajectory-based (spiral/sinwave) |
-| `useSparkCanvas.ts`   | Слой 3 — хук канваса: DPR-синк, ResizeObserver, гибридный клиппинг (mobile=mask, tablet/desktop=clip), RAF-цикл, cleanup |
-| `trajectory.ts`       | Абстракция траектории: интерфейс `Trajectory`, фабрика `createTrajectory()`, выбор spiral/sinwave по весам |
-| `spiral/SpiralConfig.ts` | Интерфейс конфигурации спиральной траектории |
-| `spiral/SpiralTrajectory.ts` | Класс спиральной траектории (точка на окружности с движущимся центром) |
-| `sinwave/SinWaveConfig.ts` | Интерфейс конфигурации синусоидальной траектории |
-| `sinwave/SinWaveTrajectory.ts` | Класс синусоидальной траектории (колебание перпендикулярно направлению движения) |
+| Файл                           | Назначение                                                                                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LogoText.tsx`                 | Компонент — GSAP timeline, оркестрация суб-таймлайнов букв и курсора. Timeline-билдеры — в `timelines.ts`                                                 |
+| `LogoText.svg`                 | Исходный SVG с двумя слоями (исходные фигуры + пути букв). Финальные `morphPath-*` — единый источник истины для `morphSVG`                                |
+| `LogoText.module.css`          | Frame-обёртка (riveted-стиль: фон, бордюр, клёпки) + контейнер + глобальные CSS-переопределения для начального состояния SVG                              |
+| `timelines.ts`                 | Timeline-билдеры: `createCLetterTimeline`, `createOVSKIYTimeline` (data-driven цикл), `createCursorTimeline` (data-driven scales), `createSparksTimeline` |
+| `sparks.config.ts`             | Слой 1 — все «магические числа» эффекта искр + профили mobile/tablet/desktop + emissionWindow                                                             |
+| `sparks.system.ts`             | Слой 2 — чистая SparkSystem (emit / update / draw / clear) без знания React/GSAP/DOM. Trajectory-based (spiral/sinwave)                                   |
+| `useSparkCanvas.ts`            | Слой 3 — хук канваса: DPR-синк, ResizeObserver, гибридный клиппинг (mobile=mask, tablet/desktop=clip), RAF-цикл, cleanup                                  |
+| `trajectory.ts`                | Абстракция траектории: интерфейс `Trajectory`, фабрика `createTrajectory()`, выбор spiral/sinwave по весам                                                |
+| `spiral/SpiralConfig.ts`       | Интерфейс конфигурации спиральной траектории                                                                                                              |
+| `spiral/SpiralTrajectory.ts`   | Класс спиральной траектории (точка на окружности с движущимся центром)                                                                                    |
+| `sinwave/SinWaveConfig.ts`     | Интерфейс конфигурации синусоидальной траектории                                                                                                          |
+| `sinwave/SinWaveTrajectory.ts` | Класс синусоидальной траектории (колебание перпендикулярно направлению движения)                                                                          |
 
 ## Структура SVG
 
@@ -97,16 +97,16 @@ tl.from(selector, {
 1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start = 1.5`). Tagline стартует на master-таймлайне в позиции `0`, поэтому `KEYBOARD_IN` на локальном таймлайне = `1.5`.
 2. **Подсветка клавиш** — привязана к началу морфа соответствующей буквы.
 
-| Master-время | Источник в `INTRO_CHOREOGRAPHY`                              | Соответствующее событие в Tagline  |
-| ------------ | ------------------------------------------------------------- | ---------------------------------- |
-| 1.5          | `logoText.Cursor.phaseCaret.start`                            | Влёт клавиатуры                    |
-| 1.9          | `logoText.C.phaseLetter.start`                                | Подсветка `.key_c`                 |
-| 2.59         | `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay`   | Подсветка `.key_o`                 |
-| 2.85         | `logoText.V.phaseDash.start + logoText.V.phaseLetter.delay`   | Подсветка `.key_v`                 |
-| 3.07         | `logoText.S.phaseDash.start + logoText.S.phaseLetter.delay`   | Подсветка `.key_s`                 |
-| 3.3          | `logoText.K.phaseDash.start + logoText.K.phaseLetter.delay`   | Подсветка `.key_k`                 |
-| 3.45         | `logoText.I.phaseDash.start + logoText.I.phaseLetter.delay`   | Подсветка `.key_i`                 |
-| 3.6          | `logoText.Y.phaseDash.start + logoText.Y.phaseLetter.delay`   | Подсветка `.key_y`                 |
+| Master-время | Источник в `INTRO_CHOREOGRAPHY`                             | Соответствующее событие в Tagline |
+| ------------ | ----------------------------------------------------------- | --------------------------------- |
+| 1.5          | `logoText.Cursor.phaseCaret.start`                          | Влёт клавиатуры                   |
+| 1.9          | `logoText.C.phaseLetter.start`                              | Подсветка `.key_c`                |
+| 2.59         | `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay` | Подсветка `.key_o`                |
+| 2.85         | `logoText.V.phaseDash.start + logoText.V.phaseLetter.delay` | Подсветка `.key_v`                |
+| 3.07         | `logoText.S.phaseDash.start + logoText.S.phaseLetter.delay` | Подсветка `.key_s`                |
+| 3.3          | `logoText.K.phaseDash.start + logoText.K.phaseLetter.delay` | Подсветка `.key_k`                |
+| 3.45         | `logoText.I.phaseDash.start + logoText.I.phaseLetter.delay` | Подсветка `.key_i`                |
+| 3.6          | `logoText.Y.phaseDash.start + logoText.Y.phaseLetter.delay` | Подсветка `.key_y`                |
 
 Tagline стартует на master-таймлайне в позиции `0` (`INTRO_CHOREOGRAPHY.master.labels.TAGLINE`); позиции событий совпадают с абсолютными временами из LogoText. Подробности — в `docs/Components/Tagline.md`.
 
@@ -172,16 +172,17 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 `TABLET_PROFILE` и `DESKTOP_PROFILE` наследуются от mobile через spread
 и переопределяют только то, что должно расти с мощностью устройства:
 
-| Параметр | mobile (base) | tablet | desktop |
-|---|---|---|---|
-| `baseRadius` | 1.9 | 2.2 | 2.2 |
-| `lifetime` | 2.0 | 2.0 | 2.5 |
-| `speed` | 30 | 30 | 30 |
-| `emitCount` | 30 | 40 | 65 |
-| `visual.sizeMul` | {min: 0.7, max: 1.3} | (наслед.) | (наслед.) |
+| Параметр             | mobile (base)        | tablet    | desktop   |
+| -------------------- | -------------------- | --------- | --------- |
+| `baseRadius`         | 1.9                  | 2.2       | 2.2       |
+| `lifetime`           | 2.0                  | 2.0       | 2.5       |
+| `speed`              | 30                   | 30        | 30        |
+| `emitCount`          | 30                   | 40        | 65        |
+| `visual.sizeMul`     | {min: 0.7, max: 1.3} | (наслед.) | (наслед.) |
 | `visual.lifetimeMul` | {min: 0.8, max: 1.2} | (наслед.) | (наслед.) |
 
 Глобально (одинаково на всех устройствах):
+
 - Тайминги старта burst'ов — часть хореографии (`choreography.ts`)
 - `emissionWindow` — время размазывания выброса внутри burst'а
 - Цвета (glowColor, coreColor, centerColor)
@@ -198,6 +199,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 по ссылочной идентичности (профили — module-singletons).
 
 **Структура конфига:**
+
 - `viewbox` — размеры viewBox SVG (200×150)
 - `jitter` — разброс начальной позиции искры
 - `tail` — настройки шлейфа (length, color, startAlpha, startSize)
@@ -210,6 +212,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 ### Слой 2 — `sparks.system.ts`
 
 Чистая логика частиц, **не знающая** про React, GSAP и DOM. API:
+
 - `emit(origin, count, profile, config)` — создание частиц с jitter. Каждая искра
   получает случайную траекторию (spiral/sinwave) через `createTrajectory()`.
 - `update(dt)` — продвижение траекторий, старение, удаление мёртвых искр.
@@ -220,6 +223,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 - `clear()` — сброс массива (используется при скрабе GSDevTools назад).
 
 **Траектории:**
+
 - `spiral` — точка на окружности с движущимся центром. Параметры: radius,
   angularSpeed, clockwise.
 - `sinwave` — колебание перпендикулярно направлению движения. Параметры:

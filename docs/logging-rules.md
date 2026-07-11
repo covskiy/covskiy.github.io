@@ -11,11 +11,12 @@
 Всегда передавай название модуля первым строковым аргументом. Это тег, который отображается цветом в консоли.
 
 ```ts
-logger.info('IntroAnimation', 'Master timeline created');   // ✓
-logger.info('master timeline created');                      // ✗ — нет тега
+logger.info('IntroAnimation', 'Master timeline created'); // ✓
+logger.info('master timeline created'); // ✗ — нет тега
 ```
 
 **Соглашение по именованию тегов:**
+
 - Компоненты: `PascalCase` — `IntroAnimation`, `PageTransition`, `LogoText`
 - Утилиты: `camelCase` или как название файла — `introStorage`, `initGsap`
 - Роуты: как путь — `/about`, `/home`
@@ -26,13 +27,13 @@ logger.info('master timeline created');                      // ✗ — нет �
 
 ## 2. Когда какой уровень использовать
 
-| Уровень | Когда использовать | Пример |
-|---------|-------------------|--------|
-| `error` | GSAP-коллбек с ошибкой, исключение в useGSAP, сбой анимации | `logger.error('IntroAnimation', 'onComplete was not called')` |
-| `warn` | Условный байпас, fallback-состояние, missing ref | `logger.warn('LogoText', 'containerRef is null, skipping animation')` |
-| `info` | Lifecycle: монтирование, onComplete таймлайна, смена роута | `logger.info('IntroAnimation', 'Master timeline complete')` |
-| `debug` | Параметры анимаций: start, duration, position, easing | `logger.debug('LogoText', 'C phaseShoe', { x: -45, duration: 0.5 })` |
-| `trace` | Массовые события, циклические вызовы (только при diagnose) | Включать только через `localStorage.setItem('loggerLevel', 'trace')` |
+| Уровень | Когда использовать                                          | Пример                                                                |
+| ------- | ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| `error` | GSAP-коллбек с ошибкой, исключение в useGSAP, сбой анимации | `logger.error('IntroAnimation', 'onComplete was not called')`         |
+| `warn`  | Условный байпас, fallback-состояние, missing ref            | `logger.warn('LogoText', 'containerRef is null, skipping animation')` |
+| `info`  | Lifecycle: монтирование, onComplete таймлайна, смена роута  | `logger.info('IntroAnimation', 'Master timeline complete')`           |
+| `debug` | Параметры анимаций: start, duration, position, easing       | `logger.debug('LogoText', 'C phaseShoe', { x: -45, duration: 0.5 })`  |
+| `trace` | Массовые события, циклические вызовы (только при diagnose)  | Включать только через `localStorage.setItem('loggerLevel', 'trace')`  |
 
 **Если сомневаешься** — используй `debug`. `info` — только для значимых точек.
 
@@ -69,13 +70,13 @@ logger.debug('LogoText', 'C phaseShoe x=-45 rotate=-90 duration=0.5');
 
 ## 5. Когда добавлять логирование в код
 
-| Ситуация | Уровень |
-|----------|---------|
-| Новый анимированный компонент | `debug` для каждой фазы анимации |
-| Новый компонент с роутингом | `info` при монтировании/размонтировании |
-| Компонент с async-операциями | `warn` для fallback, `error` для ошибок |
-| Рефакторинг существующей анимации | `debug` для start/duration ключевых точек |
-| Исправление бага с таймингом | временно поднять до `trace` affected-модуль |
+| Ситуация                          | Уровень                                     |
+| --------------------------------- | ------------------------------------------- |
+| Новый анимированный компонент     | `debug` для каждой фазы анимации            |
+| Новый компонент с роутингом       | `info` при монтировании/размонтировании     |
+| Компонент с async-операциями      | `warn` для fallback, `error` для ошибок     |
+| Рефакторинг существующей анимации | `debug` для start/duration ключевых точек   |
+| Исправление бага с таймингом      | временно поднять до `trace` affected-модуль |
 
 ---
 
@@ -113,6 +114,7 @@ logger.trace('IntroAnimation', 'Master timeline progress', master.time());
 ## 7. Соблюдение в команде / code review
 
 При code review обращай внимание на:
+
 - Передачу module-тега первым аргументом
 - Соответствие уровня ситуации (не `info` для мелочей, не `trace` для обычного дебага)
 - Отсутствие `onUpdate`-логов в ревью

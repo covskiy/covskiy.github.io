@@ -6,11 +6,11 @@ IntroAnimation рендерится как оверлей (`position: fixed; ins
 
 ## Управление состоянием
 
-| Флаг             | Хранилище      | Механизм                                   |
-| ---------------- | -------------- | ------------------------------------------ |
-| `showIntro`      | `HomePage`     | Инициализируется из `introStorage.getNeverShow()` |
-| `showSkipButton` | `IntroAnimation` | Таймер показа кнопки пропуска            |
-| `neverShowAgain` | `IntroAnimation` | Чекбокс "Больше не показывать"           |
+| Флаг             | Хранилище        | Механизм                                          |
+| ---------------- | ---------------- | ------------------------------------------------- |
+| `showIntro`      | `HomePage`       | Инициализируется из `introStorage.getNeverShow()` |
+| `showSkipButton` | `IntroAnimation` | Таймер показа кнопки пропуска                     |
+| `neverShowAgain` | `IntroAnimation` | Чекбокс "Больше не показывать"                    |
 
 **Примечание**: Логика skip инлайнена в `IntroAnimation.tsx`. Решение о показе intro принимается в `HomePage` на основе `introStorage.getNeverShow()`.
 
@@ -43,10 +43,10 @@ types/
 
 ## Последовательность анимации
 
-| Время (сек) | Элемент  | Реальная анимация                                                                                               |
-| ----------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                   |
-| `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`) |
+| Время (сек) | Элемент  | Реальная анимация                                                                                                                                        |
+| ----------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                                                            |
+| `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`)                                          |
 | `1.5`       | Tagline  | Клавиатура влетает сверху (синхронно с морфом гвоздя → курсор в LogoText), затем подсветка клавиш синхронно с началом морфинга букв, в конце — SplitText |
 
 **Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `INTRO_CHOREOGRAPHY` в `choreography.ts`).
@@ -58,17 +58,17 @@ Tagline зарегистрирован на master-таймлайне в поз�
 - **Влёт клавиатуры** (master `1.5`) — синхронно с началом морфа гвоздя в курсор (`Cursor.phaseCaret.start`).
 - **Подсветка клавиш** (master `1.9`–`4.0`) — синхронно с началом морфа соответствующей буквы.
 
-| Master-время | Tagline (событие)                | LogoText (начало морфинга)                                       |
-| ------------ | -------------------------------- | ---------------------------------------------------------------- |
-| 1.5          | Влёт клавиатуры                  | `Cursor.phaseCaret.start` (морф гвоздь → курсор)                 |
-| 1.9          | Подсветка `C`                    | C: `phaseLetter.start`                                           |
-| 2.59         | Подсветка `O`                    | O: `phaseDash.start + phaseLetter.delay`                         |
-| 2.85         | Подсветка `V`                    | V: `phaseDash.start + phaseLetter.delay`                         |
-| 3.07         | Подсветка `S`                    | S: `phaseDash.start + phaseLetter.delay`                         |
-| 3.3          | Подсветка `K`                    | K: `phaseDash.start + phaseLetter.delay`                         |
-| 3.45         | Подсветка `I`                    | I: `phaseDash.start + phaseLetter.delay`                         |
-| 3.6          | Подсветка `Y`                    | Y: `phaseDash.start + phaseLetter.delay`                         |
-| 4.2          | Подсветка `ENTER`                | `logoText.sparks.burst1` (первая эмиссия частиц)                   |
+| Master-время | Tagline (событие) | LogoText (начало морфинга)                       |
+| ------------ | ----------------- | ------------------------------------------------ |
+| 1.5          | Влёт клавиатуры   | `Cursor.phaseCaret.start` (морф гвоздь → курсор) |
+| 1.9          | Подсветка `C`     | C: `phaseLetter.start`                           |
+| 2.59         | Подсветка `O`     | O: `phaseDash.start + phaseLetter.delay`         |
+| 2.85         | Подсветка `V`     | V: `phaseDash.start + phaseLetter.delay`         |
+| 3.07         | Подсветка `S`     | S: `phaseDash.start + phaseLetter.delay`         |
+| 3.3          | Подсветка `K`     | K: `phaseDash.start + phaseLetter.delay`         |
+| 3.45         | Подсветка `I`     | I: `phaseDash.start + phaseLetter.delay`         |
+| 3.6          | Подсветка `Y`     | Y: `phaseDash.start + phaseLetter.delay`         |
+| 4.2          | Подсветка `ENTER` | `logoText.sparks.burst1` (первая эмиссия частиц) |
 
 Все позиции вычисляются в `Tagline.tsx` программно из `INTRO_CHOREOGRAPHY.logoText` (`Cursor.phaseCaret.start`, `C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`). `ENTER` привязан к `logoText.sparks.burst1`.
 
@@ -137,7 +137,9 @@ function HomePage() {
 
   useEffect(() => {
     document.body.style.overflow = showIntro ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [showIntro]);
 
   const handleIntroComplete = () => setShowIntro(false);

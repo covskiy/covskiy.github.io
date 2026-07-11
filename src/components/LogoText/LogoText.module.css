@@ -21,7 +21,11 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--color-glow-300), var(--color-glow-600));
+  background: radial-gradient(
+    circle at 35% 35%,
+    var(--color-glow-300),
+    var(--color-glow-600)
+  );
   box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
   z-index: 1;
 }

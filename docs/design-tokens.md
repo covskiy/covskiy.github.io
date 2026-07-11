@@ -8,15 +8,15 @@
 
 JSON-файлы в `design-tokens/`:
 
-| Файл | Содержимое |
-|---|---|
-| `breakpoints.json` | `breakpoints` (min-width) |
-| `colors.json` | `color` (primary/purple/gray/success/error, 25..900) + `color-gradient` |
-| `shadows.json` | `shadows` (level-1..4) |
-| `sizing.json` | `sizing` (inputHeight, buttonHeight, containerMaxWidth, avatarSize, iconSize) + `borderRadius` |
-| `spacing.json` | `spacing` (xxs, xs, sm, md, lg, xl, xxl) |
-| `transition.json` | `transitions` (short, medium, long) + easing |
-| `typography.json` | `fontFamilies`, `fontSizes`, `lineHeights`, `fontWeights`, `letterSpacings` |
+| Файл               | Содержимое                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `breakpoints.json` | `breakpoints` (min-width)                                                                      |
+| `colors.json`      | `color` (primary/purple/gray/success/error, 25..900) + `color-gradient`                        |
+| `shadows.json`     | `shadows` (level-1..4)                                                                         |
+| `sizing.json`      | `sizing` (inputHeight, buttonHeight, containerMaxWidth, avatarSize, iconSize) + `borderRadius` |
+| `spacing.json`     | `spacing` (xxs, xs, sm, md, lg, xl, xxl)                                                       |
+| `transition.json`  | `transitions` (short, medium, long) + easing                                                   |
+| `typography.json`  | `fontFamilies`, `fontSizes`, `lineHeights`, `fontWeights`, `letterSpacings`                    |
 
 ## 2. Конфиг — `sd.config.js`
 
@@ -32,15 +32,15 @@ JSON-файлы в `design-tokens/`:
 
 ## 3. Маппинг категория → файл
 
-| Категория | Файл |
-|---|---|
-| `color`, `color-gradient` | `colors.css` |
-| `fontFamilies`, `fontSizes`, `lineHeights`, `fontWeights`, `letterSpacings`, `typography` | `typography.css` |
-| `spacing` | `spacing.css` |
-| `breakpoints` | `breakpoints.css` |
-| `shadows` | `shadows.css` |
-| `transitions` | `transitions.css` |
-| `borderRadius`, `sizing` | `sizing.css` |
+| Категория                                                                                 | Файл              |
+| ----------------------------------------------------------------------------------------- | ----------------- |
+| `color`, `color-gradient`                                                                 | `colors.css`      |
+| `fontFamilies`, `fontSizes`, `lineHeights`, `fontWeights`, `letterSpacings`, `typography` | `typography.css`  |
+| `spacing`                                                                                 | `spacing.css`     |
+| `breakpoints`                                                                             | `breakpoints.css` |
+| `shadows`                                                                                 | `shadows.css`     |
+| `transitions`                                                                             | `transitions.css` |
+| `borderRadius`, `sizing`                                                                  | `sizing.css`      |
 
 ## 4. Градиенты
 

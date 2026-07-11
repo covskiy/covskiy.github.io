@@ -306,15 +306,15 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент        | Назначение                                |
-| ---------------- | ----------------------------------------- |
-| `Logo`           | Наковальня, drawSVG (Intro)               |
-| `LogoText`       | Текст "COVSKIY" — SVG morph между формами |
-| `Tagline`        | Слоган — клавиатура, поэтапная анимация   |
-| `SkipControls`   | Кнопки skip / never-show для Intro        |
+| Компонент        | Назначение                                     |
+| ---------------- | ---------------------------------------------- |
+| `Logo`           | Наковальня, drawSVG (Intro)                    |
+| `LogoText`       | Текст "COVSKIY" — SVG morph между формами      |
+| `Tagline`        | Слоган — клавиатура, поэтапная анимация        |
+| `SkipControls`   | Кнопки skip / never-show для Intro             |
 | `IntroAnimation` | Intro overlay (position: fixed, поверх layout) |
-| `NavigationBar`  | Навигация (фикс. слева)                   |
-| `PageTransition` | Обёртка анимации смены роута              |
+| `NavigationBar`  | Навигация (фикс. слева)                        |
+| `PageTransition` | Обёртка анимации смены роута                   |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.
@@ -454,11 +454,11 @@ Skip-логика — хук `useSplashSkip(timeline, onSkip, skipDelay)`. В т
 
 ### 9.1 `window.introDebug`
 
-| Метод         | Действие                                                  |
-| ------------- | --------------------------------------------------------- |
+| Метод         | Действие                                                 |
+| ------------- | -------------------------------------------------------- |
 | `reset()`     | `introStorage.clearFlag()` + reload (intro покажется)    |
-| `forceShow()` | `setNeverShow(false)` + reload                            |
-| `forceHide()` | `setNeverShow(true)` + reload (intro не покажется)        |
+| `forceShow()` | `setNeverShow(false)` + reload                           |
+| `forceHide()` | `setNeverShow(true)` + reload (intro не покажется)       |
 | `status()`    | `console.log('neverShow:', introStorage.getNeverShow())` |
 
 ### 9.2 `window.loggerDebug`
@@ -519,25 +519,25 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 
 ## 11. Сводка файлов — быстрый поиск
 
-| Задача                       | Файл                                                |
-| ---------------------------- | --------------------------------------------------- |
-| Точка входа JS               | `src/main.tsx`                                      |
-| Корневой компонент           | `src/App.tsx`                                       |
-| Все роуты                    | `src/routes.tsx`                                    |
-| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`  |
-| Intro storage               | `src/components/IntroAnimation/utils/introStorage.ts` |
+| Задача                       | Файл                                                   |
+| ---------------------------- | ------------------------------------------------------ |
+| Точка входа JS               | `src/main.tsx`                                         |
+| Корневой компонент           | `src/App.tsx`                                          |
+| Все роуты                    | `src/routes.tsx`                                       |
+| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`     |
+| Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`  |
 | Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts` |
-| Типы intro                  | `src/types/intro.types.ts`                         |
-| GSAP-инициализация           | `src/utils/initGsap.ts`                             |
-| Логгер                       | `src/utils/logger.ts`                               |
-| Design tokens build          | `sd.config.js`                                      |
-| Design tokens источник       | `design-tokens/*.json`                              |
-| Design tokens (документация) | `docs/design-tokens.md`                             |
-| Сгенерированные токены       | `src/styles/*.css`                                  |
-| Preloader HTML               | `index.html`                                        |
-| Vite config                  | `vite.config.ts`                                    |
-| ESLint config                | `eslint.config.js`                                  |
-| Deploy CI                    | `.github/workflows/deploy.yml`                      |
-| Husky hook                   | `.husky/pre-commit`                                 |
-| Скрипты npm                  | `package.json`                                      |
-| Обзор проекта (для AI)       | `AGENTS.md`                                         |
+| Типы intro                   | `src/types/intro.types.ts`                             |
+| GSAP-инициализация           | `src/utils/initGsap.ts`                                |
+| Логгер                       | `src/utils/logger.ts`                                  |
+| Design tokens build          | `sd.config.js`                                         |
+| Design tokens источник       | `design-tokens/*.json`                                 |
+| Design tokens (документация) | `docs/design-tokens.md`                                |
+| Сгенерированные токены       | `src/styles/*.css`                                     |
+| Preloader HTML               | `index.html`                                           |
+| Vite config                  | `vite.config.ts`                                       |
+| ESLint config                | `eslint.config.js`                                     |
+| Deploy CI                    | `.github/workflows/deploy.yml`                         |
+| Husky hook                   | `.husky/pre-commit`                                    |
+| Скрипты npm                  | `package.json`                                         |
+| Обзор проекта (для AI)       | `AGENTS.md`                                            |

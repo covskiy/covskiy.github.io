@@ -8,16 +8,16 @@ React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pag
 
 ## Команды
 
-| Скрипт | Назначение |
-|---|---|
-| `npm run dev` | Dev-сервер на `0.0.0.0:3005` с HMR |
-| `npm run build` | `tsc -b && vite build` — типы + production-сборка |
-| `npm run build:design-tokens` | `style-dictionary build` — JSON → `src/styles/*.css` |
-| `npm run preview` | Локальный просмотр production-сборки |
-| `npm run lint` / `lint:fix` | ESLint |
-| `npm run format` / `format:fix` | Prettier |
-| `npm run stylelint` / `stylelint:fix` | Stylelint по `src/**/*.css` |
-| `npm run precommit:check` | Ручной запуск lint-staged |
+| Скрипт                                | Назначение                                           |
+| ------------------------------------- | ---------------------------------------------------- |
+| `npm run dev`                         | Dev-сервер на `0.0.0.0:3005` с HMR                   |
+| `npm run build`                       | `tsc -b && vite build` — типы + production-сборка    |
+| `npm run build:design-tokens`         | `style-dictionary build` — JSON → `src/styles/*.css` |
+| `npm run preview`                     | Локальный просмотр production-сборки                 |
+| `npm run lint` / `lint:fix`           | ESLint                                               |
+| `npm run format` / `format:fix`       | Prettier                                             |
+| `npm run stylelint` / `stylelint:fix` | Stylelint по `src/**/*.css`                          |
+| `npm run precommit:check`             | Ручной запуск lint-staged                            |
 
 ## Структура (верхний уровень)
 
@@ -83,25 +83,27 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл | Назначение |
-|---|---|
-| `docs/architecture.md` | Архитектура, роутинг, GSAP, стили, конфиги |
-| `docs/design-tokens.md` | Сборка design tokens, маппинг, градиенты |
-| `docs/preloader.md` | Preloader — описание работы |
-| `docs/logging-rules.md` | Соглашения по логгеру (теги, уровни) |
-| `docs/utils/logger.md` | API логгера |
-| `docs/Components/Logo.md` | Анимация логотипа (наковальня) |
-| `docs/Components/LogoText.md` | Анимация текста логотипа (SVG morph) |
-| `docs/Components/Tagline.md` | Анимация слогана (клавиатура) |
-| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации |
-| `docs/Pages/NotFoundPage.md` | Описание страницы 404 |
+| Файл                                | Назначение                                 |
+| ----------------------------------- | ------------------------------------------ |
+| `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги |
+| `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты   |
+| `docs/preloader.md`                 | Preloader — описание работы                |
+| `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)       |
+| `docs/utils/logger.md`              | API логгера                                |
+| `docs/Components/Logo.md`           | Анимация логотипа (наковальня)             |
+| `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)       |
+| `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)              |
+| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                 |
+| `docs/Pages/NotFoundPage.md`        | Описание страницы 404                      |
 
 ## Зависимости
 
 ### Runtime
+
 `react`, `react-dom`, `react-router` (v7), `gsap`, `@gsap/react`.
 
 ### Dev
+
 - **Сборка**: `vite`, `@vitejs/plugin-react`, `vite-plugin-svgr`,
   `@svgr/plugin-svgo`, `browserslist`, `lightningcss`.
 - **Токены**: `style-dictionary`.
@@ -115,6 +117,7 @@ covskiy.github.io/
 ## CI/CD
 
 `.github/workflows/deploy.yml`:
+
 - Триггер: `push` в `main` (или `workflow_dispatch`).
 - `ubuntu-latest`, Node `24.12.0`, `npm ci`.
 - `npm run build` → `cp dist/index.html dist/404.html` →
@@ -136,11 +139,13 @@ covskiy.github.io/
 LLM должна следовать этим правилам при составлении commit message.
 
 **Subject (заголовок):**
+
 - 1–3 слова, Title Case (`LogoText`, `IntroAnimation`, `Design Tokens`).
 - Совпадает с именем затронутого компонента/фичи.
 - Без префиксов (`feat:`, `fix:`, `chore:`) и без точки в конце.
 
 **Body (тело):**
+
 - Маркированный список на русском, тире `—` или `-` с пробелом.
 - Первое слово каждого пункта — с маленькой буквы.
 - Глаголы прошедшего времени совершенного вида:

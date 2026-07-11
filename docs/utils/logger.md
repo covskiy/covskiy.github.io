@@ -34,12 +34,12 @@ logger.trace(module: string, ...args: unknown[]): void
 ## Уровни логирования
 
 | Уровень | Числовой вес | Дефолт DEV | Дефолт PROD |
-|---------|-------------|------------|-------------|
-| error   | 0           | ✓          | ✓           |
-| warn    | 1           | ✓          | ✓           |
-| info    | 2           | ✓          | ✗           |
-| debug   | 3           | ✓          | ✗           |
-| trace   | 4           | ✗          | ✗           |
+| ------- | ------------ | ---------- | ----------- |
+| error   | 0            | ✓          | ✓           |
+| warn    | 1            | ✓          | ✓           |
+| info    | 2            | ✓          | ✗           |
+| debug   | 3            | ✓          | ✗           |
+| trace   | 4            | ✗          | ✗           |
 
 Вызов метода срабатывает, если его числовой вес ≤ порогу.
 
@@ -49,9 +49,9 @@ logger.trace(module: string, ...args: unknown[]): void
 
 ```js
 // В консоли браузера:
-localStorage.setItem('loggerLevel', 'trace');  // максимум деталей
-localStorage.setItem('loggerLevel', 'info');    // только важное
-localStorage.removeItem('loggerLevel');         // сброс к дефолту
+localStorage.setItem('loggerLevel', 'trace'); // максимум деталей
+localStorage.setItem('loggerLevel', 'info'); // только важное
+localStorage.removeItem('loggerLevel'); // сброс к дефолту
 ```
 
 Доступные значения: `error`, `warn`, `info`, `debug`, `trace`.
@@ -61,10 +61,10 @@ localStorage.removeItem('loggerLevel');         // сброс к дефолту
 В dev-режиме на `window` доступен объект `loggerDebug` для удобного управления уровнем без ручной работы с `localStorage`:
 
 ```js
-loggerDebug.setLevel('trace');   // Установить уровень + запись в localStorage
-loggerDebug.status();            // Показать текущий уровень и значение в localStorage
-loggerDebug.reset();             // Сброс на debug (по умолчанию)
-loggerDebug.levels();            // Список доступных уровней с весами
+loggerDebug.setLevel('trace'); // Установить уровень + запись в localStorage
+loggerDebug.status(); // Показать текущий уровень и значение в localStorage
+loggerDebug.reset(); // Сброс на debug (по умолчанию)
+loggerDebug.levels(); // Список доступных уровней с весами
 ```
 
 > `setLevel()` применяет уровень мгновенно (без перезагрузки страницы). При reload значение подхватывается из `localStorage`.
@@ -74,6 +74,7 @@ loggerDebug.levels();            // Список доступных уровне
 Первый аргумент (`module`) отображается цветным тегом в квадратных скобках для визуального разделения сообщений.
 
 Пример вывода в консоль:
+
 ```
 [PageTransition] Entering /about
 [IntroAnimation]  Master timeline created
@@ -85,6 +86,7 @@ loggerDebug.levels();            // Список доступных уровне
 ## Производственный режим
 
 В production (`import.meta.env.PROD`):
+
 - Вызовы `info`, `debug`, `trace` завершаются мгновенно (ранний return)
 - `error` и `warn` работают как обычно
 - Дополнительные байты в бандле: ~300 gzip (все 5 методов, но три из них — пустышки)
@@ -105,6 +107,7 @@ interface LogTransport {
 ## Примеры использования
 
 **IntroAnimation:**
+
 ```ts
 logger.info('IntroAnimation', 'Master timeline building');
 const master = gsap.timeline({
@@ -116,15 +119,20 @@ const master = gsap.timeline({
 ```
 
 **PageTransition:**
+
 ```ts
 logger.debug('PageTransition', `Entering ${location.pathname}`);
-useGSAP(() => {
-  logger.info('PageTransition', 'Entrance animation started');
-  // ... GSAP анимация
-}, { dependencies: [location.pathname] });
+useGSAP(
+  () => {
+    logger.info('PageTransition', 'Entrance animation started');
+    // ... GSAP анимация
+  },
+  { dependencies: [location.pathname] },
+);
 ```
 
 **LogoText — фазы анимации:**
+
 ```ts
 logger.debug('LogoText', 'C phaseShoe', {
   x: letterC.phaseShoe.xPosition,

@@ -9,12 +9,14 @@ _Техническое задание на воссоздание анимац�
 Визуальный эффект: после завершения сборки букв C-O-V-S-K-I-Y над логотипом вылетают два пучка искр (горизонтально влево, с лёгким случайным наклоном). Искры видны **только внутри контуров букв** (Path2D-клиппинг).
 
 **Скоуп ТЗ:**
+
 - Particle system (физика, 3-слойная отрисовка, cull).
 - Эмиссионный твин на `localTimeline` (оркестрация burst'ов).
 - Canvas-инфраструктура (DPR-sync, Path2D clip, gsap.ticker-цикл).
 - Конфигурация в `splashChoreography.ts`.
 
 **Не в скоупе:**
+
 - SVG-морфинг букв (отдельный билдер `timelines.ts`).
 - Master timeline, Splash-логика, `useGSAP`-обёртка — отдельные ТЗ.
 - Layout / CSS-модули, кроме `.canvas { aspect-ratio: 200/150 }`.
@@ -24,13 +26,13 @@ _Техническое задание на воссоздание анимац�
 
 ## 2. Контекст и стек
 
-| Категория | Технология |
-| --- | --- |
-| Фреймворк | React 19 |
-| Язык | TypeScript 5.3+ |
-| Анимация | GSAP 3.14+ + `@gsap/react` |
-| Рендеринг частиц | Canvas 2D API |
-| Сборка | Vite 5+ |
+| Категория        | Технология                 |
+| ---------------- | -------------------------- |
+| Фреймворк        | React 19                   |
+| Язык             | TypeScript 5.3+            |
+| Анимация         | GSAP 3.14+ + `@gsap/react` |
+| Рендеринг частиц | Canvas 2D API              |
+| Сборка           | Vite 5+                    |
 
 **Связь с другими частями:** эмиссия запускается в `useGSAP`-колбэке компонента `LogoText`, привязана к `localTimeline`, которая в свою очередь вкладывается в master-таймлайн `SplashPage`. Эффект проигрывается на master-времени **4.2s** (burst1) и **4.7s** (burst2).
 
@@ -63,22 +65,22 @@ particle system (sparks.ts)
 
 ### 4.1. Общие параметры (все профили)
 
-| Поле | Тип | Смысл |
-| --- | --- | --- |
-| `burst1` | `number` (s) | Позиция первого пучка на `localTimeline` (по умолчанию `4.2`). |
-| `burst2` | `number` (s) | Позиция второго пучка (по умолчанию `4.7`). |
-| `burstBoostFactor` | `number` | Множитель `vx` для уже летящих искр при `boostAll()` (по умолчанию `1.7`). |
-| `emit.yMinFrac` | `number` (0..1) | Нижняя граница Y-полосы эмиссии (доля высоты канваса). |
-| `emit.yMaxFrac` | `number` (0..1) | Верхняя граница Y-полосы эмиссии. |
-| `emit.xOffset` | `number` (px) | Отступ от правого края канваса (искры сразу летят влево). |
-| `coneHalfAngle` | `number` (rad) | Полуугол разброса стартовой `vx` от `BASE_ANGLE = π`. |
-| `colors` | `readonly string[]` | Палитра core. Индекс = `(1 - life) × length`: `[0]` — свежее (белое), `[N-1]` — тухлое (красное). 4 цвета = 4 фазы остывания. |
-| `smokeHalo.radius` | `number` | Радиус halo = `size × radius` (обычно 2.2). |
-| `smokeHalo.alpha` | `number` (0..1) | Прозрачность halo. |
-| `smokeHalo.color` | `string` | Тёмный «дымный» цвет halo. |
-| `tailColor` | `string` | Фиксированный цвет кометного хвоста (source-over, не аддитивный). |
-| `coreAlphaMultipliers.burst1` | `number` | Множитель яркости для искр из burst1 (длиннее peak-фаза). |
-| `coreAlphaMultipliers.burst2` | `number` | Множитель яркости для burst2 (стандартно). |
+| Поле                          | Тип                 | Смысл                                                                                                                         |
+| ----------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `burst1`                      | `number` (s)        | Позиция первого пучка на `localTimeline` (по умолчанию `4.2`).                                                                |
+| `burst2`                      | `number` (s)        | Позиция второго пучка (по умолчанию `4.7`).                                                                                   |
+| `burstBoostFactor`            | `number`            | Множитель `vx` для уже летящих искр при `boostAll()` (по умолчанию `1.7`).                                                    |
+| `emit.yMinFrac`               | `number` (0..1)     | Нижняя граница Y-полосы эмиссии (доля высоты канваса).                                                                        |
+| `emit.yMaxFrac`               | `number` (0..1)     | Верхняя граница Y-полосы эмиссии.                                                                                             |
+| `emit.xOffset`                | `number` (px)       | Отступ от правого края канваса (искры сразу летят влево).                                                                     |
+| `coneHalfAngle`               | `number` (rad)      | Полуугол разброса стартовой `vx` от `BASE_ANGLE = π`.                                                                         |
+| `colors`                      | `readonly string[]` | Палитра core. Индекс = `(1 - life) × length`: `[0]` — свежее (белое), `[N-1]` — тухлое (красное). 4 цвета = 4 фазы остывания. |
+| `smokeHalo.radius`            | `number`            | Радиус halo = `size × radius` (обычно 2.2).                                                                                   |
+| `smokeHalo.alpha`             | `number` (0..1)     | Прозрачность halo.                                                                                                            |
+| `smokeHalo.color`             | `string`            | Тёмный «дымный» цвет halo.                                                                                                    |
+| `tailColor`                   | `string`            | Фиксированный цвет кометного хвоста (source-over, не аддитивный).                                                             |
+| `coreAlphaMultipliers.burst1` | `number`            | Множитель яркости для искр из burst1 (длиннее peak-фаза).                                                                     |
+| `coreAlphaMultipliers.burst2` | `number`            | Множитель яркости для burst2 (стандартно).                                                                                    |
 
 **Формула яркости core:** `coreAlpha = min(1, life × multiplier)`. Фаза полной яркости (`alpha = 1`) = первые `(1 - 1/multiplier) × 100%` жизни. Типичные значения: `burst1 ≈ 2.5` → 60% peak-фазы, `burst2 ≈ 1.4` → 29%.
 
@@ -86,24 +88,24 @@ particle system (sparks.ts)
 
 ```ts
 type SparkProfile = {
-  count: number;            // искр в одном sub-spawn
-  sizeMin: number;          // минимальный радиус ядра (px)
-  sizeMax: number;          // максимальный радиус ядра (px)
-  lifetime: number;         // базовая длительность жизни (s)
-  lifetimeJitter: number;   // ±N% (0 = одинаковые, 1 = ±100%)
-  friction: number;         // затухание vx: vx *= (1 - friction*dt), 1/s
-  initialSpeedMin: number;  // стартовый |vx| (px/s), нижняя граница
-  initialSpeedMax: number;  // стартовый |vx| (px/s), верхняя граница
-  windX: number;            // постоянное горизонтальное ускорение (px/s², <0 = влево)
-  ampY: number;             // амплитуда синуса Y (px)
-  ampYJitter: number;       // ±N% разброс амплитуды per-spark
-  periodY: number;          // период синуса Y (s)
-  periodYJitter: number;    // ±N% разброс периода per-spark
-  slopeMax: number;         // макс |наклон| траектории (0.2 ≈ ±11°)
-  tailLength: number;       // кол-во точек в кометном хвосте
-  subSpawns: number;        // кол-во порывов ветра внутри пучка
+  count: number; // искр в одном sub-spawn
+  sizeMin: number; // минимальный радиус ядра (px)
+  sizeMax: number; // максимальный радиус ядра (px)
+  lifetime: number; // базовая длительность жизни (s)
+  lifetimeJitter: number; // ±N% (0 = одинаковые, 1 = ±100%)
+  friction: number; // затухание vx: vx *= (1 - friction*dt), 1/s
+  initialSpeedMin: number; // стартовый |vx| (px/s), нижняя граница
+  initialSpeedMax: number; // стартовый |vx| (px/s), верхняя граница
+  windX: number; // постоянное горизонтальное ускорение (px/s², <0 = влево)
+  ampY: number; // амплитуда синуса Y (px)
+  ampYJitter: number; // ±N% разброс амплитуды per-spark
+  periodY: number; // период синуса Y (s)
+  periodYJitter: number; // ±N% разброс периода per-spark
+  slopeMax: number; // макс |наклон| траектории (0.2 ≈ ±11°)
+  tailLength: number; // кол-во точек в кометном хвосте
+  subSpawns: number; // кол-во порывов ветра внутри пучка
   subSpawnInterval: number; // секунд между sub-spawn'ами
-  burstDuration: number;    // длительность одного непрерывного потока sub-spawn (s)
+  burstDuration: number; // длительность одного непрерывного потока sub-spawn (s)
 };
 ```
 
@@ -112,6 +114,7 @@ type SparkProfile = {
 ## 5. Параметры профилей (mobile / tablet / desktop)
 
 Профили выбираются по `window.innerWidth` в `useSparkCanvas.ts:15-20`:
+
 - `width < 481` → `mobile`
 - `width < 1025` → `tablet`
 - `иначе` → `desktop`
@@ -120,57 +123,57 @@ type SparkProfile = {
 
 ### 5.1. Mobile (`< 481px`)
 
-| Параметр | Диапазон / значение | Тренд (vs desktop) |
-| --- | --- | --- |
-| `count` | `~30` | базовый |
-| `sizeMin..sizeMax` | `~1.6..3.0` px | **крупнее** |
-| `lifetime` | `~1.8` s (±50%) | короче |
-| `friction` | `~0.5` 1/s | ниже (медленнее тормозят) |
-| `initialSpeedMin..Max` | `~70..150` px/s | **медленнее** |
-| `windX` | `~-30` px/s² | слабее ветер |
-| `ampY` | `~9` px | меньше рябь |
-| `periodY` | `~0.55` s | реже колебания |
-| `slopeMax` | `~0.18` | положе траектории |
-| `subSpawns` | `1` | **один непрерывный поток** |
-| `subSpawnInterval` | `0` | n/a |
-| `burstDuration` | `~0.35` s | длиннее окно эмиссии |
-| `tailLength` | `10` | базовый |
+| Параметр               | Диапазон / значение | Тренд (vs desktop)         |
+| ---------------------- | ------------------- | -------------------------- |
+| `count`                | `~30`               | базовый                    |
+| `sizeMin..sizeMax`     | `~1.6..3.0` px      | **крупнее**                |
+| `lifetime`             | `~1.8` s (±50%)     | короче                     |
+| `friction`             | `~0.5` 1/s          | ниже (медленнее тормозят)  |
+| `initialSpeedMin..Max` | `~70..150` px/s     | **медленнее**              |
+| `windX`                | `~-30` px/s²        | слабее ветер               |
+| `ampY`                 | `~9` px             | меньше рябь                |
+| `periodY`              | `~0.55` s           | реже колебания             |
+| `slopeMax`             | `~0.18`             | положе траектории          |
+| `subSpawns`            | `1`                 | **один непрерывный поток** |
+| `subSpawnInterval`     | `0`                 | n/a                        |
+| `burstDuration`        | `~0.35` s           | длиннее окно эмиссии       |
+| `tailLength`           | `10`                | базовый                    |
 
 ### 5.2. Tablet (`481..1024px`)
 
-| Параметр | Диапазон / значение | Тренд (vs desktop) |
-| --- | --- | --- |
-| `count` | `~30` | базовый |
-| `sizeMin..sizeMax` | `~1.2..2.2` px | средний |
-| `lifetime` | `~2.2` s | средний |
-| `friction` | `~0.55` 1/s | средний |
-| `initialSpeedMin..Max` | `~90..200` px/s | средний |
-| `windX` | `~-50` px/s² | средний |
-| `ampY` | `~11` px | средний |
-| `periodY` | `~0.5` s | средний |
-| `slopeMax` | `~0.2` | средний |
-| `subSpawns` | `1` | один поток |
-| `subSpawnInterval` | `0` | n/a |
-| `burstDuration` | `~0.4` s | длиннее |
-| `tailLength` | `10` | базовый |
+| Параметр               | Диапазон / значение | Тренд (vs desktop) |
+| ---------------------- | ------------------- | ------------------ |
+| `count`                | `~30`               | базовый            |
+| `sizeMin..sizeMax`     | `~1.2..2.2` px      | средний            |
+| `lifetime`             | `~2.2` s            | средний            |
+| `friction`             | `~0.55` 1/s         | средний            |
+| `initialSpeedMin..Max` | `~90..200` px/s     | средний            |
+| `windX`                | `~-50` px/s²        | средний            |
+| `ampY`                 | `~11` px            | средний            |
+| `periodY`              | `~0.5` s            | средний            |
+| `slopeMax`             | `~0.2`              | средний            |
+| `subSpawns`            | `1`                 | один поток         |
+| `subSpawnInterval`     | `0`                 | n/a                |
+| `burstDuration`        | `~0.4` s            | длиннее            |
+| `tailLength`           | `10`                | базовый            |
 
 ### 5.3. Desktop (`≥ 1025px`)
 
-| Параметр | Диапазон / значение | Тренд (vs mobile) |
-| --- | --- | --- |
-| `count` | `~33` | базовый |
-| `sizeMin..sizeMax` | `~0.9..1.8` px | **мельче** |
-| `lifetime` | `~2.6` s (±50%) | **дольше живут** |
-| `friction` | `~0.6` 1/s | выше (быстрее тормозят) |
-| `initialSpeedMin..Max` | `~120..260` px/s | **быстрее** |
-| `windX` | `~-75` px/s² | **сильнее ветер** |
-| `ampY` | `~14` px | **больше рябь** |
-| `periodY` | `~0.45` s | чаще колебания |
-| `slopeMax` | `~0.22` | круче траектории |
-| `subSpawns` | `3` | **3 ступенчатых порыва** |
-| `subSpawnInterval` | `~0.15` s | шаг между порывами |
-| `burstDuration` | `~0.18` s | **короче** окно эмиссии |
-| `tailLength` | `10` | базовый |
+| Параметр               | Диапазон / значение | Тренд (vs mobile)        |
+| ---------------------- | ------------------- | ------------------------ |
+| `count`                | `~33`               | базовый                  |
+| `sizeMin..sizeMax`     | `~0.9..1.8` px      | **мельче**               |
+| `lifetime`             | `~2.6` s (±50%)     | **дольше живут**         |
+| `friction`             | `~0.6` 1/s          | выше (быстрее тормозят)  |
+| `initialSpeedMin..Max` | `~120..260` px/s    | **быстрее**              |
+| `windX`                | `~-75` px/s²        | **сильнее ветер**        |
+| `ampY`                 | `~14` px            | **больше рябь**          |
+| `periodY`              | `~0.45` s           | чаще колебания           |
+| `slopeMax`             | `~0.22`             | круче траектории         |
+| `subSpawns`            | `3`                 | **3 ступенчатых порыва** |
+| `subSpawnInterval`     | `~0.15` s           | шаг между порывами       |
+| `burstDuration`        | `~0.18` s           | **короче** окно эмиссии  |
+| `tailLength`           | `10`                | базовый                  |
 
 **Сводка тренда** (от mobile к desktop): размер уменьшается, скорость растёт, ветер усиливается, рябь усиливается, время жизни растёт, sub-spawn'ов становится больше, окно одного потока короче. Терминальная скорость `vx_terminal = windX / friction` остаётся примерно одинаковой по модулю (~ -60..-125 px/s).
 
@@ -186,12 +189,16 @@ type SparkProfile = {
 const BASE_ANGLE = Math.PI; // влево
 const angleOffset = (Math.random() - 0.5) * 2 * shared.coneHalfAngle;
 const angle = BASE_ANGLE + angleOffset;
-const speed = profile.initialSpeedMin + Math.random() * (profile.initialSpeedMax - profile.initialSpeedMin);
+const speed =
+  profile.initialSpeedMin +
+  Math.random() * (profile.initialSpeedMax - profile.initialSpeedMin);
 const ampJitter = 1 + (Math.random() - 0.5) * 2 * profile.ampYJitter;
 const periodJitter = 1 + (Math.random() - 0.5) * 2 * profile.periodYJitter;
 const slope = (Math.random() - 0.5) * 2 * profile.slopeMax;
-const lifetime = profile.lifetime * (1 + (Math.random() - 0.5) * 2 * profile.lifetimeJitter);
-const size = profile.sizeMin + Math.random() * (profile.sizeMax - profile.sizeMin);
+const lifetime =
+  profile.lifetime * (1 + (Math.random() - 0.5) * 2 * profile.lifetimeJitter);
+const size =
+  profile.sizeMin + Math.random() * (profile.sizeMax - profile.sizeMin);
 const vx = Math.cos(angle) * speed;
 ```
 
@@ -219,7 +226,10 @@ s.life -= dt / s.lifetime;
 
 ```ts
 const hueIdx = Math.min(lastColorIdx, Math.floor((1 - s.life) * COLORS.length));
-const coreMult = s.burst === 2 ? shared.coreAlphaMultipliers.burst2 : shared.coreAlphaMultipliers.burst1;
+const coreMult =
+  s.burst === 2
+    ? shared.coreAlphaMultipliers.burst2
+    : shared.coreAlphaMultipliers.burst1;
 const coreAlpha = Math.min(1, s.life * coreMult);
 ```
 
@@ -247,15 +257,16 @@ const coreAlpha = Math.min(1, s.life * coreMult);
 
 ## 8. Отрисовка: 3 слоя
 
-| Слой | `globalCompositeOperation` | Цвет | Радиус | `globalAlpha` | Источник |
-| --- | --- | --- | --- | --- | --- |
-| **Tail** (комета) | `source-over` | `shared.tailColor` | `size × factor`, `factor = i / length` | `factor × life` | кольцевой `history[]` |
-| **Halo** (дым) | `source-over` | `shared.smokeHalo.color` | `size × smokeHalo.radius` | `smokeHalo.alpha × life` | одна окружность |
-| **Core** (ядро) | `lighter` | `colors[life-based index]` | `size` | `min(1, life × coreMult)` (per-burst) | одна окружность |
+| Слой              | `globalCompositeOperation` | Цвет                       | Радиус                                 | `globalAlpha`                         | Источник              |
+| ----------------- | -------------------------- | -------------------------- | -------------------------------------- | ------------------------------------- | --------------------- |
+| **Tail** (комета) | `source-over`              | `shared.tailColor`         | `size × factor`, `factor = i / length` | `factor × life`                       | кольцевой `history[]` |
+| **Halo** (дым)    | `source-over`              | `shared.smokeHalo.color`   | `size × smokeHalo.radius`              | `smokeHalo.alpha × life`              | одна окружность       |
+| **Core** (ядро)   | `lighter`                  | `colors[life-based index]` | `size`                                 | `min(1, life × coreMult)` (per-burst) | одна окружность       |
 
 Сброс состояния канваса в конце кадра: `globalAlpha = 1`, `globalCompositeOperation = 'source-over'`.
 
 Cull-чек перед `arc(...)`:
+
 ```ts
 if (s.x < X_MIN || s.x > X_MAX || s.y < Y_MIN || s.y > Y_MAX) {
   alive.push(s);
@@ -272,6 +283,7 @@ if (s.x < X_MIN || s.x > X_MAX || s.y < Y_MIN || s.y > Y_MAX) {
 **Почему один `Path2D` через `addPath`, а не 7 `ctx.clip`-вызовов:** повторный `ctx.clip()` даёт **пересечение** областей, а нам нужен **union** контуров букв.
 
 **CTM-трюк (в `useSparkCanvas.ts`):**
+
 ```ts
 ctx.save();
 ctx.setTransform(dpr * (w / SVG_VIEW_W), 0, 0, dpr * (h / SVG_VIEW_H), 0, 0);
@@ -326,17 +338,17 @@ src/pages/SplashPage/splashChoreography.ts
 
 ## 12. Граничные случаи
 
-| Кейс | Ожидаемое поведение |
-| --- | --- |
-| StrictMode double-invoke эффектов | `system.clear()` а не `destroy()` — флаг `destroyed` переживает cleanup, иначе re-mount не эмитит искры. |
-| Вкладка в фоне → возврат | GSAP `lagSmoothing(500, 33)` по умолчанию обрезает лаг; наш `Math.min(0.1, dt)` — финальная страховка от взрыва физики. |
-| Canvas не готов (`getContext('2d')` null) | `emitOne` no-op (warning в лог, sparks disabled). |
-| `clipPath` incomplete | `clipPathRef.current = null`, искры видны везде (warning в лог). |
-| Master `pause()` | Эмиссия паузится (твин — child `localTimeline`). Летящие искры догорают (ticker-цикл живёт). |
-| Master `reverse()` | `state.progress` идёт назад, `emitted` не уменьшается → новых искр не эмитится. |
-| Master `timeScale(0.5)` | Эмиссия замедляется пропорционально. |
-| `gsap.ticker` уже работает (другие tweens) | Конфликтов нет: наш loop добавляется в listeners, оба работают параллельно. |
-| Component unmount | `useGSAP` → `gsap.context().revert()` убивает все tweens, `gsap.ticker.remove(loop)` чистит loop. |
+| Кейс                                       | Ожидаемое поведение                                                                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| StrictMode double-invoke эффектов          | `system.clear()` а не `destroy()` — флаг `destroyed` переживает cleanup, иначе re-mount не эмитит искры.                |
+| Вкладка в фоне → возврат                   | GSAP `lagSmoothing(500, 33)` по умолчанию обрезает лаг; наш `Math.min(0.1, dt)` — финальная страховка от взрыва физики. |
+| Canvas не готов (`getContext('2d')` null)  | `emitOne` no-op (warning в лог, sparks disabled).                                                                       |
+| `clipPath` incomplete                      | `clipPathRef.current = null`, искры видны везде (warning в лог).                                                        |
+| Master `pause()`                           | Эмиссия паузится (твин — child `localTimeline`). Летящие искры догорают (ticker-цикл живёт).                            |
+| Master `reverse()`                         | `state.progress` идёт назад, `emitted` не уменьшается → новых искр не эмитится.                                         |
+| Master `timeScale(0.5)`                    | Эмиссия замедляется пропорционально.                                                                                    |
+| `gsap.ticker` уже работает (другие tweens) | Конфликтов нет: наш loop добавляется в listeners, оба работают параллельно.                                             |
+| Component unmount                          | `useGSAP` → `gsap.context().revert()` убивает все tweens, `gsap.ticker.remove(loop)` чистит loop.                       |
 
 ---
 

@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import type { AnimationComponentProps } from '../../types/splash.types';
-import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
+import type { AnimationComponentProps } from '../../types/intro.types';
+import { INTRO_CHOREOGRAPHY } from '../IntroAnimation/choreography';
 import LogoSvg from './anvil_md.svg?react';
 import styles from './Logo.module.css';
 
@@ -14,8 +14,8 @@ export function Logo({ onRegisterTimeline }: AnimationComponentProps) {
       if (!containerRef.current) return;
 
       const tl = gsap.timeline({ id: 'Logo.tsx timeline' });
-      const L = SPLASH_CHOREOGRAPHY.logo.labels;
-      const D = SPLASH_CHOREOGRAPHY.logo.durations;
+      const L = INTRO_CHOREOGRAPHY.logo.labels;
+      const D = INTRO_CHOREOGRAPHY.logo.durations;
 
       // Метки для стартовых точек анимации
       tl.addLabel('GLOW_START', L.GLOW_START)
@@ -44,7 +44,7 @@ export function Logo({ onRegisterTimeline }: AnimationComponentProps) {
           'GLOW_FADE_START',
         );
 
-      onRegisterTimeline(tl, SPLASH_CHOREOGRAPHY.master.labels.LOGO);
+      onRegisterTimeline(tl, INTRO_CHOREOGRAPHY.master.labels.LOGO);
     },
     { dependencies: [onRegisterTimeline], scope: containerRef },
   );

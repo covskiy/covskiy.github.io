@@ -74,7 +74,7 @@
   }
 
   @media (width >= 481px) {
-    max-width: min(90vw, var(--splash-logo-text-max-w, 420px));
+    max-width: min(90vw, var(--intro-logo-text-max-w, 420px));
   }
 }
 
@@ -95,6 +95,6 @@
   pointer-events: none;
 
   @media (width >= 481px) {
-    max-width: min(90vw, var(--splash-logo-text-max-w, 420px));
+    max-width: min(90vw, var(--intro-logo-text-max-w, 420px));
   }
 }

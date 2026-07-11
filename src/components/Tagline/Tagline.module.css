@@ -7,8 +7,8 @@
   flex-shrink: 0;
 
   @media (width >= 481px) {
-    max-width: min(90vw, var(--splash-tagline-max-w, 360px));
-    height: var(--splash-tagline-h, 10rem);
+    max-width: min(90vw, var(--intro-tagline-max-w, 360px));
+    height: var(--intro-tagline-h, 10rem);
   }
 }
 
@@ -25,7 +25,7 @@
 .keyboard svg {
   width: 100%;
   height: 100%;
-  max-width: var(--splash-keyboard-svg-max-w, 14rem);
+  max-width: var(--intro-keyboard-svg-max-w, 14rem);
   object-fit: contain;
 }
 

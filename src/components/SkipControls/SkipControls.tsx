@@ -1,22 +1,29 @@
 import { useState } from 'react';
-import type { SkipControlsProps } from '../../types/splash.types';
-import { splashStorage } from '../../pages/SplashPage';
+import type { SkipControlsProps } from '../../types/intro.types';
+import { introStorage } from '../IntroAnimation';
 import styles from './SkipControls.module.css';
 
 export function SkipControls({ onSkip }: SkipControlsProps) {
   const [neverShowAgain, setNeverShowAgain] = useState(() =>
-    splashStorage.getNeverShow(),
+    introStorage.getNeverShow(),
   );
 
   const handleChange = (checked: boolean) => {
     setNeverShowAgain(checked);
-    splashStorage.setNeverShow(checked);
+    introStorage.setNeverShow(checked);
+  };
+
+  const handleSkip = () => {
+    if (!neverShowAgain) {
+      introStorage.setSessionSkip();
+    }
+    onSkip();
   };
 
   return (
     <div className={styles.skipControls}>
       <button
-        onClick={onSkip}
+        onClick={handleSkip}
         className={styles.skipButton}
         aria-label="Пропустить анимацию"
       >

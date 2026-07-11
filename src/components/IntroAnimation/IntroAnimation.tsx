@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { LogoText, SkipControls, Tagline } from '../../components';
-import type { SplashPageProps } from '../../types/splash.types';
-import styles from './SplashPage.module.css';
-import { SPLASH_CHOREOGRAPHY } from './splashChoreography';
+import { LogoText, SkipControls, Tagline } from '..';
+import type { IntroAnimationProps } from '../../types/intro.types';
+import styles from './IntroAnimation.module.css';
+import { INTRO_CHOREOGRAPHY } from './choreography';
 import { useGSAP } from '@gsap/react';
 
 export type registerFunc = (masterTimeline: gsap.core.Timeline) => void;
 
-export function SplashPage({ onComplete, skipDelay }: SplashPageProps) {
+export function IntroAnimation({ onComplete, skipDelay }: IntroAnimationProps) {
   const timelineContainerRef = useRef<HTMLDivElement | null>(null);
   const childTimelinesRegistrationRef = useRef<Set<registerFunc>>(new Set());
   const masterTimelineRef = useRef<gsap.core.Timeline | null>(null);
@@ -42,14 +42,14 @@ export function SplashPage({ onComplete, skipDelay }: SplashPageProps) {
   useGSAP(
     () => {
       const master = gsap.timeline({
-        id: 'SplashPage_master_timeline',
+        id: 'IntroAnimation_master_timeline',
         paused: true,
         onComplete: () => onComplete?.(),
       });
 
       masterTimelineRef.current = master;
       childTimelinesRegistrationRef.current.forEach((func) => func(master));
-      master.to({}, { duration: SPLASH_CHOREOGRAPHY.master.holdDuration });
+      master.to({}, { duration: INTRO_CHOREOGRAPHY.master.holdDuration });
       master.play();
     },
     {
@@ -59,7 +59,7 @@ export function SplashPage({ onComplete, skipDelay }: SplashPageProps) {
   );
 
   return (
-    <div className={styles.splashContainer} ref={timelineContainerRef}>
+    <div className={styles.introOverlay} ref={timelineContainerRef}>
       <LogoText onRegisterTimeline={handleRegisterTimeline} />
       <Tagline onRegisterTimeline={handleRegisterTimeline} />
 

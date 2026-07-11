@@ -11,13 +11,13 @@
 Всегда передавай название модуля первым строковым аргументом. Это тег, который отображается цветом в консоли.
 
 ```ts
-logger.info('SplashPage', 'Master timeline created');   // ✓
-logger.info('master timeline created');                   // ✗ — нет тега
+logger.info('IntroAnimation', 'Master timeline created');   // ✓
+logger.info('master timeline created');                      // ✗ — нет тега
 ```
 
 **Соглашение по именованию тегов:**
-- Компоненты: `PascalCase` — `SplashPage`, `PageTransition`, `LogoText`
-- Утилиты: `camelCase` или как название файла — `splashStorage`, `initGsap`
+- Компоненты: `PascalCase` — `IntroAnimation`, `PageTransition`, `LogoText`
+- Утилиты: `camelCase` или как название файла — `introStorage`, `initGsap`
 - Роуты: как путь — `/about`, `/home`
 
 > Если имя модуля не зарегистрировано в палитре цветов логгера (`src/utils/logger.ts` — `MODULE_COLORS`), при первом вызове появится `console.warn` с сообщением, и цвет будет сгенерирован автоматически (детерминированный HSL от хэша имени). Для кастомного цвета — добавь запись в `MODULE_COLORS`.
@@ -28,9 +28,9 @@ logger.info('master timeline created');                   // ✗ — нет те
 
 | Уровень | Когда использовать | Пример |
 |---------|-------------------|--------|
-| `error` | GSAP-коллбек с ошибкой, исключение в useGSAP, сбой анимации | `logger.error('SplashPage', 'onComplete was not called')` |
+| `error` | GSAP-коллбек с ошибкой, исключение в useGSAP, сбой анимации | `logger.error('IntroAnimation', 'onComplete was not called')` |
 | `warn` | Условный байпас, fallback-состояние, missing ref | `logger.warn('LogoText', 'containerRef is null, skipping animation')` |
-| `info` | Lifecycle: монтирование, onComplete таймлайна, смена роута | `logger.info('SplashPage', 'Master timeline complete')` |
+| `info` | Lifecycle: монтирование, onComplete таймлайна, смена роута | `logger.info('IntroAnimation', 'Master timeline complete')` |
 | `debug` | Параметры анимаций: start, duration, position, easing | `logger.debug('LogoText', 'C phaseShoe', { x: -45, duration: 0.5 })` |
 | `trace` | Массовые события, циклические вызовы (только при diagnose) | Включать только через `localStorage.setItem('loggerLevel', 'trace')` |
 
@@ -86,7 +86,7 @@ logger.debug('LogoText', 'C phaseShoe x=-45 rotate=-90 duration=0.5');
 try {
   master.play();
 } catch (e) {
-  logger.error('SplashPage', 'Failed to play master timeline', e);
+  logger.error('IntroAnimation', 'Failed to play master timeline', e);
 }
 
 // warn — пропуск анимации
@@ -96,7 +96,7 @@ if (!containerRef.current) {
 }
 
 // info — ключевая точка lifecycle
-logger.info('SplashPage', 'Master timeline complete, redirecting to /home');
+logger.info('IntroAnimation', 'Master timeline complete, redirecting to /home');
 
 // debug — фаза анимации
 logger.debug('LogoText', 'Cursor phaseMoving', {
@@ -105,7 +105,7 @@ logger.debug('LogoText', 'Cursor phaseMoving', {
 });
 
 // trace — диагностика (включить через localStorage)
-logger.trace('SplashPage', 'Master timeline progress', master.time());
+logger.trace('IntroAnimation', 'Master timeline progress', master.time());
 ```
 
 ---

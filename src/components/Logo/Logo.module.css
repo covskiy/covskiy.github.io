@@ -1,6 +1,6 @@
 .logo {
-  width: var(--splash-logo-size, 120px);
-  height: var(--splash-logo-size, 120px);
+  width: var(--intro-logo-size, 120px);
+  height: var(--intro-logo-size, 120px);
   display: flex;
   align-items: center;
   justify-content: center;

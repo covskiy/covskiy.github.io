@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Анимированный SVG-логотип для сплэш-экрана. Две начальные фигуры (подкова + гвоздь) морфируют в слово **COVSKIY** с помощью GSAP `MorphSVGPlugin`. Курсороподобный элемент последовательно открывает буквы.
+Анимированный SVG-логотип для intro-экрана. Две начальные фигуры (подкова + гвоздь) морфируют в слово **COVSKIY** с помощью GSAP `MorphSVGPlugin`. Курсороподобный элемент последовательно открывает буквы.
 
 ## Файлы
 
@@ -62,14 +62,14 @@ type AnimationComponentProps = {
 };
 ```
 
-Получает колбэк `onRegisterTimeline`, создаёт свой внутренний таймлайн и регистрирует его через колбэк. Родитель (SplashPage) сам добавляет его в мастер-таймлайн.
+Получает колбэк `onRegisterTimeline`, создаёт свой внутренний таймлайн и регистрирует его через колбэк. Родитель (IntroAnimation) сам добавляет его в мастер-таймлайн.
 
 ## Хореография
 
-Все временные метки, начальные позиции и масштабы централизованы в `src/pages/SplashPage/splashChoreography.ts` (`SPLASH_CHOREOGRAPHY.logoText`). Компонент импортирует конфиг и адресуется по ключам букв — это позволяет синхронизировать суб-таймлайны, не передавая числовые значения через родителя.
+Все временные метки, начальные позиции и масштабы централизованы в `src/components/IntroAnimation/choreography.ts` (`INTRO_CHOREOGRAPHY.logoText`). Компонент импортирует конфиг и адресуется по ключам букв — это позволяет синхронизировать суб-таймлайны, не передавая числовые значения через родителя.
 
 ```tsx
-const { C: letterC, O: letterO, Cursor } = SPLASH_CHOREOGRAPHY.logoText;
+const { C: letterC, O: letterO, Cursor } = INTRO_CHOREOGRAPHY.logoText;
 tl.from(selector, {
   x: letterC.phaseShoe.xPosition,
   duration: letterC.phaseShoe.duration,
@@ -78,7 +78,7 @@ tl.from(selector, {
 
 ## Последовательность анимации
 
-Три фазы реализованы как **параллельные суб-таймлайны** (`CLetter`, `Nail`, `letters`), добавленные в локальный таймлайн на позицию 0. Внешне последовательный порядок достигается за счёт внутренних временных меток из `SPLASH_CHOREOGRAPHY`.
+Три фазы реализованы как **параллельные суб-таймлайны** (`CLetter`, `Nail`, `letters`), добавленные в локальный таймлайн на позицию 0. Внешне последовательный порядок достигается за счёт внутренних временных меток из `INTRO_CHOREOGRAPHY`.
 
 - Фаза 1
   - Появляется "вкатыванием" будущий символ C — `.img-c` в форме подковы
@@ -97,7 +97,7 @@ tl.from(selector, {
 1. **Влёт клавиатуры** — привязан к началу морфа гвоздя в курсор (`Cursor.phaseCaret.start = 1.5`). Tagline стартует на master-таймлайне в позиции `0`, поэтому `KEYBOARD_IN` на локальном таймлайне = `1.5`.
 2. **Подсветка клавиш** — привязана к началу морфа соответствующей буквы.
 
-| Master-время | Источник в `SPLASH_CHOREOGRAPHY`                              | Соответствующее событие в Tagline  |
+| Master-время | Источник в `INTRO_CHOREOGRAPHY`                              | Соответствующее событие в Tagline  |
 | ------------ | ------------------------------------------------------------- | ---------------------------------- |
 | 1.5          | `logoText.Cursor.phaseCaret.start`                            | Влёт клавиатуры                    |
 | 1.9          | `logoText.C.phaseLetter.start`                                | Подсветка `.key_c`                 |
@@ -108,7 +108,7 @@ tl.from(selector, {
 | 3.45         | `logoText.I.phaseDash.start + logoText.I.phaseLetter.delay`   | Подсветка `.key_i`                 |
 | 3.6          | `logoText.Y.phaseDash.start + logoText.Y.phaseLetter.delay`   | Подсветка `.key_y`                 |
 
-Tagline стартует на master-таймлайне в позиции `0` (`SPLASH_CHOREOGRAPHY.master.labels.TAGLINE`); позиции событий совпадают с абсолютными временами из LogoText. Подробности — в `docs/Components/Tagline.md`.
+Tagline стартует на master-таймлайне в позиции `0` (`INTRO_CHOREOGRAPHY.master.labels.TAGLINE`); позиции событий совпадают с абсолютными временами из LogoText. Подробности — в `docs/Components/Tagline.md`.
 
 ## Mobile-first стили
 
@@ -118,12 +118,12 @@ Tagline стартует на master-таймлайне в позиции `0` (`
   тёплый золотистый фон (`--color-glow-25`), бордюр `--color-glow-700`,
   4 клёпки по углам (radial-gradient, box-shadow), скругление 8px
 - `.container` — `padding: 0 1rem` для отступов по бокам, `flex-shrink: 0`
-  (защита от сжатия в flex-контейнере SplashPage)
+  (защита от сжатия в flex-контейнере IntroAnimation)
 - `.svg` — `max-width: min(90vw, 420px)`, вписывается в мобильный viewport
 - Высота определяется пропорцией исходного `viewBox` SVG (200×150 → 360×270)
 
 **Важно**: контейнер **не** имеет `height: 100%` — это сломало бы flex-layout
-в SplashPage (заставляло LogoText занимать 100vh и вытеснять Tagline).
+в IntroAnimation (заставляло LogoText занимать 100vh и вытеснять Tagline).
 Контейнер sizing определяется контентом (SVG).
 
 Брейкпоинты для планшетов/десктопов пока не заданы — будут добавлены
@@ -131,7 +131,7 @@ Tagline стартует на master-таймлайне в позиции `0` (`
 
 ## Архитектура регистрации
 
-Компонент не получает мастер-таймлайн напрямую. Через колбэк `onRegisterTimeline` он сообщает родителю (SplashPage): «вот мой локальный таймлайн, добавь его в мастер». Это обеспечивает слабую связанность: дети не знают о структуре мастер-таймлайна и не мутируют его напрямую.
+Компонент не получает мастер-таймлайн напрямую. Через колбэк `onRegisterTimeline` он сообщает родителю (IntroAnimation): «вот мой локальный таймлайн, добавь его в мастер». Это обеспечивает слабую связанность: дети не знают о структуре мастер-таймлайна и не мутируют его напрямую.
 
 ```tsx
 // внутри useGSAP
@@ -144,7 +144,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 
 ### Определение позиции
 
-Синхронизация курсора и букв происходит по времени через единый конфиг `SPLASH_CHOREOGRAPHY` — значения из него подставляются как `start`, `duration`, `delay` в каждой суб-таймлайне
+Синхронизация курсора и букв происходит по времени через единый конфиг `INTRO_CHOREOGRAPHY` — значения из него подставляются как `start`, `duration`, `delay` в каждой суб-таймлайне
 
 ### CSS module
 
@@ -159,7 +159,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 ## Sparks — эффект искр внутри букв
 
 Эффект подъёма искр снизу вверх (из нижней части viewBox), привязанный к двум
-моментам локального таймлайна (`SPLASH_CHOREOGRAPHY.logoText.sparks.burst1 = 4.2s`, `burst2 = 4.6s`).
+моментам локального таймлайна (`INTRO_CHOREOGRAPHY.logoText.sparks.burst1 = 4.2s`, `burst2 = 4.6s`).
 Каждая искра летит по одной из двух траекторий: **spiral** (спираль) или
 **sinwave** (синусоида). Выбор траектории и параметров случаен на каждую искру
 в момент эмиссии.
@@ -182,7 +182,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 | `visual.lifetimeMul` | {min: 0.8, max: 1.2} | (наслед.) | (наслед.) |
 
 Глобально (одинаково на всех устройствах):
-- Тайминги старта burst'ов — часть хореографии (`splashChoreography.ts`)
+- Тайминги старта burst'ов — часть хореографии (`choreography.ts`)
 - `emissionWindow` — время размазывания выброса внутри burst'а
 - Цвета (glowColor, coreColor, centerColor)
 - Jitter, tail, trajectory params/ranges/mix
@@ -245,7 +245,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
   когда `aliveCount === 0`. Не зависит от паузы GSAP-мастера — искры
   догорают в своём render-loop даже на `master.pause()`.
 - `createSparksTimeline(tl, emissionWindow, getProfile, emitFn, onClear, onBurstStart)`:
-  два твина `progress.value: 0 → 1` на позициях из `SPLASH_CHOREOGRAPHY.logoText.sparks`
+  два твина `progress.value: 0 → 1` на позициях из `INTRO_CHOREOGRAPHY.logoText.sparks`
   (`burst1` / `burst2`). В `onUpdate` читается `getProfile().emitCount`, считается дельта
   эмиссии и зовётся `emitFn(delta)`. При скрабе назад
   (`progress.value < lastValue`) — `onClear()` сбрасывает систему.

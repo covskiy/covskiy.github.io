@@ -1,15 +1,15 @@
 # Архитектура React SPA — Сайт-визитка
 
 React 19 + TypeScript + Vite SPA, деплой на GitHub Pages. Сайт-визитка с
-GSAP-анимациями, design-tokens через style-dictionary, splash screen при
+GSAP-анимациями, design-tokens через style-dictionary, intro animation при
 первом заходе и системой preloader.
 
 > Содержимое этого файла пересматривается вместе с кодом. При расхождениях
 > с реальным кодом — приоритет у кода. Этот документ фиксирует **как устроено**
 > проект сейчас, а не план.
 
-> Этот файл — обзор архитектуры. Детали реализации (Splash-хореография,
-> работа с design tokens, конфиги) вынесены в `docs/Pages/SplashPage.md`,
+> Этот файл — обзор архитектуры. Детали реализации (Intro-хореография,
+> работа с design tokens, конфиги) вынесены в `docs/Components/IntroAnimation.md`,
 > `docs/design-tokens.md` и `docs/Components/`.
 
 ---
@@ -52,11 +52,10 @@ covskiy.github.io/
 │   ├── design-tokens.md
 │   ├── preloader.md
 │   ├── Components/
+│   │   ├── IntroAnimation.md
 │   │   ├── Logo.md
 │   │   ├── LogoText.md
 │   │   └── Tagline.md
-│   ├── Pages/
-│   │   └── SplashPage.md
 │   └── utils/
 │       └── logger.md
 ├── public/                           # Статические ассеты, отдаются как есть
@@ -79,18 +78,18 @@ covskiy.github.io/
 │   │   │   ├── Logo.module.css
 │   │   │   ├── anvil_md.svg
 │   │   │   └── index.ts
-  │   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph)
-  │   │   │   ├── LogoText.tsx
-  │   │   │   ├── LogoText.module.css
-  │   │   │   ├── LogoText.svg
-  │   │   │   ├── trajectory.ts         # Абстракция траектории (spiral/sinwave)
-  │   │   │   ├── spiral/               # Спиральная траектория
-  │   │   │   │   ├── SpiralConfig.ts
-  │   │   │   │   └── SpiralTrajectory.ts
-  │   │   │   ├── sinwave/              # Синусоидальная траектория
-  │   │   │   │   ├── SinWaveConfig.ts
-  │   │   │   │   └── SinWaveTrajectory.ts
-  │   │   │   └── index.ts
+│   │   ├── LogoText/                 # Текст "COVSKIY" (SVG morph)
+│   │   │   ├── LogoText.tsx
+│   │   │   ├── LogoText.module.css
+│   │   │   ├── LogoText.svg
+│   │   │   ├── trajectory.ts         # Абстракция траектории (spiral/sinwave)
+│   │   │   ├── spiral/               # Спиральная траектория
+│   │   │   │   ├── SpiralConfig.ts
+│   │   │   │   └── SpiralTrajectory.ts
+│   │   │   ├── sinwave/              # Синусоидальная траектория
+│   │   │   │   ├── SinWaveConfig.ts
+│   │   │   │   └── SinWaveTrajectory.ts
+│   │   │   └── index.ts
 │   │   ├── Tagline/                  # Клавиатура (split + keyframes)
 │   │   │   ├── Tagline.tsx
 │   │   │   ├── Tagline.module.css
@@ -100,6 +99,17 @@ covskiy.github.io/
 │   │   │   ├── SkipControls.tsx
 │   │   │   ├── SkipControls.module.css
 │   │   │   └── index.ts
+│   │   ├── IntroAnimation/           # Intro overlay (position: fixed, z-index: 9999)
+│   │   │   ├── IntroAnimation.tsx
+│   │   │   ├── IntroAnimation.module.css
+│   │   │   ├── choreography.ts
+│   │   │   ├── index.ts
+│   │   │   ├── hooks/
+│   │   │   │   ├── useSplashSkip.ts
+│   │   │   │   └── index.ts
+│   │   │   └── utils/
+│   │   │       ├── introStorage.ts
+│   │   │       └── index.ts
 │   │   ├── VerticalNav/              # Десктоп-навигация (фикс. слева)
 │   │   │   ├── VerticalNav.tsx
 │   │   │   └── VerticalNav.module.css
@@ -109,17 +119,6 @@ covskiy.github.io/
 │   │   └── PageTransition/           # Обёртка анимации смены роута
 │   │       └── PageTransition.tsx
 │   ├── pages/
-│   │   ├── SplashPage/               # Splash screen (блокирует UI до onComplete)
-│   │   │   ├── SplashPage.tsx
-│   │   │   ├── SplashPage.module.css
-│   │   │   ├── splashChoreography.ts
-│   │   │   ├── index.ts
-│   │   │   ├── hooks/
-│   │   │   │   ├── useSplashSkip.ts
-│   │   │   │   └── index.ts
-│   │   │   └── utils/
-│   │   │       ├── splashStorage.ts
-│   │   │       └── index.ts
 │   │   ├── HomePage/
 │   │   ├── AboutPage/
 │   │   ├── ServicesPage/
@@ -136,11 +135,11 @@ covskiy.github.io/
 │   │   └── typography.css            # ← сгенерирован
 │   ├── types/
 │   │   ├── index.ts
-│   │   └── splash.types.ts
+│   │   └── intro.types.ts
 │   ├── utils/
 │   │   ├── initGsap.ts               # Регистрация всех GSAP-плагинов
 │   │   └── logger.ts                 # Модульный логгер
-│   ├── App.tsx                       # SplashPage → layout (Nav + Routes)
+│   ├── App.tsx                       # Чистый layout (VerticalNav + BurgerMenu + Routes)
 │   ├── App.css                       # Устаревший (используется редко)
 │   ├── App.module.css                # Стили layout App
 │   ├── routes.tsx                    # Все роуты + lazy-обёртки
@@ -179,37 +178,45 @@ covskiy.github.io/
 
 [main.tsx]
   ├─ window.hidePreloader()                  ← сразу после загрузки модуля
-  ├─ DEV: window.splashDebug / loggerDebug   ← devtools helpers
+  ├─ DEV: window.introDebug / loggerDebug   ← devtools helpers
   └─ createRoot().render(<BrowserRouter><App /></BrowserRouter>)
 
 [App.tsx]
   ├─ initGsap()                              ← на модульном уровне (top-level)
-  └─ useState: showSplash = pathname === '/' && !splashStorage.getNeverShow()
-       ├─ showSplash === true  →  <SplashPage onComplete skipDelay=800 />
-       │                            │
-       │                            ├─ master GSAP timeline (paused → play)
-       │                            ├─ child timelines (Logo/LogoText/Tagline)
-       │                            │   регистрируются через onRegisterTimeline
-       │                            ├─ LogoText и Tagline синхронизированы:
-       │                            │   подсветка клавиш в Tagline совпадает
-       │                            │   с появлением букв в LogoText
-       │                            │   (общий источник — SPLASH_CHOREOGRAPHY)
-       │                            ├─ GSDevTools.create() (только DEV)
-       │                            └─ onComplete → setShowSplash(false)
-       │
-       └─ showSplash === false →  layout
-            ├─ <VerticalNav />
-            ├─ <BurgerMenu />
-            └─ <main>
-                 └─ <Routes>
-                      └─ каждая route обёрнута в <PageTransition>
+  ├─ Чистый layout-компонент:
+  │    ├─ <VerticalNav />
+  │    ├─ <BurgerMenu />
+  │    └─ <main>
+  │         └─ <Routes>
+  │              └─ каждая route обёрнута в <PageTransition>
+  └─ Никакой intro/splash-логики. Не импортирует
+       IntroAnimation, introStorage, useLocation, useState, useEffect.
+
+[HomePage]
+  ├─ useState: showIntro =
+  │    introStorage.getNeverShow() ? false : true
+  ├─ useEffect: document.body.style.overflow = showIntro ? 'hidden' : ''
+  └─ showIntro === true →
+       <IntroAnimation onComplete slowIntro skipDelay=800 />
+       │  (overlay: position: fixed, z-index: 9999,
+       │   рендерится поверх контента HomePage, body overflow: hidden)
+       ├─ master GSAP timeline (paused → play)
+       ├─ child timelines (Logo/LogoText/Tagline)
+       │   регистрируются через onRegisterTimeline
+       ├─ LogoText и Tagline синхронизированы:
+       │   подсветка клавиш в Tagline совпадает
+       │   с появлением букв в LogoText
+       │   (общий источник — INTRO_CHOREOGRAPHY)
+       ├─ GSDevTools.create() (только DEV)
+       └─ onComplete → setShowIntro(false)
+            (unmount overlay, без navigate-редиректа)
 ```
 
 ### 2.2 Навигация между страницами
 
 ```
 [VerticalNav / BurgerMenu]
-  └─ NavLink to="/home" | "/about" | "/services" | "/contact"
+  └─ NavLink to="/" | "/about" | "/services" | "/contact"
         └─ React Router (client-side)
               └─ <PageTransition> (useGSAP entrance-анимация)
                     └─ page component (eager или lazy)
@@ -239,7 +246,8 @@ Component unmount (route change / re-render)
 
 - **React Router v7** с `BrowserRouter`.
 - Все роуты определены в `src/routes.tsx` — массив `RouteObject[]`.
-- Роут `/` НЕ в `routes.tsx` — перехватывается в `App.tsx` (splash screen).
+- `/` — HomePage (основной домашний роут).
+- `/home` — HomePage (для обратной совместимости).
 - `*` — inline 404 (заглушка в `routes.tsx`).
 
 ```ts
@@ -253,7 +261,8 @@ function withSuspense(element: ReactNode) {
 }
 
 export const routes: RouteObject[] = [
-  { path: '/home',     element: <HomePage /> },         // eager
+  { path: '/',         element: <HomePage /> },         // основной домашний роут
+  { path: '/home',     element: <HomePage /> },         // обратная совместимость
   { path: '/about',    element: withSuspense(<AboutPage />) },
   { path: '/services', element: withSuspense(<ServicesPage />) },
   { path: '/contact',  element: withSuspense(<ContactPage />) },
@@ -302,14 +311,14 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 | `Logo`           | Наковальня, drawSVG (Intro)               |
 | `LogoText`       | Текст "COVSKIY" — SVG morph между формами |
 | `Tagline`        | Слоган — клавиатура, поэтапная анимация   |
-| `SkipControls`   | Кнопки skip / never-show для Splash       |
+| `SkipControls`   | Кнопки skip / never-show для Intro        |
+| `IntroAnimation` | Intro overlay (position: fixed, поверх layout) |
 | `VerticalNav`    | Десктоп-навигация (фикс. слева)           |
 | `BurgerMenu`     | Мобильная навигация                       |
 | `PageTransition` | Обёртка анимации смены роута              |
-| `SplashPage`     | Splash screen (conditional render в App)  |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
-Подробности по `SplashPage` — в `docs/Pages/SplashPage.md`.
+Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.
 
 ### 4.5 Responsive breakpoint
 
@@ -326,7 +335,7 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 5.1 Стратегия
 
-- `HomePage` — **eagerly** (нужен для первого рендера после splash).
+- `HomePage` — **eagerly** (основной домашний роут `/`).
 - `AboutPage` / `ServicesPage` / `ContactPage` — `React.lazy()` + `Suspense`
   через хелпер `withSuspense()` в `routes.tsx`.
 - GSAP и `@gsap/react` — глобальные зависимости, попадают в `vendor` чанк.
@@ -357,7 +366,7 @@ dist/
 ├── 404.html                          # копия index.html (см. § 3.2)
 ├── assets/
 │   ├── index-[hash].css              # Global CSS (reset + global + tokens)
-│   ├── index-[hash].js               # main + App + SplashPage + eager Pages
+│   ├── index-[hash].js               # main + App + eager Pages
 │   ├── HomePage-[hash].js            # eager, в основном чанке
 │   ├── AboutPage-[hash].js           # lazy chunk
 │   ├── ServicesPage-[hash].js        # lazy chunk
@@ -376,7 +385,7 @@ dist/
 `MotionPathPlugin`. Вызов — на модульном уровне в `App.tsx`
 (`initGsap()` при импорте модуля).
 
-`GSDevTools` подключается отдельно в `SplashPage.tsx`
+`GSDevTools` подключается отдельно в `IntroAnimation.tsx`
 (`gsap.registerPlugin(GSDevTools)` + `GSDevTools.create({ animation: master })`),
 только в `import.meta.env.DEV`.
 
@@ -390,18 +399,19 @@ dist/
 - `scope` ограничивает селекторы потомками ref.
 - `dependencies` + `revertOnUpdate: true` для реактивных анимаций.
 
-### 6.3 Splash-хореография
+### 6.3 Intro-хореография
 
-`SplashPage` собирает **master-timeline** из фрагментов дочерних
+`IntroAnimation` собирает **master-timeline** из фрагментов дочерних
 компонентов (`Logo`, `LogoText`, `Tagline`) через callback
 `onRegisterTimeline(timeline, position)`. После завершения master
-вызывает `onComplete()` → `App` снимает splash-экран.
+вызывает `onComplete()` → `setShowIntro(false)` — unmount overlay,
+body overflow возвращается.
 
 Skip-логика — хук `useSplashSkip(timeline, onSkip, skipDelay)`. В текущем
-коде хук закомментирован (`shouldBypass = false` в `SplashPage.tsx`) —
+коде хук закомментирован (`shouldBypass = false` в `IntroAnimation.tsx`) —
 оставлено на доработку.
 
-**Подробности хореографии и полный код:** `docs/Pages/SplashPage.md`.
+**Подробности хореографии и полный код:** `docs/Components/IntroAnimation.md`.
 
 ---
 
@@ -421,11 +431,11 @@ Skip-логика — хук `useSplashSkip(timeline, onSkip, skipDelay)`. В т
 
 Описан в § 6.1.
 
-### 8.2 `splashStorage`
+### 8.2 `introStorage`
 
-`src/pages/SplashPage/utils/splashStorage.ts` — обёртка над `localStorage`
-ключом `splash_never_show`, тип `SplashStorageData` в
-`src/types/splash.types.ts`.
+`src/components/IntroAnimation/utils/introStorage.ts` — обёртка над `localStorage`
+ключом `intro_never_show`, тип `IntroStorageData` в
+`src/types/intro.types.ts`.
 
 ### 8.3 `logger.ts`
 
@@ -444,14 +454,14 @@ Skip-логика — хук `useSplashSkip(timeline, onSkip, skipDelay)`. В т
 
 Только в `import.meta.env.DEV` (`src/main.tsx`).
 
-### 9.1 `window.splashDebug`
+### 9.1 `window.introDebug`
 
 | Метод         | Действие                                                  |
 | ------------- | --------------------------------------------------------- |
-| `reset()`     | `splashStorage.clearFlag()` + reload (splash покажется)   |
+| `reset()`     | `introStorage.clearFlag()` + reload (intro покажется)    |
 | `forceShow()` | `setNeverShow(false)` + reload                            |
-| `forceHide()` | `setNeverShow(true)` + reload (splash не покажется)       |
-| `status()`    | `console.log('neverShow:', splashStorage.getNeverShow())` |
+| `forceHide()` | `setNeverShow(true)` + reload (intro не покажется)        |
+| `status()`    | `console.log('neverShow:', introStorage.getNeverShow())` |
 
 ### 9.2 `window.loggerDebug`
 
@@ -511,25 +521,25 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 
 ## 11. Сводка файлов — быстрый поиск
 
-| Задача                       | Файл                                          |
-| ---------------------------- | --------------------------------------------- |
-| Точка входа JS               | `src/main.tsx`                                |
-| Корневой компонент           | `src/App.tsx`                                 |
-| Все роуты                    | `src/routes.tsx`                              |
-| Splash screen                | `src/pages/SplashPage/SplashPage.tsx`         |
-| Splash storage               | `src/pages/SplashPage/utils/splashStorage.ts` |
-| Skip-логика                  | `src/pages/SplashPage/hooks/useSplashSkip.ts` |
-| Splash типы                  | `src/types/splash.types.ts`                   |
-| GSAP-инициализация           | `src/utils/initGsap.ts`                       |
-| Логгер                       | `src/utils/logger.ts`                         |
-| Design tokens build          | `sd.config.js`                                |
-| Design tokens источник       | `design-tokens/*.json`                        |
-| Design tokens (документация) | `docs/design-tokens.md`                       |
-| Сгенерированные токены       | `src/styles/*.css`                            |
-| Preloader HTML               | `index.html`                                  |
-| Vite config                  | `vite.config.ts`                              |
-| ESLint config                | `eslint.config.js`                            |
-| Deploy CI                    | `.github/workflows/deploy.yml`                |
-| Husky hook                   | `.husky/pre-commit`                           |
-| Скрипты npm                  | `package.json`                                |
-| Обзор проекта (для AI)       | `AGENTS.md`                                   |
+| Задача                       | Файл                                                |
+| ---------------------------- | --------------------------------------------------- |
+| Точка входа JS               | `src/main.tsx`                                      |
+| Корневой компонент           | `src/App.tsx`                                       |
+| Все роуты                    | `src/routes.tsx`                                    |
+| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`  |
+| Intro storage               | `src/components/IntroAnimation/utils/introStorage.ts` |
+| Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts` |
+| Типы intro                  | `src/types/intro.types.ts`                         |
+| GSAP-инициализация           | `src/utils/initGsap.ts`                             |
+| Логгер                       | `src/utils/logger.ts`                               |
+| Design tokens build          | `sd.config.js`                                      |
+| Design tokens источник       | `design-tokens/*.json`                              |
+| Design tokens (документация) | `docs/design-tokens.md`                             |
+| Сгенерированные токены       | `src/styles/*.css`                                  |
+| Preloader HTML               | `index.html`                                        |
+| Vite config                  | `vite.config.ts`                                    |
+| ESLint config                | `eslint.config.js`                                  |
+| Deploy CI                    | `.github/workflows/deploy.yml`                      |
+| Husky hook                   | `.husky/pre-commit`                                 |
+| Скрипты npm                  | `package.json`                                      |
+| Обзор проекта (для AI)       | `AGENTS.md`                                         |

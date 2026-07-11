@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router';
 import './index.css';
 import App from './App';
 import { logger, LOG_LEVELS, type LogLevel } from './utils/logger';
-import { splashStorage } from './pages/SplashPage/utils';
+import { introStorage } from './components/IntroAnimation';
 
 declare global {
   interface Window {
@@ -17,20 +17,21 @@ if (typeof window.hidePreloader === 'function') {
 }
 
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).splashDebug = {
+  (window as unknown as Record<string, unknown>).introDebug = {
     reset: () => {
-      splashStorage.clearFlag();
+      introStorage.clearFlag();
+      introStorage.clearSessionSkip();
       window.location.reload();
     },
     forceShow: () => {
-      splashStorage.setNeverShow(false);
+      introStorage.setNeverShow(false);
       window.location.reload();
     },
     forceHide: () => {
-      splashStorage.setNeverShow(true);
+      introStorage.setNeverShow(true);
       window.location.reload();
     },
-    status: () => console.log('neverShow:', splashStorage.getNeverShow()),
+    status: () => console.log('neverShow:', introStorage.getNeverShow()),
   };
 
   (window as unknown as Record<string, unknown>).loggerDebug = {

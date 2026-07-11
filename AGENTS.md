@@ -3,7 +3,7 @@
 ## Обзор
 
 React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pages. Сайт-визитка
-с GSAP-анимациями, design-tokens через style-dictionary, splash screen
+с GSAP-анимациями, design-tokens через style-dictionary, intro animation
 при первом заходе и системой preloader. Проект в активной разработке (WIP).
 
 ## Команды
@@ -29,12 +29,13 @@ covskiy.github.io/
 ├── src/
 │   ├── assets/           # Изображения, SVG-исходники Intro
 │   ├── components/       # Logo, LogoText, Tagline, SkipControls,
-│   │                     #   VerticalNav, BurgerMenu, PageTransition
-│   ├── pages/            # SplashPage + HomePage + About/Services/Contact
+│   │                     #   VerticalNav, BurgerMenu, PageTransition,
+│   │                     #   IntroAnimation
+│   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
-│   ├── types/            # Splash- и общие типы
+│   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # SplashPage → layout (Nav + Routes)
+│   ├── App.tsx           # Чистый layout (VerticalNav + BurgerMenu + Routes)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -49,18 +50,22 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — splash screen (conditional render) → layout с
-  `VerticalNav`, `BurgerMenu` и `<Routes>`, обёрнутыми в `PageTransition`.
+- **App.tsx** — чистый layout-компонент: `VerticalNav` + `BurgerMenu` + `<Routes>`,
+  обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
+  `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
+  `/` всегда рендерит HomePage, редирект `/` → `/home` удалён.
+- **HomePage** — владеет состоянием `showIntro`, `useEffect` для
+  `overflow: hidden` на body, и рендерит `<IntroAnimation />` как overlay
+  поверх собственного контента.
 - **routes.tsx** — `HomePage` eager, `About/Services/Contact` — `React.lazy`
-  + `withSuspense`. Роут `*` — inline 404. Роут `/` НЕ в `routes.tsx`,
-  обрабатывается в `App.tsx`.
+  + `withSuspense`. Роут `/` — HomePage, роут `*` — inline 404.
 - **vendor chunk** — выделен через
   `build.rolldownOptions.output.codeSplitting.groups` по `test: /node_modules/`.
 - **GSAP** — регистрация всех плагинов в `src/utils/initGsap.ts`
   (`useGSAP`, `ScrollTrigger`, `SplitText`, `MorphSVGPlugin`,
   `DrawSVGPlugin`, `MotionPathPlugin`), вызывается на модульном уровне
-  при импорте `App`. `GSDevTools` подключается в `SplashPage` только в DEV.
-- **SplashPage** — `splashStorage` (`localStorage`, ключ `splash_never_show`,
+  при импорте `App`. `GSDevTools` подключается в `IntroAnimation` только в DEV.
+- **IntroAnimation** — `introStorage` (`localStorage`, ключ `intro_never_show`,
   объект `{ neverShow, timestamp? }`). Skip-логика в `useSplashSkip`.
 - **Design Tokens** — `design-tokens/*.json` → `sd.config.js` (custom
   transform `attribute/gradient-to-css`, `value/px-to-rem-conditional`) →
@@ -70,7 +75,7 @@ covskiy.github.io/
   morph-путей в `Logo/LogoText`.
 - **Preloader** — inline в `index.html`, `window.hidePreloader()` вызывается
   в `main.tsx` до `createRoot().render()`.
-- **Dev debug** — в DEV `main.tsx` регистрирует `window.splashDebug`
+- **Dev debug** — в DEV `main.tsx` регистрирует `window.introDebug`
   (reset/forceShow/forceHide/status) и `window.loggerDebug`
   (setLevel/reset/status/levels).
 - **CI/CD** — `cp dist/index.html dist/404.html` в deploy.yml — хак для
@@ -88,7 +93,7 @@ covskiy.github.io/
 | `docs/Components/Logo.md` | Анимация логотипа (наковальня) |
 | `docs/Components/LogoText.md` | Анимация текста логотипа (SVG morph) |
 | `docs/Components/Tagline.md` | Анимация слогана (клавиатура) |
-| `docs/Pages/SplashPage.md` | Хореография Splash-анимации |
+| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации |
 
 ## Зависимости
 
@@ -130,7 +135,7 @@ covskiy.github.io/
 LLM должна следовать этим правилам при составлении commit message.
 
 **Subject (заголовок):**
-- 1–3 слова, Title Case (`LogoText`, `SplashPage`, `Design Tokens`).
+- 1–3 слова, Title Case (`LogoText`, `IntroAnimation`, `Design Tokens`).
 - Совпадает с именем затронутого компонента/фичи.
 - Без префиксов (`feat:`, `fix:`, `chore:`) и без точки в конце.
 

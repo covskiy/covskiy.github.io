@@ -1,33 +1,35 @@
-# SplashPage
+# IntroAnimation
 
-Анимированная интро-страница (Splash Screen), последовательно анимирующая три ключевых элемента: **Логотип**, **Логотекст** и **Слоган**. Анимация управляется единым `gsap.core.Timeline`, создаваемым в `SplashPage`. Дочерние компоненты регистрируют свои локальные таймлайны через колбэк `onRegisterTimeline`, переданный в props.
+Анимированный overlay (Intro Animation), последовательно анимирующий три ключевых элемента: **Логотип**, **Логотекст** и **Слоган**. Анимация управляется единым `gsap.core.Timeline`, создаваемым в `IntroAnimation`. Дочерние компоненты регистрируют свои локальные таймлайны через колбэк `onRegisterTimeline`, переданный в props.
+
+IntroAnimation рендерится как оверлей (`position: fixed; inset: 0; z-index: 9999`) поверх контента HomePage. HomePage всегда находится в DOM под оверлеем — после завершения анимации IntroAnimation анмаунтится, открывая уже загруженный контент.
 
 ## Управление состоянием
 
 | Флаг             | Хранилище      | Механизм                                   |
 | ---------------- | -------------- | ------------------------------------------ |
-| `showSplash`     | `App.tsx`      | Инициализируется из `splashStorage.getNeverShow()` |
-| `showSkipButton` | `SplashPage`   | Таймер показа кнопки пропуска              |
-| `neverShowAgain` | `SplashPage`   | Чекбокс "Больше не показывать"             |
+| `showIntro`      | `HomePage`     | Инициализируется из `introStorage.getNeverShow()` |
+| `showSkipButton` | `IntroAnimation` | Таймер показа кнопки пропуска            |
+| `neverShowAgain` | `IntroAnimation` | Чекбокс "Больше не показывать"           |
 
-**Примечание**: Логика skip инлайнена в `SplashPage.tsx`. Решение о показе splash принимается в `App.tsx` на основе `splashStorage.getNeverShow()`.
+**Примечание**: Логика skip инлайнена в `IntroAnimation.tsx`. Решение о показе intro принимается в `HomePage` на основе `introStorage.getNeverShow()`.
 
 ## Архитектура
 
 ```
-pages/SplashPage/
-├── index.ts                    # Barrel: SplashPage, splashStorage
-├── SplashPage.tsx              # Создаёт мастер-таймлайн + skip-логика (инлайн)
-├── SplashPage.module.css       # Стили контейнера (fixed overlay)
-├── splashChoreography.ts       # Константы времени и длительностей анимаций
+components/IntroAnimation/
+├── index.ts                    # Barrel: IntroAnimation, introStorage
+├── IntroAnimation.tsx          # Создаёт мастер-таймлайн + skip-логика (инлайн)
+├── IntroAnimation.module.css   # Стили контейнера (fixed overlay)
+├── choreography.ts       # Константы времени и длительностей анимаций
 └── utils/
     ├── index.ts
-    └── splashStorage.ts        # Работа с localStorage (ключ: splash_never_show)
+    └── introStorage.ts        # Работа с localStorage (ключ: intro_never_show)
 ```
 
 ```
 components/
-├── index.ts                    # Barrel: Logo, LogoText, Tagline, SkipControls
+├── index.ts                    # Barrel: Logo, LogoText, Tagline, SkipControls, IntroAnimation, introStorage
 ├── Logo/Logo.tsx               # Анимация логотипа (scale + opacity)
 ├── LogoText/LogoText.tsx       # Анимация текста (y + opacity)
 ├── Tagline/Tagline.tsx         # Анимация слогана (blur + opacity)
@@ -36,7 +38,7 @@ components/
 
 ```
 types/
-└── splash.types.ts             # AnimationComponentProps, RegisterTimelineFn, SkipControlsProps, SplashPageProps, SplashStorageData
+└── intro.types.ts             # AnimationComponentProps, RegisterTimelineFn, SkipControlsProps, IntroAnimationProps, IntroStorageData
 ```
 
 ## Последовательность анимации
@@ -47,7 +49,7 @@ types/
 | `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`) |
 | `1.5`       | Tagline  | Клавиатура влетает сверху (синхронно с морфом гвоздя → курсор в LogoText), затем подсветка клавиш синхронно с началом морфинга букв, в конце — SplitText |
 
-**Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `SPLASH_CHOREOGRAPHY` в `splashChoreography.ts`).
+**Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `INTRO_CHOREOGRAPHY` в `choreography.ts`).
 
 ### Синхронизация Tagline ↔ LogoText
 
@@ -68,11 +70,11 @@ Tagline зарегистрирован на master-таймлайне в поз�
 | 3.6          | Подсветка `Y`                    | Y: `phaseDash.start + phaseLetter.delay`                         |
 | 4.2          | Подсветка `ENTER`                | `logoText.sparks.burst1` (первая эмиссия частиц)                   |
 
-Все позиции вычисляются в `Tagline.tsx` программно из `SPLASH_CHOREOGRAPHY.logoText` (`Cursor.phaseCaret.start`, `C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`). `ENTER` привязан к `logoText.sparks.burst1`.
+Все позиции вычисляются в `Tagline.tsx` программно из `INTRO_CHOREOGRAPHY.logoText` (`Cursor.phaseCaret.start`, `C.phaseLetter.start` или `X.phaseDash.start + X.phaseLetter.delay`). `ENTER` привязан к `logoText.sparks.burst1`.
 
-## Хореография (SPLASH_CHOREOGRAPHY)
+## Хореография (INTRO_CHOREOGRAPHY)
 
-Константа `SPLASH_CHOREOGRAPHY` (файл `splashChoreography.ts`) управляет временными позициями и длительностями анимаций.
+Константа `INTRO_CHOREOGRAPHY` (файл `choreography.ts`) управляет временными позициями и длительностями анимаций.
 
 ### master.labels
 
@@ -109,7 +111,7 @@ Tagline зарегистрирован на master-таймлайне в поз�
 
 ### Подсветка клавиш
 
-Позиции подсветки клавиш вычисляются программно в `Tagline.tsx` из `SPLASH_CHOREOGRAPHY.logoText` (см. таблицу синхронизации выше). `ENTER` привязан к `logoText.sparks.burst1` (первая эмиссия частиц). Влёт клавиатуры (`KEYBOARD_IN_LOCAL = 1.5`) вычисляется из `Cursor.phaseCaret.start`.
+Позиции подсветки клавиш вычисляются программно в `Tagline.tsx` из `INTRO_CHOREOGRAPHY.logoText` (см. таблицу синхронизации выше). `ENTER` привязан к `logoText.sparks.burst1` (первая эмиссия частиц). Влёт клавиатуры (`KEYBOARD_IN_LOCAL = 1.5`) вычисляется из `Cursor.phaseCaret.start`.
 
 - `C` — `logoText.C.phaseLetter.start` → `1.9`
 - `O` — `logoText.O.phaseDash.start + logoText.O.phaseLetter.delay` → `2.59`
@@ -122,52 +124,59 @@ Tagline зарегистрирован на master-таймлайне в поз�
 
 **Примечание**: Метки и длительности используются в дочерних компонентах (`Logo.tsx`, `LogoText.tsx`, `Tagline.tsx`) для создания локальных таймлайнов.
 
-## Использование в App.tsx
+## Использование в HomePage
 
 ```tsx
-import { SplashPage, splashStorage } from './pages/SplashPage';
-import { useState } from 'react';
-import { useLocation } from 'react-router';
+import { IntroAnimation, introStorage } from './components/IntroAnimation';
+import { useEffect, useState } from 'react';
 
-function App() {
-  const [showSplash, setShowSplash] = useState(
-    () => location.pathname === '/' && !splashStorage.getNeverShow(),
+function HomePage() {
+  const [showIntro, setShowIntro] = useState(
+    () => !introStorage.getNeverShow(),
   );
 
-  const handleSplashComplete = () => setShowSplash(false);
+  useEffect(() => {
+    document.body.style.overflow = showIntro ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [showIntro]);
+
+  const handleIntroComplete = () => setShowIntro(false);
 
   return (
     <>
-      {showSplash && (
-        <SplashPage onComplete={handleSplashComplete} skipDelay={800} />
+      {/* Контент HomePage всегда в DOM */}
+      <HomePageContent />
+      {/* IntroAnimation — оверлей поверх контента HomePage */}
+      {showIntro && (
+        <IntroAnimation onComplete={handleIntroComplete} skipDelay={800} />
       )}
-      {/* основной контент */}
     </>
   );
 }
 ```
 
-**Примечание**: Условный рендеринг `showSplash` управляется состоянием и `splashStorage.getNeverShow()`. Если пользователь ранее выбрал "Больше не показывать", splash не отображается.
+**Примечание**: Контент HomePage рендерится всегда, IntroAnimation — как оверлей поверх него. Контент HomePage находится в DOM с первого рендера — поисковики и соцсети видят контент. После завершения анимации IntroAnimation анмаунтится (просто `setShowIntro(false)`), без редиректа — URL всегда `/`.
 
 ## Отладка (dev-mode)
 
-В `main.tsx` добавляется глобальный объект `window.splashDebug`:
+В `main.tsx` добавляется глобальный объект `window.introDebug`:
 
 | Метод         | Действие                              |
 | ------------- | ------------------------------------- |
 | `reset()`     | Очищает флаг, перезагружает страницу  |
-| `forceShow()` | Сбрасывает флаг, показывает Splash    |
-| `forceHide()` | Устанавливает флаг, скрывает Splash   |
+| `forceShow()` | Сбрасывает флаг, показывает Intro     |
+| `forceHide()` | Устанавливает флаг, скрывает Intro    |
 | `status()`    | Логирует текущее значение `neverShow` |
 
 ## Ключевые решения
 
-- **Мастер-таймлайн** в `SplashPage` через `useGSAP` создаётся как `paused: true`, и после регистрации дочерних таймлайнов вызывается `master.play()`
+- **Мастер-таймлайн** в `IntroAnimation` через `useGSAP` создаётся как `paused: true`, и после регистрации дочерних таймлайнов вызывается `master.play()`
 - **Дочерние компоненты** получают `onRegisterTimeline` колбэк через пропсы — он принимает `tl: gsap.core.Timeline`(локальный таймлайн компоненты) и необязательный `position`, задающий время на мастер-таймлайне с которого локальный таймлайн начнет проигрываться
-- **`handleRegisterTimeline`** создаётся через `useCallback` с `dependencies: []`, инициализируется один раз при монтировании `SplashPage`
+- **`handleRegisterTimeline`** создаётся через `useCallback` с `dependencies: []`, инициализируется один раз при монтировании `IntroAnimation`
 - **`childTimelinesRegistrationRef`** — `ref`-контейнер (Set), который содержит в себе коллбеки с регистрацией локальных таймлайнов
 - **Отсутствие гонки регистраций** гарантируется самим механизмом React, создание компонент происходит от потомков к родителю. В момент когда будет выполняться асинхронный useGSAP родителя, в childTimelinesRegistrationRef уже будут лежать коллбеки регистрации потомков
 - **Исходные стили** скрыты через `visibility: hidden`, GSAP переключает на `visible`
 - **Пропуск**: `handleSkip` вызывает `masterTimelineRef.current?.progress(1).kill()`, затем `onComplete()`
-- **Кнопка пропуска** появляется через `skipDelay` мс (передаётся из `App.tsx`), fade-in анимация
+- **Кнопка пропуска** появляется через `skipDelay` мс (передаётся из `HomePage`), fade-in анимация
 - **`useGSAP`** из `@gsap/react` гарантирует безопасную работу в `StrictMode` и автоочистку
+- **Overlay-архитектура**: `overflow: hidden` на `body` блокирует скролл во время intro, контент HomePage всегда в DOM

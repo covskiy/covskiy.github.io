@@ -11,12 +11,12 @@ export type SkipControlsProps = {
   onSkip: () => void;
 };
 
-export type SplashPageProps = {
+export type IntroAnimationProps = {
   onComplete?: () => void;
   skipDelay?: number;
 };
 
-export type SplashStorageData = {
+export type IntroStorageData = {
   neverShow: boolean;
   timestamp?: number;
 };

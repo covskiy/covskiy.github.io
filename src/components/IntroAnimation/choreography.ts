@@ -1,9 +1,9 @@
 /**
- * Хореография анимации SplashPage.
+ * Хореография анимации IntroAnimation.
  * Числовые значения — секунды.
  * labels — стартовые позиции на timeline, durations — длины анимаций.
  */
-export const SPLASH_CHOREOGRAPHY = {
+export const INTRO_CHOREOGRAPHY = {
   /** Мастер-таймлайн: позиции, куда вкладываются таймлайны дочерних компонентов */
   master: {
     labels: {

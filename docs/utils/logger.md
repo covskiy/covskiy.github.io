@@ -9,7 +9,7 @@
 ```ts
 import { logger } from '../utils/logger';
 
-logger.info('SplashPage', 'Master timeline created');
+logger.info('IntroAnimation', 'Master timeline created');
 logger.debug('LogoText', 'C phaseShoe', { x: -45, duration: 0.5 });
 ```
 
@@ -76,7 +76,7 @@ loggerDebug.levels();            // Список доступных уровне
 Пример вывода в консоль:
 ```
 [PageTransition] Entering /about
-[SplashPage]     Master timeline created
+[IntroAnimation]  Master timeline created
 [LogoText]       C morph start: 0s, duration: 0.5s
 ```
 
@@ -104,12 +104,12 @@ interface LogTransport {
 
 ## Примеры использования
 
-**SplashPage:**
+**IntroAnimation:**
 ```ts
-logger.info('SplashPage', 'Master timeline building');
+logger.info('IntroAnimation', 'Master timeline building');
 const master = gsap.timeline({
   onComplete: () => {
-    logger.debug('SplashPage', `Master complete @ ${master.time()}s`);
+    logger.debug('IntroAnimation', `Master complete @ ${master.time()}s`);
     onComplete?.();
   },
 });

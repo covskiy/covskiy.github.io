@@ -1,9 +1,9 @@
-.splashContainer {
-  --splash-logo-size: 120px;
-  --splash-logo-text-max-w: 420px;
-  --splash-tagline-max-w: 360px;
-  --splash-tagline-h: 10rem;
-  --splash-keyboard-svg-max-w: 14rem;
+.introOverlay {
+  --intro-logo-size: 120px;
+  --intro-logo-text-max-w: 420px;
+  --intro-tagline-max-w: 360px;
+  --intro-tagline-h: 10rem;
+  --intro-keyboard-svg-max-w: 14rem;
 
   position: fixed;
   inset: 0;

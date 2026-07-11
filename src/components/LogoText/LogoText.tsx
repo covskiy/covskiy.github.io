@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { logger } from '../../utils/logger';
-import type { AnimationComponentProps } from '../../types/splash.types';
+import type { AnimationComponentProps } from '../../types/intro.types';
 import {
   createCLetterTimeline,
   createCursorTimeline,

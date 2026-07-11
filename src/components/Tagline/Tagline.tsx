@@ -3,11 +3,11 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 import KeyboardSvg from './keyboard.svg?react';
-import type { AnimationComponentProps } from '../../types/splash.types';
-import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
+import type { AnimationComponentProps } from '../../types/intro.types';
+import { INTRO_CHOREOGRAPHY } from '../IntroAnimation/choreography';
 import styles from './Tagline.module.css';
 
-const KEYBOARD_IN_LOCAL = SPLASH_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start;
+const KEYBOARD_IN_LOCAL = INTRO_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start;
 const {
   C: letterC,
   O: letterO,
@@ -16,18 +16,18 @@ const {
   K: letterK,
   I: letterI,
   Y: letterY,
-} = SPLASH_CHOREOGRAPHY.logoText;
+} = INTRO_CHOREOGRAPHY.logoText;
 
 type AnimationItem = { selector: string; at: number };
 
 const TAGLINE_MAP: readonly AnimationItem[] = [
   {
     selector: `.${styles.lineOne}`,
-    at: SPLASH_CHOREOGRAPHY.tagline.text.lineOne,
+    at: INTRO_CHOREOGRAPHY.tagline.text.lineOne,
   },
   {
     selector: `.${styles.lineTwo}`,
-    at: SPLASH_CHOREOGRAPHY.tagline.text.lineTwo,
+    at: INTRO_CHOREOGRAPHY.tagline.text.lineTwo,
   },
 ];
 
@@ -59,7 +59,7 @@ const KEY_MAP: readonly AnimationItem[] = [
   },
   {
     selector: '.key_enter',
-    at: SPLASH_CHOREOGRAPHY.tagline.enterKey.start,
+    at: INTRO_CHOREOGRAPHY.tagline.enterKey.start,
   },
 ];
 
@@ -67,7 +67,7 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
-  const { durations: D } = SPLASH_CHOREOGRAPHY.tagline;
+  const { durations: D } = INTRO_CHOREOGRAPHY.tagline;
 
   useGSAP(
     () => {
@@ -108,7 +108,7 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
           duration: D.KEYBOARD_OUT,
           ease: 'power2.in',
         },
-        SPLASH_CHOREOGRAPHY.tagline.enterKey.start,
+        INTRO_CHOREOGRAPHY.tagline.enterKey.start,
       );
 
       KEY_MAP.forEach(({ selector, at }) => {
@@ -143,7 +143,7 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         );
       });
 
-      onRegisterTimeline(tl, SPLASH_CHOREOGRAPHY.master.labels.TAGLINE);
+      onRegisterTimeline(tl, INTRO_CHOREOGRAPHY.master.labels.TAGLINE);
     },
     { dependencies: [onRegisterTimeline], scope: containerRef },
   );

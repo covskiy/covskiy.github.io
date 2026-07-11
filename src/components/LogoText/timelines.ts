@@ -1,5 +1,5 @@
 import { logger } from '../../utils/logger';
-import { SPLASH_CHOREOGRAPHY } from '../../pages/SplashPage/splashChoreography';
+import { INTRO_CHOREOGRAPHY } from '../IntroAnimation/choreography';
 import type { SparksConfig } from './sparks.config';
 
 const OVSKIY_LETTERS = ['O', 'V', 'S', 'K', 'I', 'Y'] as const;
@@ -20,7 +20,7 @@ const morphSelectorFor = (id: LetterId): string => `#morphPath-${id}`;
 export function createCLetterTimeline(
   tl: gsap.core.Timeline,
 ): gsap.core.Timeline {
-  const { C: letterC } = SPLASH_CHOREOGRAPHY.logoText;
+  const { C: letterC } = INTRO_CHOREOGRAPHY.logoText;
 
   logger.debug('LogoText', 'C phaseShoe', {
     x: letterC.phaseShoe.xPosition,
@@ -62,7 +62,7 @@ export function createCLetterTimeline(
 export function createOVSKIYTimeline(
   tl: gsap.core.Timeline,
 ): gsap.core.Timeline {
-  const logoText = SPLASH_CHOREOGRAPHY.logoText;
+  const logoText = INTRO_CHOREOGRAPHY.logoText;
 
   const dashStarts: Record<string, number> = {};
   for (const id of OVSKIY_LETTERS) {
@@ -98,8 +98,8 @@ export function createOVSKIYTimeline(
 export function createCursorTimeline(
   tl: gsap.core.Timeline,
 ): gsap.core.Timeline {
-  const { Cursor } = SPLASH_CHOREOGRAPHY.logoText;
-  const { O: letterO, Y: letterY } = SPLASH_CHOREOGRAPHY.logoText;
+  const { Cursor } = INTRO_CHOREOGRAPHY.logoText;
+  const { O: letterO, Y: letterY } = INTRO_CHOREOGRAPHY.logoText;
   const cursorSelector = '.img-nail';
 
   logger.debug('LogoText', 'Cursor phaseNail', {
@@ -151,7 +151,7 @@ export function createCursorTimeline(
 
   for (const id of OVSKIY_LETTERS) {
     if (id === 'Y') continue;
-    const letter = SPLASH_CHOREOGRAPHY.logoText[id];
+    const letter = INTRO_CHOREOGRAPHY.logoText[id];
     tl.to(
       cursorSelector,
       { scaleX: Cursor.scales[id], duration: 0 },
@@ -204,7 +204,7 @@ export function createSparksTimeline(
   onClear: () => void,
   onBurstStart: () => void,
 ): gsap.core.Timeline {
-  const { sparks } = SPLASH_CHOREOGRAPHY.logoText;
+  const { sparks } = INTRO_CHOREOGRAPHY.logoText;
 
   function buildBurstTween(
     parent: gsap.core.Timeline,

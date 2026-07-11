@@ -17,7 +17,7 @@ const LEVEL_WEIGHT: Record<LogLevel, number> = {
 };
 
 const MODULE_COLORS: Record<string, string> = {
-  SplashPage: '#6866d4',
+  IntroAnimation: '#6866d4',
   LogoText: '#04bf8a',
   PageTransition: '#f59e0b',
   App: '#344054',
@@ -72,7 +72,7 @@ function getInitialLevel(): LogLevel {
  *
  * @example
  * ```ts
- * logger.info('SplashPage', 'Master timeline created');
+ * logger.info('IntroAnimation', 'Master timeline created');
  * logger.debug('LogoText', 'C phaseShoe', { x: -45, duration: 0.5 });
  * ```
  */

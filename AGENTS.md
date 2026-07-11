@@ -29,13 +29,12 @@ covskiy.github.io/
 ├── src/
 │   ├── assets/           # Изображения, SVG-исходники Intro
 │   ├── components/       # Logo, LogoText, Tagline, SkipControls,
-│   │                     #   VerticalNav, BurgerMenu, PageTransition,
-│   │                     #   IntroAnimation
+│   │                     #   NavigationBar, PageTransition, IntroAnimation
 │   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # Чистый layout (VerticalNav + BurgerMenu + Routes)
+│   ├── App.tsx           # Чистый layout (NavigationBar + Routes)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -50,15 +49,16 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — чистый layout-компонент: `VerticalNav` + `BurgerMenu` + `<Routes>`,
+- **App.tsx** — чистый layout-компонент: `NavigationBar` + `<Routes>`,
   обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
   `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
-  `/` всегда рендерит HomePage, редирект `/` → `/home` удалён.
+  `/` всегда рендерит HomePage.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, и рендерит `<IntroAnimation />` как overlay
   поверх собственного контента.
-- **routes.tsx** — `HomePage` eager, `About/Services/Contact` — `React.lazy`
-  + `withSuspense`. Роут `/` — HomePage, роут `*` — inline 404.
+- **routes.tsx** — `RouteConfig[]` с `label`, `HomePage` eager,
+  `About/Services/Contact` — `React.lazy` + `withSuspense`.
+  Роут `/` — HomePage, роут `*` — NotFoundPage.
 - **vendor chunk** — выделен через
   `build.rolldownOptions.output.codeSplitting.groups` по `test: /node_modules/`.
 - **GSAP** — регистрация всех плагинов в `src/utils/initGsap.ts`
@@ -94,6 +94,7 @@ covskiy.github.io/
 | `docs/Components/LogoText.md` | Анимация текста логотипа (SVG morph) |
 | `docs/Components/Tagline.md` | Анимация слогана (клавиатура) |
 | `docs/Components/IntroAnimation.md` | Хореография Intro-анимации |
+| `docs/Pages/NotFoundPage.md` | Описание страницы 404 |
 
 ## Зависимости
 

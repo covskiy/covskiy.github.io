@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router';
-import VerticalNav from './components/VerticalNav/VerticalNav';
-import BurgerMenu from './components/BurgerMenu/BurgerMenu';
+import NavigationBar from './components/NavigationBar/NavigationBar';
 import PageTransition from './components/PageTransition/PageTransition';
 import { routes } from './routes';
 import styles from './App.module.css';
@@ -11,8 +10,7 @@ initGsap();
 function App() {
   return (
     <div className={styles.app}>
-      <VerticalNav />
-      <BurgerMenu />
+      <NavigationBar />
       <main className={styles.main}>
         <Routes>
           {routes.map(({ path, element }) => (

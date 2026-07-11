@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router';
 import { routes } from '../../routes';
-import styles from './VerticalNav.module.css';
+import styles from './NavigationBar.module.css';
 
 const navItems = routes
   .filter((r) => r.path !== '*')
   .map(({ path, label }) => ({ path, label: label! }));
 
-function VerticalNav() {
+function NavigationBar() {
   return (
     <nav className={styles.nav}>
       <div className={styles.logo}>✦ Portfolio</div>
@@ -28,4 +28,4 @@ function VerticalNav() {
   );
 }
 
-export default VerticalNav;
+export default NavigationBar;

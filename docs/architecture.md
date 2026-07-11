@@ -110,12 +110,9 @@ covskiy.github.io/
 │   │   │   └── utils/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
-│   │   ├── VerticalNav/              # Десктоп-навигация (фикс. слева)
-│   │   │   ├── VerticalNav.tsx
-│   │   │   └── VerticalNav.module.css
-│   │   ├── BurgerMenu/               # Мобильная навигация
-│   │   │   ├── BurgerMenu.tsx
-│   │   │   └── BurgerMenu.module.css
+│   │   ├── NavigationBar/            # Навигация (фикс. слева)
+│   │   │   ├── NavigationBar.tsx
+│   │   │   └── NavigationBar.module.css
 │   │   └── PageTransition/           # Обёртка анимации смены роута
 │   │       └── PageTransition.tsx
 │   ├── pages/
@@ -139,7 +136,7 @@ covskiy.github.io/
 │   ├── utils/
 │   │   ├── initGsap.ts               # Регистрация всех GSAP-плагинов
 │   │   └── logger.ts                 # Модульный логгер
-│   ├── App.tsx                       # Чистый layout (VerticalNav + BurgerMenu + Routes)
+│   ├── App.tsx                       # Чистый layout (NavigationBar + Routes)
 │   ├── App.css                       # Устаревший (используется редко)
 │   ├── App.module.css                # Стили layout App
 │   ├── routes.tsx                    # Все роуты + lazy-обёртки
@@ -184,8 +181,7 @@ covskiy.github.io/
 [App.tsx]
   ├─ initGsap()                              ← на модульном уровне (top-level)
   ├─ Чистый layout-компонент:
-  │    ├─ <VerticalNav />
-  │    ├─ <BurgerMenu />
+  │    ├─ <NavigationBar />
   │    └─ <main>
   │         └─ <Routes>
   │              └─ каждая route обёрнута в <PageTransition>
@@ -215,7 +211,7 @@ covskiy.github.io/
 ### 2.2 Навигация между страницами
 
 ```
-[VerticalNav / BurgerMenu]
+[NavigationBar]
   └─ NavLink to="/" | "/about" | "/services" | "/contact"
         └─ React Router (client-side)
               └─ <PageTransition> (useGSAP entrance-анимация)
@@ -244,14 +240,19 @@ Component unmount (route change / re-render)
 
 ### 3.1 Роутинг
 
-- **React Router v7** с `BrowserRouter`.
-- Все роуты определены в `src/routes.tsx` — массив `RouteObject[]`.
+- **React Router v7** с `BrowserRouter` (Declarative Mode).
+- Все роуты определены в `src/routes.tsx` — массив `RouteConfig[]`.
 - `/` — HomePage (основной домашний роут).
-- `/home` — HomePage (для обратной совместимости).
-- `*` — inline 404 (заглушка в `routes.tsx`).
+- `*` — NotFoundPage (отдельный компонент в `pages/NotFoundPage/`).
 
 ```ts
 // src/routes.tsx (концепция)
+interface RouteConfig {
+  path: string;
+  label?: string;
+  element: ReactNode;
+}
+
 const AboutPage    = lazy(() => import('./pages/AboutPage/AboutPage'));
 const ServicesPage = lazy(() => import('./pages/ServicesPage/ServicesPage'));
 const ContactPage  = lazy(() => import('./pages/ContactPage/ContactPage'));
@@ -260,13 +261,12 @@ function withSuspense(element: ReactNode) {
   return <Suspense fallback={<LazyFallback />}>{element}</Suspense>;
 }
 
-export const routes: RouteObject[] = [
-  { path: '/',         element: <HomePage /> },         // основной домашний роут
-  { path: '/home',     element: <HomePage /> },         // обратная совместимость
-  { path: '/about',    element: withSuspense(<AboutPage />) },
-  { path: '/services', element: withSuspense(<ServicesPage />) },
-  { path: '/contact',  element: withSuspense(<ContactPage />) },
-  { path: '*',         element: <NotFound /> },         // inline 404
+export const routes: RouteConfig[] = [
+  { path: '/',         label: 'Главная',   element: <HomePage /> },
+  { path: '/about',    label: 'О нас',     element: withSuspense(<AboutPage />) },
+  { path: '/services', label: 'Услуги',    element: withSuspense(<ServicesPage />) },
+  { path: '/contact',  label: 'Контакты',  element: withSuspense(<ContactPage />) },
+  { path: '*',                              element: <NotFoundPage /> },
 ];
 ```
 
@@ -313,8 +313,7 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 | `Tagline`        | Слоган — клавиатура, поэтапная анимация   |
 | `SkipControls`   | Кнопки skip / never-show для Intro        |
 | `IntroAnimation` | Intro overlay (position: fixed, поверх layout) |
-| `VerticalNav`    | Десктоп-навигация (фикс. слева)           |
-| `BurgerMenu`     | Мобильная навигация                       |
+| `NavigationBar`  | Навигация (фикс. слева)                   |
 | `PageTransition` | Обёртка анимации смены роута              |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
@@ -326,8 +325,7 @@ BrowserRouter читает URL уже на клиенте и рендерит н
   `phone` (0), `tablet` (481px), `laptop` (769px), `desktop` (1025px).
 - В коде сейчас используется `@media (width <= 1024px)` в CSS Modules
   (mobile-first базовые стили в `<= 1024`, десктоп-override не задаётся).
-- Переключение `VerticalNav` ↔ `BurgerMenu` — в коде компонентов
-  (через CSS media query).
+- `NavigationBar` скрывается на мобильных через CSS media query.
 
 ---
 

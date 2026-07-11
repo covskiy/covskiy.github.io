@@ -84,19 +84,19 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл                                | Назначение                                 |
-| ----------------------------------- | ------------------------------------------ |
-| `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги |
-| `docs/breakpoints.md`              | Breakpoints: модель, источник правды, CSS/JS использование |
-| `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты   |
-| `docs/preloader.md`                 | Preloader — описание работы                |
-| `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)       |
-| `docs/utils/logger.md`              | API логгера                                |
-| `docs/Components/Logo.md`           | Анимация логотипа (наковальня)             |
-| `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)       |
-| `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)              |
-| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                 |
-| `docs/Pages/NotFoundPage.md`        | Описание страницы 404                      |
+| Файл                                | Назначение                                                 |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги                 |
+| `docs/breakpoints.md`               | Breakpoints: модель, источник правды, CSS/JS использование |
+| `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты                   |
+| `docs/preloader.md`                 | Preloader — описание работы                                |
+| `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)                       |
+| `docs/utils/logger.md`              | API логгера                                                |
+| `docs/Components/Logo.md`           | Анимация логотипа (наковальня)                             |
+| `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)                       |
+| `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)                              |
+| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                                 |
+| `docs/Pages/NotFoundPage.md`        | Описание страницы 404                                      |
 
 ## Зависимости
 

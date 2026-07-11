@@ -8,32 +8,30 @@
     "build": "tsc -b && vite build",
     "build:design-tokens": "style-dictionary build --config sd.config.js --verbose",
     "preview": "vite preview",
+    "check": "npm run lint && npm run format && npm run stylelint",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "lint:staged": "eslint --fix",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
-    "format:staged": "prettier --write",
     "stylelint": "stylelint \"src/**/*.css\" --config .stylelintrc.json",
     "stylelint:fix": "stylelint \"src/**/*.css\" --config .stylelintrc.json --fix",
-    "stylelint:staged": "stylelint --fix --config .stylelintrc.json",
     "precommit:check": "lint-staged -v",
     "prepare": "husky install"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "npm run lint:staged",
-      "npm run format:staged"
+      "eslint --fix",
+      "prettier --write"
     ],
     "*.css": [
-      "npm run stylelint:staged",
-      "npm run format:staged"
+      "stylelint --fix --config .stylelintrc.json",
+      "prettier --write"
     ],
     "*.md": [
-      "npm run format:staged"
+      "prettier --write"
     ],
     "*.json": [
-      "npm run format:staged"
+      "prettier --write"
     ]
   },
   "dependencies": {

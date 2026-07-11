@@ -1,12 +1,10 @@
 import { NavLink } from 'react-router';
+import { routes } from '../../routes';
 import styles from './VerticalNav.module.css';
 
-const navItems = [
-  { path: '/', label: 'Главная' },
-  { path: '/about', label: 'О нас' },
-  { path: '/services', label: 'Услуги' },
-  { path: '/contact', label: 'Контакты' },
-];
+const navItems = routes
+  .filter((r) => r.path !== '*')
+  .map(({ path, label }) => ({ path, label: label! }));
 
 function VerticalNav() {
   return (

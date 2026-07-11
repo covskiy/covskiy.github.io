@@ -20,8 +20,25 @@
   );
   z-index: 9999;
 
-  @media (width >= 481px) {
-    gap: var(--spacing-xl);
-    padding: var(--spacing-md);
+  @media (width >= 768px) {
+    --intro-logo-size: 150px;
+    --intro-logo-text-max-w: 520px;
+    --intro-tagline-max-w: 440px;
+    --intro-tagline-h: 12rem;
+    --intro-keyboard-svg-max-w: 18rem;
+
+    gap: var(--spacing-xxl);
+    padding: var(--spacing-lg);
+  }
+
+  @media (width >= 1024px) {
+    --intro-logo-size: 180px;
+    --intro-logo-text-max-w: 640px;
+    --intro-tagline-max-w: 520px;
+    --intro-tagline-h: 14rem;
+    --intro-keyboard-svg-max-w: 22rem;
+
+    gap: var(--spacing-xxl);
+    padding: var(--spacing-xl);
   }
 }

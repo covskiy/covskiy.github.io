@@ -58,7 +58,7 @@
   user-select: none;
 }
 
-@media (width >= 481px) {
+@media (width >= 768px) {
   .skipControls {
     bottom: var(--spacing-lg);
     right: var(--spacing-lg);

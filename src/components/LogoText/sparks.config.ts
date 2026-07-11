@@ -17,13 +17,7 @@
  * содержать литералов — только чтение из этого файла.
  */
 
-const SPARKS_PROFILES_BREAKPOINTS = {
-  /** < mobile_max — mobile-профиль */
-  mobile_max: 768,
-  /** < tablet_max и >= mobile_max — tablet-профиль */
-  tablet_max: 1280,
-  /** >= tablet_max — desktop-профиль */
-} as const;
+import { BREAKPOINTS } from '../../utils/breakpoints';
 
 /**
  * Конфигурация шлейфа (трейла) позади искры.
@@ -366,7 +360,7 @@ const MOBILE_PROFILE: SparkProfile = {
 };
 
 /**
- * Tablet-профиль (768–1279px viewport).
+ * Tablet-профиль (768–1023px viewport).
  * Компромисс между Mobile и Desktop.
  */
 const TABLET_PROFILE: SparkProfile = {
@@ -378,7 +372,7 @@ const TABLET_PROFILE: SparkProfile = {
 };
 
 /**
- * Desktop-профиль (>= 1280px viewport).
+ * Desktop-профиль (>= 1024px viewport).
  * Максимальное количество искр, скорость и радиус.
  */
 const DESKTOP_PROFILE: SparkProfile = {
@@ -417,10 +411,10 @@ export const SPARKS_CONFIG: SparksConfig = {
  * @returns объект профиля (один из трёх синглтонов)
  */
 export function selectSparkProfile(width: number): SparkProfile {
-  if (width < SPARKS_PROFILES_BREAKPOINTS.mobile_max) {
+  if (width < BREAKPOINTS.tablet) {
     return SPARKS_CONFIG.profiles.mobile;
   }
-  if (width < SPARKS_PROFILES_BREAKPOINTS.tablet_max) {
+  if (width < BREAKPOINTS.desktop) {
     return SPARKS_CONFIG.profiles.tablet;
   }
   return SPARKS_CONFIG.profiles.desktop;

@@ -6,7 +6,7 @@
   height: 10rem;
   flex-shrink: 0;
 
-  @media (width >= 481px) {
+  @media (width >= 768px) {
     max-width: min(90vw, var(--intro-tagline-max-w, 360px));
     height: var(--intro-tagline-h, 10rem);
   }
@@ -45,7 +45,7 @@
   display: flex;
   flex-direction: column;
 
-  @media (width >= 481px) {
+  @media (width >= 768px) {
     font-size: var(--font-sizes-lg);
     letter-spacing: 0.3em;
     padding: 0;

@@ -67,6 +67,7 @@ covskiy.github.io/
   при импорте `App`. `GSDevTools` подключается в `IntroAnimation` только в DEV.
 - **IntroAnimation** — `introStorage` (`localStorage`, ключ `intro_never_show`,
   объект `{ neverShow, timestamp? }`). Skip-логика в `useSplashSkip`.
+- **Breakpoints** — 3-тирная mobile-first модель (`mobile` / `tablet: 768` / `desktop: 1024`). Единый источник правды: `design-tokens/breakpoints.json` → токены, `src/utils/breakpoints.ts` → JS/TS, hardcoded в CSS `@media`. Spark-система импортирует `BREAKPOINTS`. Подробнее: `docs/breakpoints.md`.
 - **Design Tokens** — `design-tokens/*.json` → `sd.config.js` (custom
   transform `attribute/gradient-to-css`, `value/px-to-rem-conditional`) →
   `src/styles/*.css`. `px` → `rem` (base 16).
@@ -86,6 +87,7 @@ covskiy.github.io/
 | Файл                                | Назначение                                 |
 | ----------------------------------- | ------------------------------------------ |
 | `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги |
+| `docs/breakpoints.md`              | Breakpoints: модель, источник правды, CSS/JS использование |
 | `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты   |
 | `docs/preloader.md`                 | Preloader — описание работы                |
 | `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)       |

@@ -1,22 +1,14 @@
 {
   "breakpoints": {
     "$type": "dimension",
-    "$description": "Брейкпоинты для адаптивного дизайна (точки перехода min-width => MobileFirst).",
-    "phone": {
-      "$value": "0px",
-      "$description": "Стили по умолчанию для мобильных устройств."
-    },
+    "$description": "Брейкпоинты для адаптивного дизайна (mobile-first, min-width).",
     "tablet": {
-      "$value": "481px",
-      "$description": "Планшеты. Применяются при ширине экрана от 481 px."
-    },
-    "laptop": {
-      "$value": "769px",
-      "$description": "Ноутбуки. Применяются при ширине экрана от 769 px."
+      "$value": "768px",
+      "$description": "Планшеты. Применяются при ширине экрана от 768 px."
     },
     "desktop": {
-      "$value": "1025px",
-      "$description": "Десктопы. Применяются при ширине экрана от 1025 px."
+      "$value": "1024px",
+      "$description": "Десктопы. Применяются при ширине экрана от 1024 px."
     }
   }
 }

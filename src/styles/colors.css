@@ -47,45 +47,11 @@
   --color-gray-700: #1e293b; /** Ночной — очень тёмный фон */
   --color-gray-800: #1a1c23; /** Глубокий графит — фон карточек и блоков */
   --color-gray-900: #121316; /** Угольный — основной тёмный фон страницы */
-  --color-gradient-core-900-600-45-deg: linear-gradient(
-    45deg,
-    #66330a 0%,
-    #e67d33 100%
-  ); /** Глубокий жар — переход от тёмных углей к среднему пламени */
-
-  --color-gradient-core-800-600-45-deg: linear-gradient(
-    45deg,
-    #994d13 0%,
-    #e67d33 100%
-  ); /** Тлеющий уголь — насыщенный переход в диапазоне огня */
-
-  --color-gradient-core-700-500-45-deg: linear-gradient(
-    45deg,
-    #cc6620 0%,
-    #ff9447 100%
-  ); /** Раскалённое пламя — яркий переход для активных элементов */
-
-  --color-gradient-glow-800-600-90-deg: linear-gradient(
-    90deg,
-    #998112 0%,
-    #e6c244 100%
-  ); /** Мерцание искр — горизонтальный переход золотых оттенков */
-
-  --color-gradient-glow-700-500-45-deg: linear-gradient(
-    45deg,
-    #ccac2b 0%,
-    #fed85d 100%
-  ); /** Золотое сияние — диагональный переход для hover */
-
-  --color-gradient-mixed-core-800-glow-500-45-deg: linear-gradient(
-    45deg,
-    #994d13 0%,
-    #fed85d 100%
-  ); /** Огонь и золото — переход от оранжевого к жёлтому */
-
-  --color-gradient-mixed-center-300-core-500-90-deg: linear-gradient(
-    90deg,
-    #ffc7c7 0%,
-    #ff9447 100%
-  ); /** Ядро горна — от бело-розового к огненному (как в h1 forge) */
+  --color-gradient-core-900-600-45-deg: linear-gradient(45deg, #66330a 0%, #e67d33 100%); /** Глубокий жар — переход от тёмных углей к среднему пламени */
+  --color-gradient-core-800-600-45-deg: linear-gradient(45deg, #994d13 0%, #e67d33 100%); /** Тлеющий уголь — насыщенный переход в диапазоне огня */
+  --color-gradient-core-700-500-45-deg: linear-gradient(45deg, #cc6620 0%, #ff9447 100%); /** Раскалённое пламя — яркий переход для активных элементов */
+  --color-gradient-glow-800-600-90-deg: linear-gradient(90deg, #998112 0%, #e6c244 100%); /** Мерцание искр — горизонтальный переход золотых оттенков */
+  --color-gradient-glow-700-500-45-deg: linear-gradient(45deg, #ccac2b 0%, #fed85d 100%); /** Золотое сияние — диагональный переход для hover */
+  --color-gradient-mixed-core-800-glow-500-45-deg: linear-gradient(45deg, #994d13 0%, #fed85d 100%); /** Огонь и золото — переход от оранжевого к жёлтому */
+  --color-gradient-mixed-center-300-core-500-90-deg: linear-gradient(90deg, #ffc7c7 0%, #ff9447 100%); /** Ядро горна — от бело-розового к огненному (как в h1 forge) */
 }

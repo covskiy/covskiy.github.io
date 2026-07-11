@@ -17,7 +17,7 @@
     "stylelint": "stylelint \"src/**/*.css\" --config .stylelintrc.json",
     "stylelint:fix": "stylelint \"src/**/*.css\" --config .stylelintrc.json --fix",
     "stylelint:staged": "stylelint --fix --config .stylelintrc.json",
-    "precommit:check": "lint-staged --verbose",
+    "precommit:check": "lint-staged -v",
     "prepare": "husky install"
   },
   "lint-staged": {
@@ -26,7 +26,14 @@
       "npm run format:staged"
     ],
     "*.css": [
-      "npm run stylelint:staged"
+      "npm run stylelint:staged",
+      "npm run format:staged"
+    ],
+    "*.md": [
+      "npm run format:staged"
+    ],
+    "*.json": [
+      "npm run format:staged"
     ]
   },
   "dependencies": {

@@ -14,10 +14,21 @@ export function IntroAnimation({ onComplete, skipDelay }: IntroAnimationProps) {
   const masterTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
   const [showSkipButton, setShowSkipButton] = useState(false);
+  const [remainingMs, setRemainingMs] = useState(0);
 
   useEffect(() => {
     if (skipDelay == null) return;
-    const timer = setTimeout(() => setShowSkipButton(true), skipDelay);
+    const timer = setTimeout(() => {
+      setShowSkipButton(true);
+      const duration = masterTimelineRef.current?.duration();
+      if (duration != null) {
+        const remaining = Math.max(
+          0,
+          Math.round((duration - skipDelay / 1000) * 1000),
+        );
+        setRemainingMs(remaining);
+      }
+    }, skipDelay);
     return () => clearTimeout(timer);
   }, [skipDelay]);
 
@@ -63,7 +74,9 @@ export function IntroAnimation({ onComplete, skipDelay }: IntroAnimationProps) {
       <LogoText onRegisterTimeline={handleRegisterTimeline} />
       <Tagline onRegisterTimeline={handleRegisterTimeline} />
 
-      {showSkipButton && <SkipControls onSkip={handleSkip} />}
+      {showSkipButton && (
+        <SkipControls onSkip={handleSkip} durationMs={remainingMs} />
+      )}
     </div>
   );
 }

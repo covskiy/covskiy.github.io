@@ -9,6 +9,7 @@ export type AnimationComponentProps = {
 
 export type SkipControlsProps = {
   onSkip: () => void;
+  durationMs: number;
 };
 
 export type IntroAnimationProps = {

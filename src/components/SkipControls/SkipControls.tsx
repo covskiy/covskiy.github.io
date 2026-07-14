@@ -5,7 +5,7 @@ import SkipIcon from '../../assets/skip.svg?react';
 import styles from './SkipControls.module.css';
 import { SlimProgressBar } from '../SlimProgressBar';
 
-export function SkipControls({ onSkip }: SkipControlsProps) {
+export function SkipControls({ onSkip, durationMs }: SkipControlsProps) {
   const [neverShowAgain, setNeverShowAgain] = useState(() =>
     introStorage.getNeverShow(),
   );
@@ -31,7 +31,7 @@ export function SkipControls({ onSkip }: SkipControlsProps) {
         </span>
       </button>
 
-      <SlimProgressBar durationInMs={4000} />
+      <SlimProgressBar durationInMs={durationMs} />
 
       <label className={styles.checkboxLabel}>
         <input

@@ -96,7 +96,6 @@ export function LogoText({ onRegisterTimeline }: AnimationComponentProps) {
         reducedMotion,
       ],
       scope: containerRef,
-      revertOnUpdate: true,
     },
   );
 

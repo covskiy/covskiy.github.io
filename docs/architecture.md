@@ -218,8 +218,7 @@ covskiy.github.io/
                     └─ page component (eager или lazy)
 ```
 
-`PageTransition` использует `useGSAP` с `scope` и `dependencies: [pathname]`,
-`revertOnUpdate: true` — анимации автоматически откатываются при смене роута.
+`PageTransition` использует `useGSAP` с `scope` и `dependencies: [pathname]`.
 
 ### 2.3 GSAP lifecycle
 
@@ -395,7 +394,7 @@ dist/
 - Автоматически создаёт `gsap.context()`.
 - Cleanup при unmount — `revert()`.
 - `scope` ограничивает селекторы потомками ref.
-- `dependencies` + `revertOnUpdate: true` для реактивных анимаций.
+- `dependencies` для реактивных анимаций.
 
 ### 6.3 Intro-хореография
 

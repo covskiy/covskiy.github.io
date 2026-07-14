@@ -63,7 +63,7 @@ function HomePage() {
       {showIntro &&
         createPortal(
           <IntroAnimation
-            onComplete={() => setShowIntro(false)}
+            // onComplete={() => setShowIntro(false)}
             skipDelay={800}
           />,
           document.body,

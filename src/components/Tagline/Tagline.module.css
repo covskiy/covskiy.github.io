@@ -34,7 +34,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  font-family: Montserrat, sans-serif;
+  font-family: var(--font-families-headings);
   font-size: var(--font-sizes-base);
   line-height: var(--line-heights-normal);
   font-weight: var(--font-weights-semibold);

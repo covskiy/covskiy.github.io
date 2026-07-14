@@ -1,0 +1,1 @@
+export { SlimProgressBar } from './SlimProgressBar';

@@ -1,0 +1,32 @@
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.track {
+  flex: 1;
+  height: var(--spacing-xxs);
+  background: var(--color-gray-800);
+  border: var(--border-width-lg) solid var(--color-gray-700);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 100%;
+  background: var(--color-core-400);
+  border-radius: 0;
+  animation: timeline-fill var(--duration, 5000ms) linear forwards;
+}
+
+@keyframes timeline-fill {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}

@@ -56,8 +56,11 @@ StyleDictionary.registerTransform({
   name: pxToRemTransform,
   type: transformTypes.value,
   filter: (token) => {
-    // Применяем только к токенам типа dimension (размеры, отступы, радиусы и т. д.)
-    return token.$type === 'dimension';
+    // Применяем только к токенам типа dimension (размеры, отступы, радиусы и т. д.)
+    if (token.$type !== 'dimension') return false;
+    // borderWidth оставляем в px — толщины рамок не масштабируются с размером шрифта
+    if (token.attributes.category === 'borderWidth') return false;
+    return true;
   },
   transform: (token, config) => {
     const value = token.$value;
@@ -139,6 +142,10 @@ export default {
           format: formats.cssVariables,
           filter: (token) =>
             token.attributes.category === 'borderRadius' ||
+            token.attributes.category === 'borderWidth' ||
+            token.attributes.category === 'controlElementHeight' ||
+            token.attributes.category === 'iconSize' ||
+            token.attributes.category === 'avatarSize' ||
             token.attributes.category === 'sizing',
         },
       ],

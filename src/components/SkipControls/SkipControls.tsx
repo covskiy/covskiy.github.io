@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { SkipControlsProps } from '../../types/intro.types';
-import { introStorage } from '../IntroAnimation';
+import { introStorage } from '../IntroAnimation/utils';
+import SkipIcon from '../../assets/skip.svg?react';
 import styles from './SkipControls.module.css';
+import { SlimProgressBar } from '../SlimProgressBar';
 
 export function SkipControls({ onSkip }: SkipControlsProps) {
   const [neverShowAgain, setNeverShowAgain] = useState(() =>
@@ -22,13 +24,14 @@ export function SkipControls({ onSkip }: SkipControlsProps) {
 
   return (
     <div className={styles.skipControls}>
-      <button
-        onClick={handleSkip}
-        className={styles.skipButton}
-        aria-label="Пропустить анимацию"
-      >
-        Пропустить →
+      <button onClick={handleSkip} className={styles.skipButton}>
+        <span className={styles.skipButtonContent}>
+          <SkipIcon />
+          <span>Пропустить</span>
+        </span>
       </button>
+
+      <SlimProgressBar durationInMs={4000} />
 
       <label className={styles.checkboxLabel}>
         <input
@@ -36,9 +39,7 @@ export function SkipControls({ onSkip }: SkipControlsProps) {
           checked={neverShowAgain}
           onChange={(e) => handleChange(e.target.checked)}
         />
-        <span className={styles.checkboxText}>
-          Больше не показывать при запуске
-        </span>
+        <span className={styles.checkboxText}>Запомнить выбор</span>
       </label>
     </div>
   );

@@ -29,9 +29,11 @@ export function SkipControls({ onSkip, durationMs }: SkipControlsProps) {
           <SkipIcon />
           <span>Пропустить</span>
         </span>
+        <SlimProgressBar
+          durationInMs={durationMs}
+          className={styles.progressRoot}
+        />
       </button>
-
-      <SlimProgressBar durationInMs={durationMs} />
 
       <label className={styles.checkboxLabel}>
         <input

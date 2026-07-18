@@ -156,6 +156,7 @@ export const INTRO_CHOREOGRAPHY = {
     durations: {
       KEYBOARD_IN: 0.5,
       KEY_HIGHLIGHT: 0.3,
+      KEY_HOLD: 0.18,
       KEYBOARD_OUT: 0.4,
       TEXT_REVEAL: 1,
       TEXT_STAGGER: 0.15,

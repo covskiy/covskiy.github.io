@@ -31,6 +31,21 @@ const TAGLINE_MAP: readonly AnimationItem[] = [
   },
 ];
 
+const KEY_COLORS = {
+  highlight: {
+    '--key-fill': 'var(--color-core-500)',
+    '--key-filter': 'drop-shadow(0 0 3px var(--color-core-500))',
+  },
+  enter: {
+    '--key-fill': 'var(--color-glow-400)',
+    '--key-filter': 'drop-shadow(0 0 5px var(--color-glow-400))',
+  },
+  base: {
+    '--key-fill': 'var(--color-gray-700)',
+    '--key-filter': 'none',
+  },
+} as const;
+
 const KEY_MAP: readonly AnimationItem[] = [
   { selector: '.key_c', at: letterC.phaseLetter.start },
   {
@@ -57,11 +72,12 @@ const KEY_MAP: readonly AnimationItem[] = [
     selector: '.key_y',
     at: letterY.phaseDash.start + letterY.phaseLetter.delay,
   },
-  {
-    selector: '.key_enter',
-    at: INTRO_CHOREOGRAPHY.tagline.enterKey.start,
-  },
 ];
+
+const ENTER_KEY: AnimationItem = {
+  selector: '.key_enter',
+  at: INTRO_CHOREOGRAPHY.tagline.enterKey.start,
+};
 
 export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -112,18 +128,70 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
       );
 
       KEY_MAP.forEach(({ selector, at }) => {
+        const highlightVars = KEY_COLORS.highlight;
+
+        tl.set(selector, { ...highlightVars, '--key-opacity': 1 }, at);
+
         tl.to(
           selector,
           {
-            fill: '#04bf8a',
-            opacity: 1,
             scale: 1.2,
-            duration: D.KEY_HIGHLIGHT,
-            transformOrigin: 'center center',
+            duration: D.KEY_HIGHLIGHT * 0.5,
+            transformOrigin: 'center top',
           },
           at,
         );
+
+        tl.to(
+          selector,
+          {
+            scale: 1,
+            duration: D.KEY_HIGHLIGHT * 0.3,
+            ease: 'power1.out',
+          },
+          at + D.KEY_HIGHLIGHT * 0.5,
+        );
+
+        tl.set(
+          selector,
+          { ...KEY_COLORS.base, '--key-opacity': 0.4 },
+          at + D.KEY_HOLD,
+        );
       });
+
+      tl.set(
+        ENTER_KEY.selector,
+        { ...KEY_COLORS.enter, '--key-opacity': 1 },
+        ENTER_KEY.at,
+      );
+
+      tl.to(
+        ENTER_KEY.selector,
+        {
+          scale: 1.3,
+          y: 1.5,
+          duration: D.KEY_HIGHLIGHT * 0.5,
+          transformOrigin: 'center top',
+        },
+        ENTER_KEY.at,
+      );
+
+      tl.to(
+        ENTER_KEY.selector,
+        {
+          scale: 1,
+          y: 0,
+          duration: D.KEY_HIGHLIGHT * 0.3,
+          ease: 'power1.out',
+        },
+        ENTER_KEY.at + D.KEY_HIGHLIGHT * 0.5,
+      );
+
+      tl.set(
+        ENTER_KEY.selector,
+        { ...KEY_COLORS.base, '--key-opacity': 0.4 },
+        ENTER_KEY.at + D.KEY_HOLD,
+      );
 
       const customBounce = CustomEase.create(
         'custom',

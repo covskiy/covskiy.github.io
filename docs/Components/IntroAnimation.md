@@ -9,7 +9,7 @@ IntroAnimation рендерится как оверлей (`position: fixed; ins
 Оверлей `.introOverlay` занимает всю ширину (`inset: 0`) и несёт только фон-градиент и `padding`. Внутри него лежит `.introContent` — flex-контейнер, который центрирует дочерние элементы (`LogoText`, `Tagline`, `SkipControls`) и ограничивает их ширину:
 
 - `width: 100%`
-- `max-width: var(--sizing-container-max-width)` — токен `sizing.containerMaxWidth` (фиксированные `1200px`, остаётся в px-линейке, см. `docs/design-tokens.md`)
+- `max-width: var(--layout-container-max-width)` — токен `layout.containerMaxWidth` (фиксированные `1200px`, остаётся в px-линейке, см. `docs/design-tokens.md`)
 - `margin-inline: auto` — горизонтальное центрирование на широких экранах
 
 Таким образом фон-градиент тянется на весь вьюпорт, а сами анимируемые элементы интро не растягиваются за пределы максимальной ширины контейнера.

@@ -1,16 +1,18 @@
 import StyleDictionary from 'style-dictionary';
 import {
   transformTypes,
-  transforms,
   formats,
   transformGroups,
-  commentPositions,
+  transforms,
 } from 'style-dictionary/enums';
 
+/** @typedef {import('style-dictionary/types').Config} Config */
+/** @typedef {import('style-dictionary/types').Transform} Transform */
+
 /** Кастомный трансформер для трансляции градиента в корректный css */
-const gradientTransform = 'attribute/gradient-to-css';
-StyleDictionary.registerTransform({
-  name: gradientTransform,
+/** @type {Transform} */
+const gradientTransform = {
+  name: 'attribute/gradient-to-css',
   type: transformTypes.value,
   filter: (token) => {
     return token.$type === 'custom-gradient';
@@ -48,62 +50,76 @@ StyleDictionary.registerTransform({
 
     throw new Error(`Unsupported gradient type: ${gradient.gradientType}`);
   },
-});
+};
 
 /** Транслятор dimension значений */
-const pxToRemTransform = 'value/px-to-rem-conditional';
-StyleDictionary.registerTransform({
-  name: pxToRemTransform,
+/** @type {Transform} */
+const pxToRemTransform = {
+  name: 'value/px-to-rem-conditional',
   type: transformTypes.value,
   filter: (token) => {
     // Применяем только к токенам типа dimension (размеры, отступы, радиусы и т. д.)
     if (token.$type !== 'dimension') return false;
     // borderWidth оставляем в px — толщины рамок не масштабируются с размером шрифта
     if (token.attributes.category === 'borderWidth') return false;
+    // beakpoints не транслируем в rem
+    if (token.attributes.category === 'breakpoints') return false;
     // containerMaxWidth оставляем в px — это фиксированная ширина макета,
     // она не должна масштабироваться с размером шрифта пользователя
     if (
       token.attributes.category === 'layout' &&
-      token.name === 'container-max-width'
+      token.name === 'layout-container-max-width'
     ) {
       return false;
     }
-    return true;
+    // Если в значении лежит "auto" или "normal", регулярное выражение вернет false,
+    // и этот токен вообще не пойдет на этап transform.
+    const valueStr = String(token.$value);
+    const isNumericOrPx = /^[0-9.-]+(px)?$/.test(valueStr);
+
+    return isNumericOrPx;
   },
   transform: (token, config) => {
     const value = token.$value;
+    const baseFontSize = config.basePxFontSize || 16; // 16 — базовый размер шрифта (1rem = 16px)
 
-    // beakpoints не транслируем в rem
-    if (token.attributes.category === 'breakpoints') {
-      return value;
-    }
-
-    if (typeof value === 'string') {
+    if (typeof value === 'string' && value.endsWith('px')) {
       // Конвертируем px в rem
-      if (value.endsWith('px')) {
-        const pxValue = parseInt(value.slice(0, -2), 10);
-        if (pxValue === '0') {
-          console.log('hit');
-        }
-        const remValue = pxValue / config.basePxFontSize; // 16 — базовый размер шрифта (1rem = 16px)
-        return `${remValue}rem`;
+      const pxValue = parseFloat(value);
+      if (!isNaN(pxValue)) {
+        return `${pxValue / baseFontSize}rem`;
       }
-
-      // Если значение уже в rem/em/auto и т. д. — возвращаем как есть
-      return value;
     }
 
-    // Для числовых значений (например, line-height) возвращаем как есть
+    if (typeof value === 'number') {
+      return `${value / baseFontSize}rem`;
+    }
+
     return value;
   },
-});
+};
 
+const customCSS = 'custom-css';
+const customGroups = StyleDictionary.hooks.transformGroups[
+  transformGroups.css
+].filter((t) => t !== transforms.sizeRem);
+
+/** @type {Config} */
 export default {
   source: [`design-tokens/**/*.json`],
+  hooks: {
+    transformGroups: {
+      [customCSS]: [...customGroups, pxToRemTransform.name],
+    },
+    transforms: {
+      [gradientTransform.name]: gradientTransform,
+      [pxToRemTransform.name]: pxToRemTransform,
+    },
+  },
   platforms: {
     css: {
-      transformGroup: transformGroups.css,
-      transforms: [gradientTransform, pxToRemTransform],
+      transformGroup: customCSS,
+      transforms: [gradientTransform.name, pxToRemTransform.name],
       basePxFontSize: 16,
       buildPath: 'src/styles',
       files: [
@@ -154,7 +170,7 @@ export default {
             token.attributes.category === 'controlElementHeight' ||
             token.attributes.category === 'iconSize' ||
             token.attributes.category === 'avatarSize' ||
-            token.attributes.category === 'sizing',
+            token.attributes.category === 'layout',
         },
       ],
     },

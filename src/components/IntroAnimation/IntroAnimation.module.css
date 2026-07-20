@@ -35,7 +35,7 @@
 .introContent {
   position: relative;
   width: 100%;
-  max-width: var(--sizing-container-max-width);
+  max-width: var(--layout-container-max-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;

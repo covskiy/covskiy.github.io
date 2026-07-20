@@ -28,9 +28,12 @@ JSON-файлы в `design-tokens/`:
   - `value/px-to-rem-conditional` — для `dimension` токенов конвертирует
     `px` → `rem` (`basePxFontSize: 16`), **кроме**:
     - токенов категории `breakpoints` (остаются в `px`);
-    - токена `sizing.containerMaxWidth` — фиксированная ширина макета
+    - токена `layout.containerMaxWidth` — фиксированная ширина макета
       (`1200px`), не масштабируется с размером шрифта пользователя,
       поэтому остаётся в `px`.
+
+    в дефолтной группе `transformGroups.css` трансформер `transforms.sizeRem` ('size/rem') заменен на этот
+
 - `buildPath: 'src/styles'`.
 
 ## 3. Маппинг категория → файл

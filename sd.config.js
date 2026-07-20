@@ -60,6 +60,14 @@ StyleDictionary.registerTransform({
     if (token.$type !== 'dimension') return false;
     // borderWidth оставляем в px — толщины рамок не масштабируются с размером шрифта
     if (token.attributes.category === 'borderWidth') return false;
+    // containerMaxWidth оставляем в px — это фиксированная ширина макета,
+    // она не должна масштабироваться с размером шрифта пользователя
+    if (
+      token.attributes.category === 'layout' &&
+      token.name === 'container-max-width'
+    ) {
+      return false;
+    }
     return true;
   },
   transform: (token, config) => {

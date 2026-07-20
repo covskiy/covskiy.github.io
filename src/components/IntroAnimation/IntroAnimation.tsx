@@ -5,6 +5,9 @@ import type { IntroAnimationProps } from '../../types/intro.types';
 import styles from './IntroAnimation.module.css';
 import { INTRO_CHOREOGRAPHY } from './choreography';
 import { useGSAP } from '@gsap/react';
+import { GSDevTools } from 'gsap/GSDevTools';
+
+gsap.registerPlugin(GSDevTools);
 
 export type registerFunc = (masterTimeline: gsap.core.Timeline) => void;
 
@@ -62,6 +65,11 @@ export function IntroAnimation({ onComplete, skipDelay }: IntroAnimationProps) {
       childTimelinesRegistrationRef.current.forEach((func) => func(master));
       master.to({}, { duration: INTRO_CHOREOGRAPHY.master.holdDuration });
       master.play();
+      // GSDevTools.create({
+      //   id: 'IntroTimeline',
+      //   animation: master,
+      //   css: { 'z-index': 9999 },
+      // });
     },
     {
       dependencies: [onComplete],
@@ -71,12 +79,14 @@ export function IntroAnimation({ onComplete, skipDelay }: IntroAnimationProps) {
 
   return (
     <div className={styles.introOverlay} ref={timelineContainerRef}>
-      <LogoText onRegisterTimeline={handleRegisterTimeline} />
-      <Tagline onRegisterTimeline={handleRegisterTimeline} />
+      <div className={styles.introContent}>
+        <LogoText onRegisterTimeline={handleRegisterTimeline} />
+        <Tagline onRegisterTimeline={handleRegisterTimeline} />
 
-      {showSkipButton && (
-        <SkipControls onSkip={handleSkip} durationMs={remainingMs} />
-      )}
+        {showSkipButton && (
+          <SkipControls onSkip={handleSkip} durationMs={remainingMs} />
+        )}
+      </div>
     </div>
   );
 }

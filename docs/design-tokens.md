@@ -26,8 +26,11 @@ JSON-файлы в `design-tokens/`:
   - `attribute/gradient-to-css` — для токенов `$type: 'custom-gradient'`,
     поддерживает `linear` и `radial` (см. § 4).
   - `value/px-to-rem-conditional` — для `dimension` токенов конвертирует
-    `px` → `rem` (`basePxFontSize: 16`), **кроме** токенов категории
-    `breakpoints` (они остаются в `px`).
+    `px` → `rem` (`basePxFontSize: 16`), **кроме**:
+    - токенов категории `breakpoints` (остаются в `px`);
+    - токена `sizing.containerMaxWidth` — фиксированная ширина макета
+      (`1200px`), не масштабируется с размером шрифта пользователя,
+      поэтому остаётся в `px`.
 - `buildPath: 'src/styles'`.
 
 ## 3. Маппинг категория → файл

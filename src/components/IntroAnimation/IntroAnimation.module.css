@@ -1,9 +1,18 @@
 .introOverlay {
-  --intro-logo-size: 120px;
-  --intro-logo-text-max-w: 420px;
-  --intro-tagline-max-w: 360px;
-  --intro-tagline-h: 10rem;
-  --intro-keyboard-svg-max-w: 14rem;
+  /* Ширина svg & canvas LogoText контейнера с анимацией */
+  --intro-logo-text-width: min(95vw, 420px);
+
+  /* Максимальная ширина основного контейнера Tagline компоненты */
+  --intro-tagline-max-width: var(--intro-logo-text-width);
+
+  /* Высота основного контейнера Tagline компоненты */
+  --intro-tagline-height: 10rem;
+
+  /* Максимальная ширина svg элемента с клавиатурой у Tagline компоненты */
+  --intro-keyboard-width: calc(0.75 * var(--intro-tagline-max-width));
+
+  /** Отступ логотипа в мобильной верстке от верхнего края */
+  --intro-logo-mobile-top-offset: min(15vh, 150px);
 
   position: fixed;
   inset: 0;
@@ -16,19 +25,20 @@
   z-index: 9999;
 
   @media (width >= 768px) {
-    --intro-logo-size: 150px;
-    --intro-logo-text-max-w: 520px;
-    --intro-tagline-max-w: 440px;
-    --intro-tagline-h: 12rem;
-    --intro-keyboard-svg-max-w: 18rem;
+    --intro-logo-text-width: min(90vw, 520px);
+    --intro-tagline-height: 12rem;
+    --intro-logo-mobile-top-offset: 0px;
   }
 
   @media (width >= 1024px) {
-    --intro-logo-size: 180px;
-    --intro-logo-text-max-w: 640px;
-    --intro-tagline-max-w: 520px;
-    --intro-tagline-h: 14rem;
-    --intro-keyboard-svg-max-w: 22rem;
+    /* маленькие ноутбуки, а так же слепошарые с масштабированием */
+    --intro-tagline-height: 10rem;
+
+    @media (height >= 730px) {
+      /* FullHD экраны, ноуты с современными матрицами */
+      --intro-logo-text-width: min(90vw, 640px);
+      --intro-tagline-height: 14rem;
+    }
   }
 }
 
@@ -39,17 +49,17 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   gap: var(--spacing-lg);
   padding: 0 var(--spacing-sm);
 
   @media (width >= 768px) {
-    gap: var(--spacing-xxl);
+    justify-content: center;
+    gap: var(--spacing-xl);
     padding: var(--spacing-lg);
   }
 
-  @media (width >= 1024px) {
+  @media (width >= 1024px) and (height >= 730px) {
     gap: var(--spacing-xxl);
     padding: var(--spacing-xl);
   }

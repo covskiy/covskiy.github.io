@@ -6,11 +6,11 @@ IntroAnimation рендерится как оверлей (`position: fixed; ins
 
 ## Контейнер контента
 
-Оверлей `.introOverlay` занимает всю ширину (`inset: 0`) и несёт только фон-градиент и `padding`. Внутри него лежит `.introContent` — flex-контейнер, который центрирует дочерние элементы (`LogoText`, `Tagline`, `SkipControls`) и ограничивает их ширину:
+Оверлей `.introOverlay` занимает всю ширину (`inset: 0`) и несёт только фон-градиент. Внутри него лежит `.introContent` — flex-контейнер с `padding`, который центрирует дочерние элементы (`LogoText`, `Tagline`, `SkipControls`) и ограничивает их ширину:
 
 - `width: 100%`
 - `max-width: var(--layout-container-max-width)` — токен `layout.containerMaxWidth` (фиксированные `1200px`, остаётся в px-линейке, см. `docs/design-tokens.md`)
-- `margin-inline: auto` — горизонтальное центрирование на широких экранах
+- `margin: 0 auto` — горизонтальное центрирование на широких экранах
 
 Таким образом фон-градиент тянется на весь вьюпорт, а сами анимируемые элементы интро не растягиваются за пределы максимальной ширины контейнера.
 
@@ -53,11 +53,11 @@ types/
 
 ## Последовательность анимации
 
-| Время (сек) | Элемент  | Реальная анимация                                                                                                                                        |
-| ----------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                                                            |
-| `0.0`       | LogoText | `morphSVG` cursor (nail → anchor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`)                                          |
-| `1.5`       | Tagline  | Клавиатура влетает сверху (синхронно с морфом гвоздя → курсор в LogoText), затем подсветка клавиш синхронно с началом морфинга букв, в конце — SplitText |
+| Время (сек) | Элемент  | Реальная анимация                                                                                                                                                          |
+| ----------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0.0`       | Logo     | `drawSVG: '0% 0%' → '0% 100%'` (glow + main path), `ease: power2.inOut` + `power2.out` (fade)                                                                              |
+| `0.0`       | LogoText | `morphSVG` cursor (nail → cursor), `x/y/rotation` fly (`power3.out`), затем `ovskiyTl` playing (`power1.inOut`)                                                            |
+| `1.5`       | Tagline  | Клавиатура влетает сверху (синхронно с морфом гвоздя → курсор в LogoText), затем подсветка клавиш синхронно с началом морфинга букв, в конце — text reveal с custom bounce |
 
 **Примечание**: Таймлайны дочерних компонентов вкладываются в мастер-таймлайн через `position` параметр (см. `INTRO_CHOREOGRAPHY` в `choreography.ts`).
 
@@ -106,17 +106,17 @@ Tagline зарегистрирован на master-таймлайне в поз�
 
 - `C_LETTER_FROM`: `0.5s`
 - `C_LETTER_MORPH`: `0.5s`
-- `NAIL_FLY`: `1.2s`
+- `NAIL_FLY`: `1s`
 - `NAIL_MORPH`: `0.5s`
-- `LETTER_MORPH`: `0.4s`
-- `CURSOR_MOVE`: `2s`
+- `LETTER_MORPH`: `0.5s`
+- `CURSOR_MOVE`: `1.6s`
 
 ### tagline.durations
 
 - `KEYBOARD_IN`: `0.5s`
 - `KEY_HIGHLIGHT`: `0.3s`
 - `KEYBOARD_OUT`: `0.4s`
-- `TEXT_REVEAL`: `0.6s`
+- `TEXT_REVEAL`: `1s`
 - `TEXT_STAGGER`: `0.15s`
 
 ### Подсветка клавиш

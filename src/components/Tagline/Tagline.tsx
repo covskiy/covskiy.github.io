@@ -7,7 +7,6 @@ import type { AnimationComponentProps } from '../../types/intro.types';
 import { INTRO_CHOREOGRAPHY } from '../IntroAnimation/choreography';
 import styles from './Tagline.module.css';
 
-const KEYBOARD_IN_LOCAL = INTRO_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start;
 const {
   C: letterC,
   O: letterO,
@@ -94,32 +93,29 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         defaults: { ease: 'power2.out' },
       });
 
-      // Метка старта Tagline на его собственном timeline
-      tl.addLabel('KEYBOARD_IN', KEYBOARD_IN_LOCAL);
-
       TAGLINE_MAP.forEach(({ selector }) => {
         tl.set(selector, {
           autoAlpha: 0,
-          y: -80,
+          y: -150,
         });
       });
 
-      tl.set(keyboardRef.current, { y: -120, autoAlpha: 0 });
+      tl.set(keyboardRef.current, { yPercent: -120, autoAlpha: 0 });
 
       tl.to(
         keyboardRef.current,
         {
-          y: 0,
+          yPercent: 0,
           autoAlpha: 1,
           duration: D.KEYBOARD_IN,
         },
-        'KEYBOARD_IN',
+        INTRO_CHOREOGRAPHY.logoText.Cursor.phaseCaret.start,
       );
 
       tl.to(
         keyboardRef.current,
         {
-          y: 120,
+          yPercent: 120,
           autoAlpha: 0,
           duration: D.KEYBOARD_OUT,
           ease: 'power2.in',
@@ -222,8 +218,9 @@ export function Tagline({ onRegisterTimeline }: AnimationComponentProps) {
         <KeyboardSvg />
       </div>
       <div ref={textRef} className={styles.text}>
-        {/* <p className={`${styles.textLine} ${styles.lineOne}`}> */}
-        <p className={`${styles.lineOne}`}>Цифровая кузница</p>
+        <p className={`${styles.textLine} ${styles.lineOne}`}>
+          Цифровая кузница
+        </p>
         <p className={`${styles.textLine} ${styles.lineTwo}`}>ваших решений</p>
       </div>
     </div>

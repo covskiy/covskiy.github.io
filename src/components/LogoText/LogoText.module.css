@@ -1,3 +1,4 @@
+/* контейнер который держит два слоя под анимацию: canvas - искры / svg - морфинг */
 .container {
   position: relative;
   display: flex;
@@ -7,15 +8,18 @@
   flex-shrink: 0;
 }
 
+/* главный компонент,который держит весь элемент */
 .frame {
+  margin-top: var(--intro-logo-mobile-top-offset);
   position: relative;
   display: inline-flex;
   background: var(--color-glow-25, #fffef5);
-  border: 2px solid var(--color-glow-700, #ccac2b);
-  border-radius: 8px;
+  border: var(--border-width-lg) solid var(--color-glow-700, #ccac2b);
+  border-radius: var(--border-radius-md);
   box-shadow: 0 2px 16px rgb(0 0 0 / 25%);
 }
 
+/* кружочек - крепление для доски с анимацией */
 .rivet {
   position: absolute;
   width: 8px;
@@ -54,7 +58,7 @@
   display: block;
   width: 100%;
   height: auto;
-  max-width: min(95vw, 320px);
+  max-width: var(--intro-logo-text-width);
 
   :global(#logoLetters) {
     display: none;
@@ -76,10 +80,6 @@
   :global(.img-nail) {
     fill: var(--color-gray-900, #121316);
   }
-
-  @media (width >= 768px) {
-    max-width: min(90vw, var(--intro-logo-text-max-w, 420px));
-  }
 }
 
 .canvas {
@@ -94,11 +94,7 @@
   right: 0;
   margin: 0 auto;
   width: 100%;
-  max-width: min(95vw, 320px);
+  max-width: var(--intro-logo-text-width);
   aspect-ratio: 200 / 150;
   pointer-events: none;
-
-  @media (width >= 768px) {
-    max-width: min(90vw, var(--intro-logo-text-max-w, 420px));
-  }
 }

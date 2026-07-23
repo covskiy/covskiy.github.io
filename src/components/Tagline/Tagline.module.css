@@ -2,14 +2,9 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  max-width: min(95vw, 320px);
-  height: 10rem;
+  max-width: var(--intro-tagline-max-width);
+  height: var(--intro-tagline-height);
   flex-shrink: 0;
-
-  @media (width >= 768px) {
-    max-width: min(90vw, var(--intro-tagline-max-w, 360px));
-    height: var(--intro-tagline-h, 10rem);
-  }
 }
 
 .keyboard {
@@ -25,12 +20,8 @@
 .keyboard svg {
   width: 100%;
   height: 100%;
-  max-width: var(--intro-keyboard-svg-max-w, 14rem);
+  max-width: var(--intro-keyboard-width);
   object-fit: contain;
-
-  @media (width < 360px) {
-    max-width: 12rem;
-  }
 }
 
 .text {
@@ -39,20 +30,24 @@
   left: 0;
   width: 100%;
   font-family: var(--font-families-headings);
-  font-size: var(--font-sizes-base);
+  font-size: var(--font-sizes-xl);
   line-height: var(--line-heights-normal);
   font-weight: var(--font-weights-semibold);
   color: var(--color-core-400);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.2rem;
   padding-top: var(--spacing-md);
   display: flex;
   flex-direction: column;
 
   @media (width >= 768px) {
-    font-size: var(--font-sizes-lg);
-    letter-spacing: 0.3em;
-    padding: 0;
+    font-size: var(--font-sizes-2xl);
+    letter-spacing: 0.3rem;
+  }
+
+  @media (width >= 1024px) and (height >= 730px) {
+    font-size: var(--font-sizes-4xl);
+    letter-spacing: 0.2rem;
   }
 }
 

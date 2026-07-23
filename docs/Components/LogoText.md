@@ -117,17 +117,18 @@ Tagline стартует на master-таймлайне в позиции `0` (`
 - `.frame` — декоративная обёртка в стиле заклёпанной металлической пластины:
   тёплый золотистый фон (`--color-glow-25`), бордюр `--color-glow-700`,
   4 клёпки по углам (radial-gradient, box-shadow), скругление 8px
-- `.container` — `padding: 0 1rem` для отступов по бокам, `flex-shrink: 0`
+- `.container` — `flex-shrink: 0`
   (защита от сжатия в flex-контейнере IntroAnimation)
-- `.svg` — `max-width: min(90vw, 420px)`, вписывается в мобильный viewport
+- `.svg` — `max-width: var(--intro-logo-text-width)` (mobile `min(95vw, 420px)`, tablet `min(90vw, 520px)`, desktop `min(90vw, 640px)`)
 - Высота определяется пропорцией исходного `viewBox` SVG (200×150 → 360×270)
 
 **Важно**: контейнер **не** имеет `height: 100%` — это сломало бы flex-layout
 в IntroAnimation (заставляло LogoText занимать 100vh и вытеснять Tagline).
 Контейнер sizing определяется контентом (SVG).
 
-Брейкпоинты для планшетов/десктопов пока не заданы — будут добавлены
-отдельной задачей.
+Адаптация размера на планшетах/десктопах — через `--intro-logo-text-width`,
+определённую в `IntroAnimation.module.css` (mobile `min(95vw, 420px)`,
+tablet `min(90vw, 520px)`, FullHD `min(90vw, 640px)`).
 
 ## Архитектура регистрации
 
@@ -159,7 +160,7 @@ onRegisterTimeline(tl); // регистрация без позиции (по у
 ## Sparks — эффект искр внутри букв
 
 Эффект подъёма искр снизу вверх (из нижней части viewBox), привязанный к двум
-моментам локального таймлайна (`INTRO_CHOREOGRAPHY.logoText.sparks.burst1 = 4.2s`, `burst2 = 4.6s`).
+моментам локального таймлайна (`INTRO_CHOREOGRAPHY.logoText.sparks.burst1 = 4.5s`, `burst2 = 4.9s`).
 Каждая искра летит по одной из двух траекторий: **spiral** (спираль) или
 **sinwave** (синусоида). Выбор траектории и параметров случаен на каждую искру
 в момент эмиссии.

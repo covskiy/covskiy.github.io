@@ -1,0 +1,66 @@
+.introOverlay {
+  /* Ширина svg & canvas LogoText контейнера с анимацией */
+  --intro-logo-text-width: min(95vw, 420px);
+
+  /* Максимальная ширина основного контейнера Tagline компоненты */
+  --intro-tagline-max-width: var(--intro-logo-text-width);
+
+  /* Высота основного контейнера Tagline компоненты */
+  --intro-tagline-height: 10rem;
+
+  /* Максимальная ширина svg элемента с клавиатурой у Tagline компоненты */
+  --intro-keyboard-width: calc(0.75 * var(--intro-tagline-max-width));
+
+  /** Отступ логотипа в мобильной верстке от верхнего края */
+  --intro-logo-mobile-top-offset: min(15vh, 150px);
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background: linear-gradient(
+    135deg,
+    var(--color-gray-900, #121316) 0%,
+    var(--color-gray-800, #1a1c23) 100%
+  );
+  z-index: 9999;
+
+  @media (width >= 768px) {
+    --intro-logo-text-width: min(90vw, 520px);
+    --intro-tagline-height: 12rem;
+    --intro-logo-mobile-top-offset: 0px;
+  }
+
+  @media (width >= 1024px) {
+    /* маленькие ноутбуки, а так же слепошарые с масштабированием */
+    --intro-tagline-height: 10rem;
+
+    @media (height >= 730px) {
+      /* FullHD экраны, ноуты с современными матрицами */
+      --intro-logo-text-width: min(90vw, 640px);
+      --intro-tagline-height: 14rem;
+    }
+  }
+}
+
+.introContent {
+  position: relative;
+  width: 100%;
+  max-width: var(--layout-container-max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: 0 var(--spacing-sm);
+
+  @media (width >= 768px) {
+    justify-content: center;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-lg);
+  }
+
+  @media (width >= 1024px) and (height >= 730px) {
+    gap: var(--spacing-xxl);
+    padding: var(--spacing-xl);
+  }
+}

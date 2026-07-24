@@ -1,0 +1,14 @@
+{
+  "breakpoints": {
+    "$type": "dimension",
+    "$description": "Брейкпоинты для адаптивного дизайна (mobile-first, min-width).",
+    "tablet": {
+      "$value": "768px",
+      "$description": "Планшеты. Применяются при ширине экрана от 768 px."
+    },
+    "desktop": {
+      "$value": "1024px",
+      "$description": "Десктопы. Применяются при ширине экрана от 1024 px."
+    }
+  }
+}

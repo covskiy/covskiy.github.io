@@ -1,0 +1,38 @@
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.track {
+  flex: 1;
+  height: calc(var(--spacing-xxs) * 1.4);
+  background: var(--color-gray-800);
+  border: var(--border-width-lg) solid var(--color-gray-700);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 100%;
+  background: var(--color-core-400);
+  border-radius: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  will-change: transform;
+  animation-name: timeline-fill;
+  animation-duration: var(--duration, 5000ms);
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes timeline-fill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}

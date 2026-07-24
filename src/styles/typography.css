@@ -1,0 +1,46 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --font-families-logo:
+    'Playfair Display', serif; /** Элегантный шрифт с засечками для логотипа и hero‑описания. Создаёт премиальное впечатление. */
+
+  --font-families-headings:
+    'Inter', sans-serif; /** Современный гротеск для заголовков всех уровней. Хорошая читаемость и чёткие формы. */
+
+  --font-families-body:
+    'Open Sans', sans-serif; /** Универсальный шрифт без засечек для основного текста, параграфов, подписей и мелких элементов. */
+
+  --font-sizes-xs: 0.75rem; /** Очень мелкий текст (12px). Для подписей, мелких подписей к изображениям, дисклеймеров. */
+  --font-sizes-sm: 0.875rem; /** Мелкий текст (14px). Для подзаголовков, второстепенного текста, подписей к полям формы. */
+  --font-sizes-base: 1rem; /** Базовый размер (16px). Основной текст параграфов, описания, списки. */
+  --font-sizes-lg: 1.125rem; /** Увеличенный текст (18px). Для акцентированного основного текста или более крупных параграфов. */
+  --font-sizes-xl: 1.25rem; /** Заголовок уровня H4 (20px). */
+  --font-sizes-2xl: 1.5rem; /** Заголовок уровня H3 (24px). */
+  --font-sizes-3xl: 1.875rem; /** Заголовок уровня H2 (30px). */
+  --font-sizes-4xl: 2.25rem; /** Заголовок уровня H1 (36px). */
+  --font-sizes-5xl: 3rem; /** Hero‑заголовок (48px). Используется для главного заголовка в hero‑секции. */
+  --font-sizes-6xl: 3.75rem; /** Крупный hero‑текст (60px). Для особо выразительных заголовков в hero‑блоке. */
+  --line-heights-tight: 1.1; /** Плотный интерлиньяж для крупных заголовков и логотипов. */
+  --line-heights-normal: 1.4; /** Стандартный интерлиньяж для заголовков среднего размера. */
+  --line-heights-relaxed: 1.6; /** Комфортный интерлиньяж для основного текста и параграфов. */
+  --line-heights-loose: 2; /** Свободный интерлиньяж для очень крупных заголовков в hero‑секциях. */
+  --font-weights-thin: 100;
+  --font-weights-light: 300;
+  --font-weights-normal: 400;
+  --font-weights-medium: 500;
+  --font-weights-semibold: 600;
+  --font-weights-bold: 700;
+  --font-weights-extrabold: 800;
+  --letter-spacings-tight: -0.025em; /** Сжатый трекинг для крупных заголовков. */
+  --letter-spacings-normal: normal; /** Нормальный трекинг. */
+  --letter-spacings-wide: 0.05em; /** Расширенный трекинг для логотипов и акцентированных надписей. */
+  --typography-logo: 700 3rem/2 'Playfair Display', serif;
+  --typography-hero-description: 500 1.875rem/1.4 'Playfair Display', serif;
+  --typography-heading-h1: 800 2.25rem/1.4 'Inter', sans-serif;
+  --typography-heading-h2: 700 1.875rem/1.4 'Inter', sans-serif;
+  --typography-heading-h3: 600 1.5rem/1.4 'Inter', sans-serif;
+  --typography-paragraph: 400 1rem/1.6 'Open Sans', sans-serif;
+  --typography-small-text: 300 0.875rem/1.6 'Open Sans', sans-serif;
+}

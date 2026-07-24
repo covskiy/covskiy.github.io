@@ -1,0 +1,169 @@
+{
+  "fontFamilies": {
+    "$type": "fontFamily",
+    "$description": "Коллекция шрифтов для разных элементов интерфейса",
+    "logo": {
+      "$value": "\"Playfair Display\", serif",
+      "$description": "Элегантный шрифт с засечками для логотипа и hero‑описания. Создаёт премиальное впечатление."
+    },
+    "headings": {
+      "$value": "\"Inter\", sans-serif",
+      "$description": "Современный гротеск для заголовков всех уровней. Хорошая читаемость и чёткие формы."
+    },
+    "body": {
+      "$value": "\"Open Sans\", sans-serif",
+      "$description": "Универсальный шрифт без засечек для основного текста, параграфов, подписей и мелких элементов."
+    }
+  },
+  "fontSizes": {
+    "$type": "dimension",
+    "$description": "Размеры шрифта в px для фиксированного масштаба",
+    "xs": {
+      "$value": "12px",
+      "$description": "Очень мелкий текст (12px). Для подписей, мелких подписей к изображениям, дисклеймеров."
+    },
+    "sm": {
+      "$value": "14px",
+      "$description": "Мелкий текст (14px). Для подзаголовков, второстепенного текста, подписей к полям формы."
+    },
+    "base": {
+      "$value": "16px",
+      "$description": "Базовый размер (16px). Основной текст параграфов, описания, списки."
+    },
+    "lg": {
+      "$value": "18px",
+      "$description": "Увеличенный текст (18px). Для акцентированного основного текста или более крупных параграфов."
+    },
+    "xl": {
+      "$value": "20px",
+      "$description": "Заголовок уровня H4 (20px)."
+    },
+    "2xl": {
+      "$value": "24px",
+      "$description": "Заголовок уровня H3 (24px)."
+    },
+    "3xl": {
+      "$value": "30px",
+      "$description": "Заголовок уровня H2 (30px)."
+    },
+    "4xl": {
+      "$value": "36px",
+      "$description": "Заголовок уровня H1 (36px)."
+    },
+    "5xl": {
+      "$value": "48px",
+      "$description": "Hero‑заголовок (48px). Используется для главного заголовка в hero‑секции."
+    },
+    "6xl": {
+      "$value": "60px",
+      "$description": "Крупный hero‑текст (60px). Для особо выразительных заголовков в hero‑блоке."
+    }
+  },
+  "lineHeights": {
+    "$type": "number",
+    "$description": "Межстрочные интервалы (line‑height) как множитель от размера шрифта",
+    "tight": {
+      "$value": 1.1,
+      "$description": "Плотный интерлиньяж для крупных заголовков и логотипов."
+    },
+    "normal": {
+      "$value": 1.4,
+      "$description": "Стандартный интерлиньяж для заголовков среднего размера."
+    },
+    "relaxed": {
+      "$value": 1.6,
+      "$description": "Комфортный интерлиньяж для основного текста и параграфов."
+    },
+    "loose": {
+      "$value": 2,
+      "$description": "Свободный интерлиньяж для очень крупных заголовков в hero‑секциях."
+    }
+  },
+  "fontWeights": {
+    "$type": "number",
+    "$description": "Начертания шрифта (font‑weight)",
+    "thin": { "$value": 100 },
+    "light": { "$value": 300 },
+    "normal": { "$value": 400 },
+    "medium": { "$value": 500 },
+    "semibold": { "$value": 600 },
+    "bold": { "$value": 700 },
+    "extrabold": { "$value": 800 }
+  },
+  "letterSpacings": {
+    "$type": "dimension",
+    "$description": "Межбуквенные интервалы (letter‑spacing)",
+    "tight": {
+      "$value": "-0.025em",
+      "$description": "Сжатый трекинг для крупных заголовков."
+    },
+    "normal": {
+      "$value": "normal",
+      "$description": "Нормальный трекинг."
+    },
+    "wide": {
+      "$value": "0.05em",
+      "$description": "Расширенный трекинг для логотипов и акцентированных надписей."
+    }
+  },
+  "typography": {
+    "$description": "Готовые комбинации типографических свойств для конкретных элементов",
+    "$type": "typography",
+    "logo": {
+      "$value": {
+        "fontFamily": "{fontFamilies.logo}",
+        "fontSize": "{fontSizes.5xl}",
+        "lineHeight": "{lineHeights.loose}",
+        "fontWeight": "{fontWeights.bold}"
+      }
+    },
+    "heroDescription": {
+      "$value": {
+        "fontFamily": "{fontFamilies.logo}",
+        "fontSize": "{fontSizes.3xl}",
+        "lineHeight": "{lineHeights.normal}",
+        "fontWeight": "{fontWeights.medium}"
+      }
+    },
+    "headingH1": {
+      "$value": {
+        "fontFamily": "{fontFamilies.headings}",
+        "fontSize": "{fontSizes.4xl}",
+        "lineHeight": "{lineHeights.normal}",
+        "fontWeight": "{fontWeights.extrabold}"
+      }
+    },
+    "headingH2": {
+      "$value": {
+        "fontFamily": "{fontFamilies.headings}",
+        "fontSize": "{fontSizes.3xl}",
+        "lineHeight": "{lineHeights.normal}",
+        "fontWeight": "{fontWeights.bold}"
+      }
+    },
+    "headingH3": {
+      "$value": {
+        "fontFamily": "{fontFamilies.headings}",
+        "fontSize": "{fontSizes.2xl}",
+        "lineHeight": "{lineHeights.normal}",
+        "fontWeight": "{fontWeights.semibold}"
+      }
+    },
+    "paragraph": {
+      "$value": {
+        "fontFamily": "{fontFamilies.body}",
+        "fontSize": "{fontSizes.base}",
+        "lineHeight": "{lineHeights.relaxed}",
+        "fontWeight": "{fontWeights.normal}"
+      }
+    },
+    "smallText": {
+      "$value": {
+        "fontFamily": "{fontFamilies.body}",
+        "fontSize": "{fontSizes.sm}",
+        "lineHeight": "{lineHeights.relaxed}",
+        "fontWeight": "{fontWeights.light}"
+      }
+    }
+  }
+}

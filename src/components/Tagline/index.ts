@@ -1,0 +1,1 @@
+export { Tagline } from './Tagline';

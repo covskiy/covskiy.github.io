@@ -1,0 +1,100 @@
+/* контейнер который держит два слоя под анимацию: canvas - искры / svg - морфинг */
+.container {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* главный компонент,который держит весь элемент */
+.frame {
+  margin-top: var(--intro-logo-mobile-top-offset);
+  position: relative;
+  display: inline-flex;
+  background: var(--color-glow-25, #fffef5);
+  border: var(--border-width-lg) solid var(--color-glow-700, #ccac2b);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 2px 16px rgb(0 0 0 / 25%);
+}
+
+/* кружочек - крепление для доски с анимацией */
+.rivet {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    var(--color-glow-300),
+    var(--color-glow-600)
+  );
+  box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  z-index: 1;
+}
+
+.rivetTopLeft {
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+.rivetTopRight {
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.rivetBottomLeft {
+  bottom: 0.5rem;
+  left: 0.5rem;
+}
+
+.rivetBottomRight {
+  bottom: 0.5rem;
+  right: 0.5rem;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: var(--intro-logo-text-width);
+
+  :global(#logoLetters) {
+    display: none;
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  :global(.img-orig):global(:not(.img-c)) {
+    visibility: hidden;
+  }
+
+  :global(.img-c),
+  :global(.img-o),
+  :global(.img-v),
+  :global(.img-s),
+  :global(.img-k),
+  :global(.img-i),
+  :global(.img-y),
+  :global(.img-nail) {
+    fill: var(--color-gray-900, #121316);
+  }
+}
+
+.canvas {
+  /* Размер и позиция — как у SVG: bottom-anchored, горизонтально центрирован,
+     те же max-width и пропорции. Это нужно, чтобы Path2D-клиппинг
+     (viewBox 200×150 → CSS-пиксели через scale) лёг 1:1 на SVG
+     и буквы в клипе совпали с реальными буквами.
+     viewBox 200×150 */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: var(--intro-logo-text-width);
+  aspect-ratio: 200 / 150;
+  pointer-events: none;
+}

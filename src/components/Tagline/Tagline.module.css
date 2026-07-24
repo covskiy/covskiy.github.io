@@ -1,0 +1,78 @@
+.container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: var(--intro-tagline-max-width);
+  height: var(--intro-tagline-height);
+  flex-shrink: 0;
+}
+
+.keyboard {
+  opacity: 0;
+  visibility: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.keyboard svg {
+  width: 100%;
+  height: 100%;
+  max-width: var(--intro-keyboard-width);
+  object-fit: contain;
+}
+
+.text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  font-family: var(--font-families-headings);
+  font-size: var(--font-sizes-xl);
+  line-height: var(--line-heights-normal);
+  font-weight: var(--font-weights-semibold);
+  color: var(--color-core-400);
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  padding-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+
+  @media (width >= 768px) {
+    font-size: var(--font-sizes-2xl);
+    letter-spacing: 0.3rem;
+  }
+
+  @media (width >= 1024px) and (height >= 730px) {
+    font-size: var(--font-sizes-4xl);
+    letter-spacing: 0.2rem;
+  }
+}
+
+.textLine {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.lineOne {
+  align-self: flex-start;
+}
+
+.lineTwo {
+  align-self: flex-end;
+  padding-top: var(--spacing-md);
+}
+
+.container :global(.svg-board) {
+  fill: var(--color-gray-800);
+  stroke: var(--color-gray-600);
+  stroke-width: 0.5;
+}
+
+.container :global(.svg-board-key) {
+  fill: var(--key-fill, var(--color-gray-700));
+  opacity: var(--key-opacity, 0.4);
+  filter: var(--key-filter, none);
+}

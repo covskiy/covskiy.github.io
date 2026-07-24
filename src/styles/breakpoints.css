@@ -1,0 +1,8 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --breakpoints-tablet: 768px; /** Планшеты. Применяются при ширине экрана от 768 px. */
+  --breakpoints-desktop: 1024px; /** Десктопы. Применяются при ширине экрана от 1024 px. */
+}

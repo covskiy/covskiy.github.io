@@ -1,0 +1,42 @@
+import styles from './LandingSections.module.css';
+
+export function LandingSections() {
+  return (
+    <main className={styles.home}>
+      <section className={styles.hero}>
+        <h1>Добро пожаловать</h1>
+        <p className={styles.tagline}>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        </p>
+      </section>
+
+      <section className={styles.features}>
+        <h2>Наши преимущества</h2>
+        <div className={styles.grid}>
+          <div className={styles.card}>
+            <h3>Качество</h3>
+            <p>
+              Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat.
+            </p>
+          </div>
+          <div className={styles.card}>
+            <h3>Опыт</h3>
+            <p>
+              Duis aute irure dolor in reprehenderit in voluptate velit esse
+              cillum dolore eu fugiat nulla pariatur.
+            </p>
+          </div>
+          <div className={styles.card}>
+            <h3>Результат</h3>
+            <p>
+              Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
+              officia deserunt mollit anim id est laborum.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

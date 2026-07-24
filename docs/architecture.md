@@ -192,6 +192,7 @@ covskiy.github.io/
   ├─ useState: showIntro =
   │    introStorage.getNeverShow() ? false : true
   ├─ useEffect: document.body.style.overflow = showIntro ? 'hidden' : ''
+  ├─ <LandingSections /> — контент страницы (hero + features)
   └─ showIntro === true →
        <IntroAnimation onComplete slowIntro skipDelay=800 />
        │  (overlay: position: fixed, z-index: 9999,

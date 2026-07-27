@@ -5,56 +5,58 @@
 
 .hero {
   text-align: center;
-  padding: 64px 0;
+  padding: var(--spacing-xxl) 0;
 }
 
 .tagline {
-  font-size: 20px;
-  color: var(--text);
+  font-size: var(--font-sizes-xl);
+  color: var(--color-text-body);
   max-width: 600px;
   margin: 0 auto;
-  line-height: 1.6;
+  line-height: var(--line-heights-relaxed);
 }
 
 .features {
-  padding: 48px 0;
+  padding: var(--spacing-xxl) 0;
 }
 
 .features h2 {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+  gap: var(--spacing-lg);
 }
 
 .card {
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-bg-page);
   transition:
-    box-shadow 0.2s,
-    transform 0.2s;
+    box-shadow var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out),
+    transform var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out);
 }
 
 .card:hover {
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
   transform: translateY(-2px);
 }
 
 .card h3 {
-  font-size: 20px;
-  color: var(--text-h);
-  margin-bottom: 12px;
+  font-size: var(--font-sizes-xl);
+  color: var(--color-text-heading);
+  margin-bottom: var(--spacing-sm);
 }
 
 .card p {
-  color: var(--text);
-  line-height: 1.6;
+  color: var(--color-text-body);
+  line-height: var(--line-heights-relaxed);
 }
 
 @media (width < 768px) {
@@ -64,10 +66,10 @@
   }
 
   .hero {
-    padding: 32px 0;
+    padding: var(--spacing-xl) 0;
   }
 
   .tagline {
-    font-size: 18px;
+    font-size: var(--font-sizes-lg);
   }
 }

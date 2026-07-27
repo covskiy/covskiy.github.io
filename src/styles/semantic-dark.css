@@ -1,0 +1,135 @@
+/**
+ * Семантические CSS-переменные — ТЁМНАЯ тема.
+ *
+ * Фон gray-800 (#1a1c23) — на ступень светлее интро (gray-900 → gray-800).
+ * Сохраняет кузнечную эстетику: тёмный фон, огненные акценты, светлый текст.
+ *
+ * Импортируется ПОСЛЕ colors.css и typography.css (содержит алиасы на их токены).
+ * Для переключения на среднюю тему — закомментировать этот файл и раскомментировать semantic-mid.css.
+ */
+
+:root {
+  /* === Фон === */
+
+  /* Основной фон страницы — body, корневой контейнер.
+   * Используется в: body, карточки (.card), панели, секции. */
+  --color-bg-page: var(--color-gray-800); /* #1a1c23 */
+
+  /* === Текст === */
+
+  /* Основной текст — абзацы, подписи, описания, списки.
+   * Используется в: body, p, li, .tagline, .card p, инпуты. */
+  --color-text-body: var(--color-gray-200); /* #cbd5e1 */
+
+  /* Заголовки (h1–h4), выделенный текст, strong.
+   * Используется в: h1, h2, .card h3, .logo, code. */
+  --color-text-heading: var(--color-gray-50); /* #f1f5f9 */
+
+  /* Приглушённый текст — подписи, мета-данные, secondary.
+   * Используется в: подписи к полям, даты, теги, описания карточек. */
+  --color-text-secondary: var(--color-gray-300); /* #94a3b8 */
+
+  /* Текст на акцентном фоне — кнопки, бейджи, CTA.
+   * Используется в: текст кнопки submit на оранжевом фоне. */
+  --color-text-on-accent: var(--color-gray-25); /* #fff7f0 */
+
+  /* === Акцент (огонь) === */
+
+  /* Основной акцентный цвет — CTA-кнопки, ссылки, иконки, ховер-состояния.
+   * Используется в:NavLink.active, .logo, .hamburger:hover, кнопки форм, иконки. */
+  --color-accent-primary: var(--color-core-500); /* #ff9447 */
+
+  /* Акцентный цвет при наведении — hover на кнопках и ссылках.
+   * Используется в: CTA hover, ссылки hover. */
+  --color-accent-hover: var(--color-core-400); /* #ffa259 */
+
+  /* Подложка для hover/active состояний кнопок и ссылок.
+   * Используется в: NavLink:hover, NavLink.active background, alert-блоки. */
+  --color-bg-accent: var(--color-core-900); /* #66330a */
+
+  /* Рамки акцентных элементов — инпуты в фокусе, выделенные блоки.
+   * Используется в: input:focus, .quote border-left, выделенные карточки. */
+  --color-border-accent: var(--color-core-700); /* #cc6620 */
+
+  /* === Границы === */
+
+  /* Разделители секций, рамки карточек, инпутов.
+   * Используется в: border-right навбара, border карточек, разделители, input border. */
+  --color-border: var(--color-gray-700); /* #1e293b */
+
+  /* === Поверхности === */
+
+  /* Фон карточек и панелей — отделён от основного фона страницы.
+   * Используется в: .card, .item, info-блоки. */
+  --color-bg-card: var(--color-gray-700); /* #1e293b */
+
+  /* === Фокус и accessibility === */
+
+  /* Цвет рамки фокуса — для клавиатурной навигации.
+   * Используется в: :focus-visible outline. */
+  --color-border-focus: var(--color-core-400); /* #ffa259 */
+
+  /* === Обратная связь (формы) === */
+
+  /* Цвет ошибки — валидация форм.
+   * Используется в: border-color ошибок, текст ошибок. */
+  --color-status-error: var(--color-center-500); /* #ff9999 */
+
+  /* Цвет успеха — подтверждение отправки формы, успешные операции.
+   * Используется в: сообщения об успехе, иконки валидации. */
+  --color-status-success: var(--color-glow-500); /* #fed85d */
+
+  /* Прозрачность для disabled-элементов.
+   * Используется в: disabled кнопки, disabled инпуты. */
+  --opacity-disabled: 0.5;
+
+  /* === Тени === */
+
+  /* Стандартная тень карточек — при ховере, выпадающие меню, popover.
+   * Используется в: .card:hover box-shadow, модальные окна. */
+  --shadow-card: var(--shadows-level-2); /* 0 4px 8px rgba(0,0,0,0.1) */
+
+  /* === Код и спецэлементы === */
+
+  /* Фон для инлайн-кода (<code>).
+   * Используется в: code, pre. */
+  --color-bg-code: var(--color-gray-700); /* #1e293b */
+
+  /* Фон для кнопок соцсетей и внешних ссылок.
+   * Используется в: ссылки в .social-links, кнопки-иконки. */
+  --color-bg-social: var(--color-gray-700); /* #1e293b */
+
+  /* === Типографика (алиасы на design-tokens) === */
+
+  /* Основной шрифт body — параграфы, списки, описания.
+   * Используется в: body font, p, li, span. */
+  --font-body: var(--font-families-body); /* Open Sans */
+
+  /* Шрифт заголовков — h1–h4, hero-тексты.
+   * Используется в: h1, h2, h3, h4. */
+  --font-heading: var(--font-families-headings); /* Inter */
+
+  /* Моноширинный шрифт — инлайн-код, <pre>, <kbd>.
+   * Используется в: code, pre, куски кода. */
+  --font-mono: var(--font-families-mono); /* Fira Code */
+
+  /* === z-index === */
+
+  /* z-index для мобильного нав-оверлея.
+   * Используется в: NavigationBar mobile overlay. */
+  --z-nav-overlay: 1000;
+
+  /* === Базовые размеры типографики === */
+
+  /* Базовый размер шрифта body (16px).
+   * Используется в: body font shorthand. */
+  --font-size-base: var(--font-sizes-base); /* 1rem = 16px */
+
+  /* Межстрочный интервал body (1.6).
+   * Используется в: body font shorthand. */
+  --line-height-base: var(--line-heights-relaxed); /* 1.6 */
+
+  /* Межбуквенный интервал body.
+   * Используется в: body letter-spacing. */
+  --letter-spacing-base: var(--letter-spacings-normal); /* normal */
+}

@@ -9,17 +9,17 @@
 }
 
 .code {
-  font-family: var(--heading);
+  font-family: var(--font-heading);
   font-size: var(--font-sizes-6xl);
   font-weight: var(--font-weights-extrabold);
-  color: var(--text-h);
-  line-height: 1;
+  color: var(--color-text-heading);
+  line-height: var(--line-heights-tight);
 }
 
 .message {
-  font-family: var(--font-families-body);
+  font-family: var(--font-body);
   font-size: var(--font-sizes-lg);
-  color: var(--text);
+  color: var(--color-text-body);
   margin-top: var(--spacing-sm);
 }
 
@@ -27,15 +27,15 @@
   display: inline-block;
   margin-top: var(--spacing-xl);
   padding: var(--spacing-xs) var(--spacing-lg);
-  font-family: var(--font-families-body);
+  font-family: var(--font-body);
   font-size: var(--font-sizes-base);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
+  color: var(--color-accent-primary);
+  border: 1px solid var(--color-border-accent);
   border-radius: var(--border-radius-md);
   transition: background-color var(--transitions-duration-short)
     var(--transitions-easing-ease-out);
 }
 
 .link:hover {
-  background-color: var(--accent-bg);
+  background-color: var(--color-bg-accent);
 }

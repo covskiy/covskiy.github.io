@@ -17,7 +17,7 @@ gsap.registerPlugin(ScrollTrigger);
  * NavigationBar слушает это событие и анимирует ширину/отступ,
  * когда ScrollTrigger фиксирует progress = 0 (верх) или progress = 1 (конец спейсера).
  *
- * @see {@link import('../../components/NavigationBar/NavigationBar').default}
+ * @see {@link import('../../components/NavigationBar').NavigationBar}
  */
 const STATE_EVENT = 'navbar:setstate';
 

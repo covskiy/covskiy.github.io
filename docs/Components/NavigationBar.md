@@ -45,9 +45,48 @@
 
 ```
 src/components/NavigationBar/
-├── NavigationBar.tsx          # Компонент (default export)
-└── NavigationBar.module.css   # Стили (CSS Modules)
+├── index.ts                  # Barrel: NavigationBar, NavList, navItems, NavItemConfig
+├── NavigationBar.tsx         # Nav-обёртка, логотип, toggle-btn, использует NavList
+├── NavigationBar.module.css  # .nav, .navInner, .logo, .toggleBtn
+├── NavList.tsx               # <ul>{items.map → NavItem}</ul>
+├── NavList.module.css        # .list
+├── NavItem.tsx               # <li> + <NavLink>, иконка/текст в зависимости от isSlim
+├── NavItem.module.css        # .link, .active, .icon, .label, [data-slim]-стили
+└── navItems.ts               # Конфиг (path, label, icon), деривация от routes
 ```
+
+Barrel (`index.ts`) экспортирует только `NavigationBar`, `NavList`, `navItems` и тип `NavItemConfig`. `NavItem` — внутренний компонент, не экспортируется наружу.
+
+### navItems.ts
+
+Единственный источник правды для `path` и `label` — `routes.tsx`. `navItems.ts` импортирует `routes`, отфильтровывает `*` (NotFound) и навешивает `icon` через маппинг `Record<path, ReactNode>`:
+
+```ts
+// navItems.ts — схема
+import { routes } from '../../routes';
+
+const routeIcons: Record<string, ReactNode> = {
+  '/': '🏠', // emoji-заглушка, позже — <HomeIcon />
+  '/about': 'ℹ️',
+  '/services': '🛠️',
+  '/contact': '📬',
+};
+
+export const navItems: NavItemConfig[] = routes
+  .filter((r) => r.path !== '*')
+  .map((r) => ({
+    path: r.path,
+    label: r.label!,
+    icon: routeIcons[r.path] ?? '❓',
+  }));
+```
+
+Поле `icon` типизировано как `ReactNode` — замена emoji на `<HomeIcon />` не потребует изменения интерфейсов, только замены значения в `routeIcons`.
+
+### NavItem — поведение `isSlim`
+
+- `isSlim === false`: рендерится `<span class="label">{label}</span>` + `<span class="icon">{icon}</span>` (иконка в DOM, но в CSS на данный момент скрыта — в обычных режимах не отображается)
+- `isSlim === true`: текст `.label` скрыт через CSS (`display: none`), иконка `.icon` центрируется, на `<NavLink>` вешается `data-slim` и `tabIndex={-1}`, исключающий ссылку из Tab-навигации
 
 ### Зависимости
 
@@ -55,13 +94,15 @@ src/components/NavigationBar/
 - `useLocation` — `react-router`
 - `gsap` + `useGSAP` — GSAP-анимации
 - `logger` — `src/utils/logger.ts`
-- `routes` — `src/routes.tsx`
+- `routes` — `src/routes.tsx` (через `navItems.ts`)
 
 ### Поток данных
 
 ```
 App.tsx
 ├── <NavigationBar />          ← всегда в DOM
+│     ├── <NavList />
+│     │     └── <NavItem> × N
 │     └── GSAP анимирует width
 │     └── dispatch: window 'navbar:setstate'
 │
@@ -119,7 +160,7 @@ HomePage (useGSAP)
 
 | Сущность       | Тип                           | Назначение                                                 |
 | -------------- | ----------------------------- | ---------------------------------------------------------- |
-| `currentState` | `React.State<NavState>`       | UI-состояние для кнопки toggle и атрибута `tabIndex`       |
+| `currentState` | `React.State<NavState>`       | UI-состояние для кнопки toggle и пропа `isSlim` в NavList  |
 | `stateRef`     | `React.Ref<NavState>`         | Актуальное состояние для логики toggle (без stale closure) |
 | `STATE_EVENT`  | константа `'navbar:setstate'` | Имя кастомного события для синхронизации с HomePage        |
 
@@ -131,6 +172,56 @@ HomePage (useGSAP)
 2. **Смена breakpoint** — `useGSAP` с `dependencies: [location.pathname, bp]`
 3. **Ручной toggle** — `handleToggle` по клику на кнопку
 4. **Событие ScrollTrigger** — `useEffect` с `addEventListener(STATE_EVENT)`
+
+### Поток `currentState → isSlim`
+
+```tsx
+const isSlim = currentState === 'slim';
+
+return <NavList isSlim={isSlim} />;
+```
+
+`isSlim` пробрасывается в `NavList` → `NavItem`, где:
+
+- Управляет видимостью текста/иконки
+- Выставляет `tabIndex={-1}` на `<NavLink>`
+- Вешает `data-slim` для CSS-селекторов
+
+## CSS-селекторы slim-режима
+
+В `NavItem.module.css` переключение происходит через атрибут `data-slim`:
+
+```css
+.link[data-slim] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.link[data-slim] .label {
+  display: none;
+}
+
+.link[data-slim] .icon {
+  font-size: var(--font-sizes-xl);
+}
+```
+
+## Замена иконок (emoji → React-компоненты)
+
+Достаточно отредактировать `navItems.ts` — поле `icon` имеет тип `ReactNode`:
+
+```ts
+const routeIcons: Record<string, ReactNode> = {
+  '/':        <HomeIcon />,       // вместо '🏠'
+  '/about':   <InfoIcon />,
+  '/services':<ToolsIcon />,
+  '/contact': <MailIcon />,
+};
+```
+
+Остальные компоненты (NavItem, NavList, NavigationBar) изменений не требуют.
 
 ## Ключевые решения
 

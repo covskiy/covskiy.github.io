@@ -37,48 +37,6 @@
   white-space: nowrap;
 }
 
-/** Вертикальный список навигационных ссылок. */
-.list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xxs);
-}
-
-/** Элемент списка — без отступов по умолчанию. */
-.item {
-  margin: 0;
-}
-
-/** Навигационная ссылка. */
-.link {
-  display: block;
-  padding: 10px var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
-  color: var(--color-text-body);
-  text-decoration: none;
-  font-size: var(--font-sizes-base);
-  line-height: var(--line-heights-normal);
-  white-space: nowrap;
-  transition:
-    background-color var(--transitions-duration-short)
-      var(--transitions-easing-ease-in-out),
-    color var(--transitions-duration-short)
-      var(--transitions-easing-ease-in-out);
-}
-
-.link:hover {
-  background: var(--color-bg-accent);
-  color: var(--color-text-heading);
-}
-
-/** Ссылка, соответствующая текущему роуту. */
-.active {
-  background: var(--color-bg-accent);
-  color: var(--color-accent-primary);
-  font-weight: var(--font-weights-medium);
-}
-
 /**
  * Кнопка ручного переключения состояний (☰ / ←).
  *
@@ -117,11 +75,6 @@
  * за счёт overflow: hidden.
  */
 @media (width < 768px) {
-  /**
-   * На mobile навбар центрирует содержимое на весь экран,
-   * фон прозрачный. При slim-состоянии (GSAP сужает до 80px)
-   * overflow: hidden скрывает содержимое, оставляя только полоску.
-   */
   .nav {
     padding: 0;
     border-right: none;
@@ -131,7 +84,6 @@
     background: transparent;
   }
 
-  /** На mobile — центрирование колонки, увеличенные отступы. */
   .navInner {
     display: flex;
     flex-direction: column;
@@ -143,14 +95,7 @@
     padding: var(--spacing-lg);
   }
 
-  /** Логотип крупнее для fullscreen-режима. */
   .logo {
     font-size: var(--font-sizes-2xl);
-  }
-
-  /** Ссылки крупнее и центрированы для fullscreen-режима. */
-  .link {
-    font-size: var(--font-sizes-lg);
-    text-align: center;
   }
 }

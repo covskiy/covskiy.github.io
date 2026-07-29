@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { routes } from '../../routes';
 import { useBreakpoint } from '../../utils/breakpoints';
 import { logger } from '../../utils/logger';
+import { NavList } from './NavList';
 import styles from './NavigationBar.module.css';
 
 /** Возможные состояния отображения навбара. */
@@ -17,10 +17,6 @@ type NavState = 'fullscreen' | 'standard' | 'slim';
  * @see {@link import('../../pages/HomePage/HomePage').default}
  */
 const STATE_EVENT = 'navbar:setstate';
-
-const navItems = routes
-  .filter((r) => r.path !== '*')
-  .map(({ path, label }) => ({ path, label: label! }));
 
 /**
  * Возвращает состояние навбара по умолчанию для текущего роута и устройства.
@@ -115,7 +111,7 @@ function animateNavbar(state: NavState) {
  * - **Приоритет**: автоскролл > ручное переключение.
  *   ScrollTrigger принудительно разворачивает в fullscreen при скролле к началу.
  */
-function NavigationBar() {
+export function NavigationBar() {
   const location = useLocation();
   const bp = useBreakpoint();
   const stateRef = useRef<NavState>('fullscreen');
@@ -204,41 +200,25 @@ function NavigationBar() {
     animateNavbar(next);
   }, [bp, hasToggle]);
 
+  const isSlim = currentState === 'slim';
+
   return (
     <nav className={styles.nav} data-navbar>
       <div className={styles.navInner}>
         <div className={styles.logo}>✦ Portfolio</div>
-        <ul className={styles.list}>
-          {navItems.map(({ path, label }) => (
-            <li key={path} className={styles.item}>
-              <NavLink
-                to={path}
-                className={({ isActive }) =>
-                  isActive ? `${styles.link} ${styles.active}` : styles.link
-                }
-                tabIndex={currentState === 'slim' ? -1 : 0}
-              >
-                {label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        <NavList isSlim={isSlim} />
       </div>
 
       {hasToggle && (
         <button
           className={styles.toggleBtn}
           onClick={handleToggle}
-          aria-label={
-            currentState === 'slim' ? 'Open navigation' : 'Close navigation'
-          }
+          aria-label={isSlim ? 'Open navigation' : 'Close navigation'}
           type="button"
         >
-          {currentState === 'slim' ? '☰' : '←'}
+          {isSlim ? '☰' : '←'}
         </button>
       )}
     </nav>
   );
 }
-
-export default NavigationBar;

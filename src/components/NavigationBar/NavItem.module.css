@@ -1,0 +1,63 @@
+/** Элемент списка — без отступов по умолчанию. */
+.item {
+  margin: 0;
+}
+
+/** Навигационная ссылка. */
+.link {
+  display: block;
+  padding: 10px var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-body);
+  text-decoration: none;
+  font-size: var(--font-sizes-base);
+  line-height: var(--line-heights-normal);
+  white-space: nowrap;
+  transition:
+    background-color var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out),
+    color var(--transitions-duration-short)
+      var(--transitions-easing-ease-in-out);
+}
+
+.link:hover {
+  background: var(--color-bg-accent);
+  color: var(--color-text-heading);
+}
+
+/** Ссылка, соответствующая текущему роуту. */
+.active {
+  background: var(--color-bg-accent);
+  color: var(--color-accent-primary);
+  font-weight: var(--font-weights-medium);
+}
+
+/** Иконка пункта. В slim-режиме центрируется и увеличивается. */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-sizes-lg);
+  line-height: 1;
+}
+
+/** Текстовая метка пункта. Скрывается в slim-режиме. */
+.label {
+  display: inline;
+}
+
+/** Ссылка в slim-режиме — центрирует иконку, скрывает текст. */
+.link[data-slim] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.link[data-slim] .label {
+  display: none;
+}
+
+.link[data-slim] .icon {
+  font-size: var(--font-sizes-xl);
+}

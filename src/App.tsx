@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router';
-import NavigationBar from './components/NavigationBar/NavigationBar';
+import { NavigationBar } from './components/NavigationBar';
 import PageTransition from './components/PageTransition/PageTransition';
 import { routes } from './routes';
 import styles from './App.module.css';

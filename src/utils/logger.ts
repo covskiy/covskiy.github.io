@@ -24,6 +24,8 @@ const MODULE_COLORS: Record<string, string> = {
   Logo: '#04bf8a',
   Tagline: '#60b527',
   useSparkCanvas: '#04b3bf',
+  NavigationBar: '#8b5cf6',
+  HomePage: '#ec4899',
 };
 
 const warnedModules = new Set<string>();

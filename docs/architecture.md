@@ -53,9 +53,16 @@ covskiy.github.io/
 │   ├── preloader.md
 │   ├── Components/
 │   │   ├── IntroAnimation.md
+│   │   ├── LandingSections.md
 │   │   ├── Logo.md
 │   │   ├── LogoText.md
+│   │   ├── NavigationBar.md
+│   │   ├── SkipControls.md
+│   │   ├── SlimProgressBar.md
 │   │   └── Tagline.md
+│   ├── Pages/
+│   │   ├── HomePage.md
+│   │   └── NotFoundPage.md
 │   └── utils/
 │       └── logger.md
 ├── public/                           # Статические ассеты, отдаются как есть
@@ -110,7 +117,7 @@ covskiy.github.io/
 │   │   │   └── utils/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
-│   │   ├── NavigationBar/            # Навигация (фикс. слева)
+│   │   ├── NavigationBar/            # Навигация (3 состояния: fullscreen / standard / slim)
 │   │   │   ├── NavigationBar.tsx
 │   │   │   └── NavigationBar.module.css
 │   │   └── PageTransition/           # Обёртка анимации смены роута
@@ -181,32 +188,32 @@ covskiy.github.io/
 [App.tsx]
   ├─ initGsap()                              ← на модульном уровне (top-level)
   ├─ Чистый layout-компонент:
-  │    ├─ <NavigationBar />
-  │    └─ <main>
+  │    ├─ <NavigationBar />                  ← всегда в DOM
+  │    │     data-navbar                     ← GSAP анимирует width
+  │    └─ <main data-content>                ← GSAP анимирует margin-left
   │         └─ <Routes>
   │              └─ каждая route обёрнута в <PageTransition>
   └─ Никакой intro/splash-логики. Не импортирует
        IntroAnimation, introStorage, useLocation, useState, useEffect.
 
+Подробнее о NavigationBar: `docs/Components/NavigationBar.md`.
+
 [HomePage]
-  ├─ useState: showIntro =
-  │    introStorage.getNeverShow() ? false : true
+  ├─ useState: showIntro
+  │    introStorage.getNeverShow() || introStorage.getSessionSkip() → false
   ├─ useEffect: document.body.style.overflow = showIntro ? 'hidden' : ''
-  ├─ <LandingSections /> — контент страницы (hero + features)
-  └─ showIntro === true →
-       <IntroAnimation onComplete slowIntro skipDelay=800 />
-       │  (overlay: position: fixed, z-index: 9999,
-       │   рендерится поверх контента HomePage, body overflow: hidden)
-       ├─ master GSAP timeline (paused → play)
-       ├─ child timelines (Logo/LogoText/Tagline)
-       │   регистрируются через onRegisterTimeline
-       ├─ LogoText и Tagline синхронизированы:
-       │   подсветка клавиш в Tagline совпадает
-       │   с появлением букв в LogoText
-       │   (общий источник — INTRO_CHOREOGRAPHY)
-       ├─ GSDevTools.create() (только DEV)
-       └─ onComplete → setShowIntro(false)
-            (unmount overlay, без navigate-редиректа)
+  ├─ <div ref={spacerRef} />                ← 100dvh спейсер для ScrollTrigger
+  ├─ <LandingSections />                    ← контент лендинга (всегда в DOM)
+  ├─ showIntro === true →
+  │    createPortal(<IntroAnimation />, document.body) — overlay поверх контента
+  │    onComplete → setShowIntro(false)
+  └─ ScrollTrigger (useGSAP):
+       ├─ scrub: анимация [data-navbar] width (100vw → target)
+       ├─ scrub: анимация [data-content] marginLeft (tablet/desktop)
+       ├─ progress 0 → dispatchEvent('navbar:setstate', 'fullscreen')
+       └─ progress ≥ 1 → dispatchEvent('navbar:setstate', endState)
+
+Подробнее: `docs/Pages/HomePage.md`.
 ```
 
 ### 2.2 Навигация между страницами
@@ -220,6 +227,11 @@ covskiy.github.io/
 ```
 
 `PageTransition` использует `useGSAP` с `scope` и `dependencies: [pathname]`.
+
+**ScrollTrigger-анимация навбара** работает только на `/home`. При переходе
+на другие роуты HomePage анмаунтится, ScrollTrigger уничтожается (`context.revert()`),
+и NavigationBar переходит в состояние по умолчанию (`slim` на mobile,
+`standard` на tablet/desktop). Подробнее: `docs/Components/NavigationBar.md`.
 
 ### 2.3 GSAP lifecycle
 
@@ -306,15 +318,15 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент        | Назначение                                     |
-| ---------------- | ---------------------------------------------- |
-| `Logo`           | Наковальня, drawSVG (Intro)                    |
-| `LogoText`       | Текст "COVSKIY" — SVG morph между формами      |
-| `Tagline`        | Слоган — клавиатура, поэтапная анимация        |
-| `SkipControls`   | Кнопки skip / never-show для Intro             |
-| `IntroAnimation` | Intro overlay (position: fixed, поверх layout) |
-| `NavigationBar`  | Навигация (фикс. слева)                        |
-| `PageTransition` | Обёртка анимации смены роута                   |
+| Компонент        | Назначение                                                           |
+| ---------------- | -------------------------------------------------------------------- |
+| `Logo`           | Наковальня, drawSVG (Intro)                                          |
+| `LogoText`       | Текст "COVSKIY" — SVG morph между формами                            |
+| `Tagline`        | Слоган — клавиатура, поэтапная анимация                              |
+| `SkipControls`   | Кнопки skip / never-show для Intro                                   |
+| `IntroAnimation` | Intro overlay (position: fixed, поверх layout)                       |
+| `NavigationBar`  | Многосостояние: fullscreen / standard / slim, ScrollTrigger + toggle |
+| `PageTransition` | Обёртка анимации смены роута                                         |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.
@@ -322,10 +334,11 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 ### 4.5 Responsive breakpoint
 
 - Брейкпоинты — токены в `design-tokens/breakpoints.json`:
-  `phone` (0), `tablet` (481px), `laptop` (769px), `desktop` (1025px).
-- В коде сейчас используется `@media (width <= 1024px)` в CSS Modules
-  (mobile-first базовые стили в `<= 1024`, десктоп-override не задаётся).
-- `NavigationBar` скрывается на мобильных через CSS media query.
+  `tablet` (768px), `desktop` (1024px).
+- В CSS используется синтаксис `width < 768px` / `width >= 768px`.
+- В JS — хук `useBreakpoint()` из `src/utils/breakpoints.ts`
+  с детекцией через `window.matchMedia` (не `resize`).
+- Подробнее о breakpoint-модели: `docs/breakpoints.md`.
 
 ---
 
@@ -524,9 +537,15 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Точка входа JS               | `src/main.tsx`                                         |
 | Корневой компонент           | `src/App.tsx`                                          |
 | Все роуты                    | `src/routes.tsx`                                       |
+| NavigationBar                | `src/components/NavigationBar/NavigationBar.tsx`       |
+| HomePage                     | `src/pages/HomePage/HomePage.tsx`                      |
+| Глобальные стили навбара     | `src/index.css` (`[data-navbar]`, `[data-content]`)    |
+| Breakpoint hook              | `src/utils/breakpoints.ts`                             |
 | Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`     |
 | Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`  |
 | Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts` |
+| NavigationBar (документация) | `docs/Components/NavigationBar.md`                     |
+| HomePage (документация)      | `docs/Pages/HomePage.md`                               |
 | Типы intro                   | `src/types/intro.types.ts`                             |
 | GSAP-инициализация           | `src/utils/initGsap.ts`                                |
 | Логгер                       | `src/utils/logger.ts`                                  |

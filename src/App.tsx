@@ -7,11 +7,19 @@ import { initGsap } from './utils/initGsap';
 
 initGsap();
 
+/**
+ * Корневой layout приложения.
+ *
+ * - `NavigationBar` всегда присутствует в DOM (не зависит от роута)
+ * - `<main data-content>` — контентная область, сдвигаемая GSAP
+ *   при изменении состояния навбара (margin-left на tablet/desktop)
+ * - `PageTransition` оборачивает каждый роут для анимации перехода
+ */
 function App() {
   return (
     <div className={styles.app}>
       <NavigationBar />
-      <main className={styles.main}>
+      <main className={styles.main} data-content>
         <Routes>
           {routes.map(({ path, element }) => (
             <Route

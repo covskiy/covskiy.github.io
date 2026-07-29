@@ -1,31 +1,43 @@
+/**
+ * Базовая панель навбара.
+ *
+ * Ширина управляется GSAP (100vw / 25vw / 80px), здесь заданы только
+ * внутренняя структура, фон и граница. На mobile фон прозрачный,
+ * граница убирается.
+ *
+ * @see NavigationBar.tsx — data-navbar + animateNavbar
+ */
 .nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 220px;
-  height: 100svh;
+  display: flex;
+  flex-direction: column;
   padding: var(--spacing-lg) var(--spacing-md);
   background: var(--color-bg-page);
   border-right: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  z-index: var(--z-nav-overlay);
 }
 
+/**
+ * Внутренний контейнер навбара.
+ *
+ * Занимает всю доступную высоту, выстраивает логотип и список страниц
+ * в колонку. На mobile центрирует содержимое по обеим осям.
+ */
 .navInner {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
+/** Логотип «✦ Portfolio» в верхней части панели. */
 .logo {
   font-size: var(--font-sizes-xl);
   font-weight: var(--font-weights-semibold);
   color: var(--color-accent-primary);
   margin-bottom: var(--spacing-xl);
   padding: 0 var(--spacing-xs);
+  white-space: nowrap;
 }
 
+/** Вертикальный список навигационных ссылок. */
 .list {
   list-style: none;
   display: flex;
@@ -33,10 +45,12 @@
   gap: var(--spacing-xxs);
 }
 
+/** Элемент списка — без отступов по умолчанию. */
 .item {
   margin: 0;
 }
 
+/** Навигационная ссылка. */
 .link {
   display: block;
   padding: 10px var(--spacing-sm);
@@ -45,6 +59,7 @@
   text-decoration: none;
   font-size: var(--font-sizes-base);
   line-height: var(--line-heights-normal);
+  white-space: nowrap;
   transition:
     background-color var(--transitions-duration-short)
       var(--transitions-easing-ease-in-out),
@@ -57,27 +72,66 @@
   color: var(--color-text-heading);
 }
 
+/** Ссылка, соответствующая текущему роуту. */
 .active {
   background: var(--color-bg-accent);
   color: var(--color-accent-primary);
   font-weight: var(--font-weights-medium);
 }
 
-.hamburger {
-  display: none;
+/**
+ * Кнопка ручного переключения состояний (☰ / ←).
+ *
+ * Видна только на mobile и tablet (`hasToggle` в NavigationBar.tsx).
+ * На desktop рендеринг кнопки отключён на уровне JSX.
+ */
+.toggleBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: rgb(255 255 255 / 10%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--color-text-body);
+  transition: all 0.3s ease;
 }
 
+.toggleBtn:hover {
+  background: rgb(255 255 255 / 20%);
+  color: var(--color-accent-primary);
+}
+
+/**
+ * Mobile: полноэкранный режим навбара.
+ *
+ * Навбар центрирует содержимое, фон прозрачный (контент просвечивает),
+ * граница убирается. В slim-состоянии ширина 80px — содержимое скрывается
+ * за счёт overflow: hidden.
+ */
 @media (width < 768px) {
+  /**
+   * На mobile навбар центрирует содержимое на весь экран,
+   * фон прозрачный. При slim-состоянии (GSAP сужает до 80px)
+   * overflow: hidden скрывает содержимое, оставляя только полоску.
+   */
   .nav {
-    width: 100%;
-    height: 100dvh;
     padding: 0;
     border-right: none;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    background: transparent;
   }
 
+  /** На mobile — центрирование колонки, увеличенные отступы. */
   .navInner {
     display: flex;
     flex-direction: column;
@@ -89,35 +143,14 @@
     padding: var(--spacing-lg);
   }
 
-  .hamburger {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-    position: absolute;
-    top: var(--spacing-md);
-    right: var(--spacing-md);
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    z-index: 1001;
-    padding: var(--spacing-xs);
+  /** Логотип крупнее для fullscreen-режима. */
+  .logo {
+    font-size: var(--font-sizes-2xl);
   }
 
-  .hamburger span {
-    display: block;
-    width: 24px;
-    height: 2px;
-    background: var(--color-core-300);
-    border-radius: var(--border-radius-xs);
-    transition: background var(--transitions-duration-short)
-      var(--transitions-easing-ease-in-out);
-  }
-
-  .hamburger:hover span {
-    background: var(--color-accent-primary);
+  /** Ссылки крупнее и центрированы для fullscreen-режима. */
+  .link {
+    font-size: var(--font-sizes-lg);
+    text-align: center;
   }
 }

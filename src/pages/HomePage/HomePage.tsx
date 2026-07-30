@@ -84,9 +84,9 @@ function HomePage() {
       }
 
       const isMobile = bp === 'mobile';
-      const targetWidth = isMobile ? '80px' : '25vw';
+      const targetWidth = isMobile ? '0px' : '25vw';
       const targetMargin = isMobile ? '0px' : '25vw';
-      const endState = isMobile ? 'slim' : 'standard';
+      const endState = isMobile ? 'invisible' : 'standard';
 
       logger.info('HomePage', 'Создание ScrollTrigger', {
         bp,

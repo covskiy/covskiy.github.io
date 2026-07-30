@@ -112,7 +112,7 @@ if (!isMobile) {
 
 | Breakpoint | Начало     | Конец скролла | Ширина навбара | Отступ контента |
 | ---------- | ---------- | ------------- | -------------- | --------------- |
-| Mobile     | fullscreen | slim          | `80px`         | `0` (нет)       |
+| Mobile     | fullscreen | invisible     | `0px`          | `0` (нет)       |
 | Tablet     | fullscreen | standard      | `25vw`         | `25vw`          |
 | Desktop    | fullscreen | standard      | `25vw`         | `25vw`          |
 
@@ -121,7 +121,7 @@ if (!isMobile) {
 При достижении границ спейсера ScrollTrigger диспатчит кастомное событие:
 
 - `progress === 0` → `{ detail: 'fullscreen' }` — скролл к началу, принудительный разворот
-- `progress >= 1` → `{ detail: 'slim' | 'standard' }` — конец спейсера
+- `progress >= 1` → `{ detail: 'invisible' | 'standard' }` — конец спейсера
 
 NavigationBar слушает это событие и вызывает `animateNavbar()` — это
 гарантирует синхронизацию состояния, даже если ручной toggle убил
@@ -130,7 +130,7 @@ ScrollTrigger-твин.
 ### Приоритет: автоскролл > ручное переключение
 
 При скролле к началу страницы ScrollTrigger принудительно разворачивает
-навбар в `fullscreen`, переопределяя предыдущее ручное `slim` состояние.
+навбар в `fullscreen`, переопределяя предыдущее ручное `slim` или `invisible` состояние.
 Это реализовано через `onUpdate` + custom event, который NavigationBar
 обрабатывает безусловно.
 

@@ -230,7 +230,7 @@ covskiy.github.io/
 
 **ScrollTrigger-анимация навбара** работает только на `/home`. При переходе
 на другие роуты HomePage анмаунтится, ScrollTrigger уничтожается (`context.revert()`),
-и NavigationBar переходит в состояние по умолчанию (`slim` на mobile,
+и NavigationBar переходит в состояние по умолчанию (`invisible` на mobile,
 `standard` на tablet/desktop). Подробнее: `docs/Components/NavigationBar.md`.
 
 ### 2.3 GSAP lifecycle

@@ -10,7 +10,7 @@
  * поэтому смена CSS-классов не требуется.
  *
  * Свойства, управляемые GSAP:
- * - width (100vw / 25vw / 80px)
+ * - width (100vw / 25vw / 80px / 0px)
  * - height (100dvh, не меняется между состояниями)
  *
  * @see src/components/NavigationBar/NavigationBar.tsx
@@ -22,15 +22,14 @@
   height: 100dvh;
   z-index: var(--z-nav-overlay, 1000);
   background: transparent;
-  overflow: hidden;
   will-change: width, height;
 }
 
 /**
  * Content wrapper — область контента, сдвигаемая при изменении состояния навбара.
  *
- * На tablet/desktop GSAP анимирует margin-left для компенсации ширины навбара
- * (25vw для standard, 80px для slim). На mobile контент не сдвигается.
+ * На tablet/desktop GSAP анимирует margin-left для компенсации ширины навбара.
+ * На mobile контент не сдвигается.
  *
  * @see src/App.tsx — атрибут data-content на <main>
  */

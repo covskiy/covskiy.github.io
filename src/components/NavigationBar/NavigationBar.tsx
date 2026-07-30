@@ -8,7 +8,7 @@ import { NavList } from './NavList';
 import styles from './NavigationBar.module.css';
 
 /** Возможные состояния отображения навбара. */
-type NavState = 'fullscreen' | 'standard' | 'slim';
+type NavState = 'fullscreen' | 'standard' | 'slim' | 'invisible';
 
 /**
  * Имя кастомного события, которое HomePage кидает из ScrollTrigger
@@ -29,13 +29,14 @@ function getDefaultState(
   isHome: boolean,
 ): NavState {
   if (isHome) return 'fullscreen';
-  return bp === 'mobile' ? 'slim' : 'standard';
+  if (bp === 'mobile') return 'invisible';
+  return bp === 'tablet' ? 'slim' : 'standard';
 }
 
 /**
  * Вычисляет следующее состояние при ручном переключении (toggle).
  *
- * - Mobile: slim ↔ fullscreen
+ * - Mobile: invisible ↔ fullscreen
  * - Tablet: standard ↔ slim
  * - Desktop: всегда `null` (кнопка скрыта)
  */
@@ -44,7 +45,8 @@ function getNextState(
   bp: ReturnType<typeof useBreakpoint>,
 ): NavState | null {
   if (bp === 'desktop') return null;
-  if (bp === 'mobile') return current === 'slim' ? 'fullscreen' : 'slim';
+  if (bp === 'mobile')
+    return current === 'invisible' ? 'fullscreen' : 'invisible';
   return current === 'slim' ? 'standard' : 'slim';
 }
 
@@ -52,14 +54,15 @@ function getNextState(
 function getWidth(state: NavState): string {
   if (state === 'fullscreen') return '100vw';
   if (state === 'standard') return '25vw';
-  return '80px';
+  if (state === 'slim') return '80px';
+  return '0px';
 }
 
 /** Маппинг состояния → отступ контента (только tablet/desktop). */
 function getContentMargin(state: NavState): string {
   if (state === 'fullscreen') return '0px';
   if (state === 'standard') return '25vw';
-  return '80px';
+  return '0px';
 }
 
 /**
@@ -97,14 +100,6 @@ function animateNavbar(state: NavState) {
 /**
  * NavigationBar — многофункциональная навигационная панель.
  *
- * ## Состояния
- *
- * | Состояние    | Ширина    | Где используется                |
- * |--------------|-----------|---------------------------------|
- * | `fullscreen` | 100vw     | `/home` в начале страницы       |
- * | `standard`   | 25vw      | tablet/desktop после скролла    |
- * | `slim`       | 80px      | mobile по умолчанию, tablet при toggle |
- *
  * ## Управление
  * - **Автоматическое** — ScrollTrigger в HomePage меняет ширину при скролле.
  * - **Ручное** — кнопка toggle (☰ / ←) для mobile и tablet.
@@ -136,7 +131,6 @@ export function NavigationBar() {
       const prev = stateRef.current;
       stateRef.current = newState;
       setCurrentState(newState);
-
       logger.debug(
         'NavigationBar',
         `Событие "${STATE_EVENT}": ${prev} → ${newState}`,
@@ -200,23 +194,23 @@ export function NavigationBar() {
     animateNavbar(next);
   }, [bp, hasToggle]);
 
-  const isSlim = currentState === 'slim';
+  const isCollapsed = currentState === 'slim' || currentState === 'invisible';
 
   return (
     <nav className={styles.nav} data-navbar>
       <div className={styles.navInner}>
         <div className={styles.logo}>✦ Portfolio</div>
-        <NavList isSlim={isSlim} />
+        <NavList isSlim={isCollapsed} />
       </div>
 
       {hasToggle && (
         <button
           className={styles.toggleBtn}
           onClick={handleToggle}
-          aria-label={isSlim ? 'Open navigation' : 'Close navigation'}
+          aria-label={isCollapsed ? 'Open navigation' : 'Close navigation'}
           type="button"
         >
-          {isSlim ? '☰' : '←'}
+          {isCollapsed ? '☰' : '←'}
         </button>
       )}
     </nav>

@@ -2,7 +2,7 @@
 
 Лендинг — основной контент сайта при заходе на `/` или `/home`. Управляет двумя
 независимыми механизмами: **IntroAnimation** (оверлей при первом заходе) и
-**ScrollTrigger** (анимация навбара при скролле).
+**ScrollTrigger** (регистрация анимации навбара при скролле).
 
 ## Состояния
 
@@ -24,8 +24,8 @@ pages/HomePage/
 
 - `IntroAnimation`, `introStorage` — `components/IntroAnimation/`
 - `LandingSections` — `components/LandingSections/`
+- `useNavbar` — `components/NavigationBar/` (`registerScrollTrigger`)
 - `useBreakpoint` — `utils/breakpoints.ts`
-- `useGSAP` + `ScrollTrigger` — GSAP
 
 ## IntroAnimation
 
@@ -47,8 +47,9 @@ const [showIntro, setShowIntro] = useState(
 
 ## ScrollTrigger
 
-ScrollTrigger создаётся внутри `useGSAP` и пересоздаётся только при смене
-breakpoint (`dependencies: [bp]`).
+ScrollTrigger создаёт **NavigationBarProvider** через `registerScrollTrigger`,
+который HomePage вызывает в `useEffect`. Пересоздаётся только при смене
+breakpoint (`dependencies: [registerScrollTrigger, bp]`).
 
 ### Спейсер
 
@@ -67,48 +68,23 @@ breakpoint (`dependencies: [bp]`).
 }
 ```
 
-### Timeline + scrub
-
-GSAP-таймлайн с ScrollTrigger, привязанным к спейсеру:
+### Регистрация триггера
 
 ```tsx
-const scrollConfig = {
-  trigger: spacerRef.current,
-  start: 'top top',
-  end: 'bottom top',
-  scrub: true,
-  invalidateOnRefresh: true,
-  onUpdate: (self: ScrollTrigger) => {
-    if (self.progress === 0) {
-      window.dispatchEvent(
-        new CustomEvent('navbar:setstate', { detail: 'fullscreen' }),
-      );
-    } else if (self.progress >= 1) {
-      window.dispatchEvent(
-        new CustomEvent('navbar:setstate', { detail: endState }),
-      );
-    }
-  },
-};
+const { registerScrollTrigger } = useNavbar();
 
-const tl = gsap.timeline({ scrollTrigger: scrollConfig });
-
-tl.to('[data-navbar]', {
-  width: targetWidth,
-  ease: 'none',
-  overwrite: 'auto',
-});
-
-if (!isMobile) {
-  tl.to(
-    '[data-content]',
-    { marginLeft: targetMargin, ease: 'none', overwrite: 'auto' },
-    0,
-  );
-}
+useEffect(() => {
+  if (!spacerRef.current) return;
+  return registerScrollTrigger(spacerRef.current);
+}, [registerScrollTrigger, bp]);
 ```
 
-**Целевые значения** зависят от breakpoint:
+Сам таймлайн (scrub) и обновление состояния навбара на границах спейсера
+живут в провайдере — HomePage отдаёт только элемент-триггер. Cleanup,
+возвращённый из `registerScrollTrigger`, убивает ScrollTrigger и таймлайн
+при размонтировании страницы или смене breakpoint.
+
+**Целевые значения** зависят от breakpoint и известны провайдеру:
 
 | Breakpoint | Начало     | Конец скролла | Ширина навбара | Отступ контента |
 | ---------- | ---------- | ------------- | -------------- | --------------- |
@@ -116,36 +92,32 @@ if (!isMobile) {
 | Tablet     | fullscreen | standard      | `25vw`         | `25vw`          |
 | Desktop    | fullscreen | standard      | `25vw`         | `25vw`          |
 
-### Custom event `navbar:setstate`
+### Границы спейсера
 
-При достижении границ спейсера ScrollTrigger диспатчит кастомное событие:
+При достижении границ спейсера ScrollTrigger обновляет состояние навбара
+внутри провайдера:
 
-- `progress === 0` → `{ detail: 'fullscreen' }` — скролл к началу, принудительный разворот
-- `progress >= 1` → `{ detail: 'invisible' | 'standard' }` — конец спейсера
-
-NavigationBar слушает это событие и вызывает `animateNavbar()` — это
-гарантирует синхронизацию состояния, даже если ручной toggle убил
-ScrollTrigger-твин.
+- `progress === 0` → `fullscreen` — скролл к началу, принудительный разворот
+- `progress >= 1` → `invisible` | `standard` — конец спейсера
 
 ### Приоритет: автоскролл > ручное переключение
 
 При скролле к началу страницы ScrollTrigger принудительно разворачивает
-навбар в `fullscreen`, переопределяя предыдущее ручное `slim` или `invisible` состояние.
-Это реализовано через `onUpdate` + custom event, который NavigationBar
-обрабатывает безусловно.
+навбар в `fullscreen`, переопределяя предыдущее ручное `slim` или `invisible`
+состояние. Это реализовано через `onUpdate` внутри провайдера, который
+обрабатывает границы безусловно — без custom event'ов.
 
 ## Связь с NavigationBar
 
 ```text
-HomePage (ScrollTrigger)
-  │
-  ├── GSAP: анимация [data-navbar] width напрямую (scrub)
-  ├── GSAP: анимация [data-content] marginLeft (scrub, tablet/desktop)
-  │
-  └── dispatchEvent('navbar:setstate', detail)
+HomePage (useEffect)
+  └── useNavbar().registerScrollTrigger(spacerRef.current)
         │
-        NavigationBar (addEventListener)
-          └── animateNavbar(newState) — GSAP.to() с overwrite: 'auto'
+        NavigationBarProvider
+          ├── GSAP: анимация navRef width (scrub)
+          ├── GSAP: анимация contentRef marginLeft (scrub, tablet/desktop)
+          ├── progress 0 / 1 → обновление currentState навбара
+          └── cleanup → kill() ScrollTrigger + timeline
 ```
 
 Детальнее: `docs/Components/NavigationBar.md`.
@@ -153,13 +125,18 @@ HomePage (ScrollTrigger)
 ## Ключевые решения
 
 - **ScrollTrigger НЕ использует React State** — прогресс скролла передаётся
-  GSAP напрямую в DOM. Custom event диспатчит только дискретные значения
-  при достижении границ спейсера.
-- **`overwrite: 'auto'`** во всех `gsap.to()` — гарантирует, что ручной toggle
-  не сломает ScrollTrigger при повторном скролле.
+  GSAP напрямую в DOM. Состояние навбара обновляется только в дискретных
+  точках на границах спейсера.
+- **Страница не знает о DOM навбара** — никаких селекторов `[data-navbar]`
+  / `[data-content]` и целевых ширин; страница отдаёт только элемент-триггер.
+- **Жизненный цикл триггера — на странице** — создание в `useEffect`,
+  уничтожение через cleanup из `registerScrollTrigger` при размонтировании
+  или смене breakpoint.
+- **`overwrite: 'auto'`** только в прямых твинах `animateNavbar` — гарантирует,
+  что ручной toggle не сломает ScrollTrigger при повторном скролле. Твины
+  внутри scrub-таймлайна `registerScrollTrigger` идут без `overwrite` (им это
+  не нужно — они живут в собственном timeline).
 - **Spacer общий для всех bp** — единый механизм анимации навбара,
   независимо от устройства, с разными целевыми значениями.
-- **GSAP анимирует data-атрибуты напрямую** — без переключения CSS-классов,
-  что исключает проблемы с хешированными именами CSS Modules.
 - **IntroAnimation — overlay, не замена контента** — `LandingSections` всегда
   в DOM под intro-оверлеем, поисковики и соцсети видят контент с первого рендера.

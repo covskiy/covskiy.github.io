@@ -36,9 +36,12 @@ const routeIcons: Record<string, ReactNode> = {
  * отфильтровывает NotFound (`*`) и навешивает иконку из `routeIcons`.
  */
 export const navItems: NavItemConfig[] = routes
-  .filter((r) => r.path !== '*')
+  .filter(
+    (r): r is (typeof routes)[number] & { label: string } =>
+      r.path !== '*' && typeof r.label === 'string',
+  )
   .map((r) => ({
     path: r.path,
-    label: r.label!,
+    label: r.label,
     icon: routeIcons[r.path] ?? '❓',
   }));

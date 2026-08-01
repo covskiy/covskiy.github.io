@@ -34,7 +34,7 @@ covskiy.github.io/
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # Чистый layout (NavigationBar + Routes)
+│   ├── App.tsx           # Чистый layout (NavigationBarProvider + Routes)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -49,13 +49,19 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — чистый layout-компонент: `NavigationBar` + `<Routes>`,
+- **App.tsx** — чистый layout-компонент: `NavigationBarProvider` + `<Routes>`,
   обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
   `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
   `/` всегда рендерит HomePage.
+- **NavigationBarProvider** (Context-Driven Animation Factory) — владеет
+  DOM-нодами навбара (`<nav data-navbar>`) и контента (`<main data-content>`),
+  знает как их анимировать, но не когда. Страницы регистрируют ScrollTrigger
+  через `useNavbar().registerScrollTrigger(trigger)` (cleanup возвращается
+  странице для `kill()`). Приоритет: автоскролл > ручной toggle.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
-  `overflow: hidden` на body, и рендерит `<IntroAnimation />` как overlay
-  поверх собственного контента.
+  `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
+  поверх собственного контента и регистрирует ScrollTrigger навбара
+  через `registerScrollTrigger(spacerRef.current)`.
 - **routes.tsx** — `RouteConfig[]` с `label`, `HomePage` eager,
   `About/Services/Contact` — `React.lazy` + `withSuspense`.
   Роут `/` — HomePage, роут `*` — NotFoundPage.

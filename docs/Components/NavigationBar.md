@@ -49,17 +49,29 @@
 
 ```
 src/components/NavigationBar/
-├── index.ts                  # Barrel: NavigationBar, NavList, navItems, NavItemConfig
-├── NavigationBar.tsx         # Nav-обёртка, логотип, toggle-btn, использует NavList
-├── NavigationBar.module.css  # .nav, .navInner, .logo, .toggleBtn
-├── NavList.tsx               # <ul>{items.map → NavItem}</ul>
-├── NavList.module.css        # .list
-├── NavItem.tsx               # <li> + <NavLink>, иконка/текст в зависимости от isSlim
-├── NavItem.module.css        # .link, .active, .icon, .label, [data-slim]-стили
-└── navItems.ts               # Конфиг (path, label, icon), деривация от routes
+├── index.ts                    # Barrel: NavigationBarProvider, NavigationBar, NavList,
+│                               #   navItems, useNavbar, NavbarAPI, NavItemConfig,
+│                               #   NAV_STATES, NavState
+├── NavigationBarProvider.tsx   # Владелец: логика состояний, рефы nav/content,
+│                               #   registerScrollTrigger, Context.Provider
+├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
+├── navbarContext.ts            # createContext + useNavbar() + тип NavbarAPI
+├── navbarStates.ts             # NavState, NAV_STATES + чистые хелперы:
+│                               #   getWidth/getContentMargin/getDefaultState/getNextState
+├── NavigationBar.tsx           # Презентационный: <nav>, логотип, toggle-btn;
+│                               #   пропсы isSlim/hasToggle/handleToggle
+├── NavigationBar.module.css    # .nav, .navInner, .logo, .toggleBtn
+├── NavList.tsx                 # <ul>{items.map → NavItem}</ul>
+├── NavList.module.css          # .list
+├── NavItem.tsx                 # <li> + <NavLink>, иконка/текст в зависимости от isSlim
+├── NavItem.module.css          # .link, .active, .icon, .label, [data-slim]-стили
+└── navItems.ts                 # Конфиг (path, label, icon), деривация от routes
 ```
 
-Barrel (`index.ts`) экспортирует только `NavigationBar`, `NavList`, `navItems` и тип `NavItemConfig`. `NavItem` — внутренний компонент, не экспортируется наружу.
+Barrel (`index.ts`) экспортирует `NavigationBarProvider` (основной компонент,
+оборачивающий layout), `NavigationBar`, `NavList`, `navItems`, хук `useNavbar`,
+конфиг `NAV_STATES` и типы `NavbarAPI`, `NavItemConfig`, `NavState`.
+`NavItem` — внутренний компонент, не экспортируется наружу.
 
 ### navItems.ts
 
@@ -77,10 +89,13 @@ const routeIcons: Record<string, ReactNode> = {
 };
 
 export const navItems: NavItemConfig[] = routes
-  .filter((r) => r.path !== '*')
+  .filter(
+    (r): r is (typeof routes)[number] & { label: string } =>
+      r.path !== '*' && typeof r.label === 'string',
+  )
   .map((r) => ({
     path: r.path,
-    label: r.label!,
+    label: r.label,
     icon: routeIcons[r.path] ?? '❓',
   }));
 ```
@@ -102,35 +117,47 @@ export const navItems: NavItemConfig[] = routes
 - `logger` — `src/utils/logger.ts`
 - `routes` — `src/routes.tsx` (через `navItems.ts`)
 
+## Архитектура: Context-Driven Animation Factory
+
+**владелец** (`NavigationBarProvider`)
+полностью инкапсулирует DOM-ноды и суть анимации (какие свойства меняются,
+с какой скоростью), но контроль над тем, когда и от чего анимация запускается
+(скролл со страницы), делегирует наружу через React Context функцией
+`registerScrollTrigger`.
+
 ### Поток данных
 
 ```
 App.tsx
-├── <NavigationBar />          ← всегда в DOM
-│     ├── <NavList />
-│     │     └── <NavItem> × N
-│     └── GSAP анимирует width
-│     └── dispatch: window 'navbar:setstate'
-│
-├── <main data-content>        ← margin-left анимируется GSAP
-│     └── <Routes>
-│           └── HomePage
-│                 ├── <div ref={spacerRef} />   ← 100dvh спейсер
-│                 └── <LandingSections />
-│
-HomePage (useGSAP)
-  └── ScrollTrigger.create()
-        ├── scrub: анимация [data-navbar] width
-        ├── scrub: анимация [data-content] marginLeft (tablet/desktop)
-        └── onUpdate:
-              ├── progress === 0 → dispatchEvent('navbar:setstate', 'fullscreen')
-              └── progress >= 1 → dispatchEvent('navbar:setstate', endState)
+└── <NavigationBarProvider />              ← всегда в DOM, владелец анимации
+      ├── <NavigationBar navRef isSlim hasToggle handleToggle/>
+      │     └── <NavList /> → <NavItem> × N
+      ├── <main data-content ref>          ← контентная область
+      │     └── <Routes>
+      │           └── HomePage
+      │                 ├── <div ref={spacerRef} />   ← 100dvh спейсер
+      │                 └── <LandingSections />
+      └── Context API:
+            └── registerScrollTrigger(trigger) → () => void
+
+Пропсы NavigationBar (не через контекст): isSlim, hasToggle, handleToggle
+
+HomePage (useEffect)
+  └── registerScrollTrigger(spacerRef.current)
+        └── NavigationBarProvider создаёт ScrollTrigger + таймлайн
+              ├── scrub: анимация navRef width (100vw → target)
+              ├── scrub: анимация contentRef marginLeft (tablet/desktop)
+              ├── progress === 0 → fullscreen (авто > ручное)
+              ├── progress >= 1 → endState (invisible | standard)
+              └── возвращает cleanup → kill() при размонтировании страницы
 ```
 
-Навбар слушает кастомное событие `navbar:setstate` и при его получении
-вызывает `animateNavbar()` — это гарантирует, что даже после ручного toggle
-(который убивает ScrollTrigger-твин) принудительный разворот в `fullscreen`
-сработает при скролле к началу.
+Страница не знает ни о DOM-нодах навбара (`[data-navbar]`, `[data-content]`),
+ни о целевых ширинах — она только отдаёт свой элемент-триггер. Это гарантирует,
+что даже после ручного toggle (который убивает ScrollTrigger-твин)
+принудительный разворот в `fullscreen` сработает при скролле к началу:
+триггер живёт в провайдере и обновляет состояние навбара на границах
+спейсера напрямую.
 
 ## Глобальные стили
 
@@ -163,30 +190,41 @@ HomePage (useGSAP)
 
 ## Управление состоянием
 
-| Сущность       | Тип                           | Назначение                                                 |
-| -------------- | ----------------------------- | ---------------------------------------------------------- |
-| `currentState` | `React.State<NavState>`       | UI-состояние для кнопки toggle и пропа `isSlim` в NavList  |
-| `stateRef`     | `React.Ref<NavState>`         | Актуальное состояние для логики toggle (без stale closure) |
-| `STATE_EVENT`  | константа `'navbar:setstate'` | Имя кастомного события для синхронизации с HomePage        |
+| Сущность                | Тип                                    | Назначение                                                  |
+| ----------------------- | -------------------------------------- | ----------------------------------------------------------- |
+| `currentState`          | `React.State<NavState>`                | UI-состояние для пропа `isSlim` в NavigationBar             |
+| `stateRef`              | `React.Ref<NavState>`                  | Актуальное состояние для логики toggle (без stale closure)  |
+| `registerScrollTrigger` | `(trigger: HTMLElement) => () => void` | Функция из Context API: регистрирует ScrollTrigger страницы |
 
-**NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'`
+**NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'` — тип и конфиг
+ширин (`NAV_STATES`) вынесены в `navbarStates.ts` (чистая логика, без React).
+Провайдер использует `getDefaultState`/`getNextState` для пересчёта состояний и
+`getWidth`/`getContentMargin` для GSAP-анимаций.
 
 ### Триггеры изменения состояния
 
 1. **Смена роута** — `useGSAP` с `dependencies: [location.pathname, bp]`
 2. **Смена breakpoint** — `useGSAP` с `dependencies: [location.pathname, bp]`
 3. **Ручной toggle** — `handleToggle` по клику на кнопку
-4. **Событие ScrollTrigger** — `useEffect` с `addEventListener(STATE_EVENT)`
+4. **Событие ScrollTrigger** — страница вызывает `registerScrollTrigger` в `useEffect`;
+   границы спейсера (progress 0 / 1) обновляют состояние внутри провайдера
 
 ### Поток `currentState → isSlim`
 
 ```tsx
-const isCollapsed = currentState === 'slim' || currentState === 'invisible';
+// NavigationBarProvider.tsx
+const isSlim = currentState === 'slim' || currentState === 'invisible';
 
-return <NavList isSlim={isCollapsed} />;
+<NavigationBar
+  navRef={navRef}
+  isSlim={isSlim}
+  hasToggle={hasToggle}
+  handleToggle={handleToggle}
+/>;
 ```
 
-`isCollapsed` пробрасывается в `NavList` → `NavItem` как `isSlim`, где:
+`isSlim` прокидывается пропсом в `NavigationBar` (не через контекст) и дальше —
+в `NavList` → `NavItem`, где:
 
 - Управляет видимостью текста/иконки
 - Выставляет `tabIndex={-1}` на `<NavLink>`
@@ -248,13 +286,18 @@ const routeIcons: Record<string, ReactNode> = {
   анимирует CSS-свойства (`width`, `marginLeft`) напрямую. Это упрощает
   интеграцию со ScrollTrigger и избегает проблем с хешированными именами CSS Modules.
 
-- **`overwrite: 'auto'` во всех `gsap.to()`** — гарантирует, что новый твин
-  прерывает предыдущие конфликты, включая твины от ScrollTrigger.
+- **`overwrite: 'auto'` только в `animateNavbar`** — прямые `gsap.to()` прерывают
+  конфликтующие твины (включая твины от ScrollTrigger). Твины scrub-таймлайна
+  в `registerScrollTrigger` пишутся без `overwrite` — они привязаны к своему
+  timeline и не конкурируют с внешними твинами.
 
-- **Custom event вместо React State** — прогресс скролла не передаётся
-  через React State (запрещено архитектурой). ScrollTrigger диспатчит
-  только дискретные значения (`fullscreen` / `slim` / `standard` / `invisible`) при
-  достижении границ спейсера.
+- **Context-Driven Animation Factory вместо custom event** — NavigationBar
+  инкапсулирует DOM и анимацию, а страница делегирует управление через
+  `registerScrollTrigger` (React Context). Прогресс скролла НЕ передаётся
+  через React State (запрещено архитектурой) — ScrollTrigger обновляет
+  состояние навбара только в дискретных точках (progress 0 / 1) на границах
+  спейсера. Магическая строка `navbar:setstate` + `window.dispatchEvent`
+  удалены.
 
 - **`useBreakpoint` через `matchMedia`** — в отличие от `resize`,
   `matchMedia` не срабатывает на каждом пикселе и корректно реагирует
@@ -277,3 +320,8 @@ const routeIcons: Record<string, ReactNode> = {
   создаётся внутри HomePage, а не в NavigationBar. Это гарантирует,
   что ScrollTrigger анимирует навбар только на `/home`, и не мешает
   на других роутах.
+
+- **Жизненный цикл триггера — на стороне страницы** — страница вызывает
+  `registerScrollTrigger` в `useEffect` и получает cleanup, который убивает
+  ScrollTrigger и таймлайн (`kill()`) при размонтировании. Никаких утечек
+  при переходах между роутами; навбар остаётся независимым модулем.

@@ -54,8 +54,8 @@ covskiy.github.io/
   `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
   `/` всегда рендерит HomePage.
 - **NavigationBarProvider** (Context-Driven Animation Factory) — владеет
-  DOM-нодами навбара (`<nav data-navbar>`) и контента (`<main data-content>`),
-  знает как их анимировать, но не когда. Страницы регистрируют ScrollTrigger
+  DOM-нодами навбара (`<nav>`) и контента (`<main>`), знает как их анимировать,
+  но не когда. Страницы регистрируют ScrollTrigger
   через `useNavbar().registerScrollTrigger(trigger)` (cleanup возвращается
   странице для `kill()`). Приоритет: автоскролл > ручной toggle.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для

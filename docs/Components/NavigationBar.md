@@ -15,8 +15,8 @@
 Все состояния имеют `position: fixed`, `z-index: 1000` и прозрачный фон.
 
 **Реализация ширины**: навбар всегда занимает `100vw` в раскладке, а видимая
-ширина достигается трансформациями (GSAP твинит `x` на nav, `.navInner` и
-`<main>`). Это держит анимацию на композиторе и не вызывает reflow при
+ширина достигается трансформациями (GSAP твинит `x` на `.nav` и `.navInner`).
+Это держит анимацию на композиторе и не вызывает reflow при
 60fps-обновлениях ScrollTrigger (scrub). Подробнее — в разделе
 «Почему transforms вместо width».
 
@@ -58,7 +58,7 @@ src/components/NavigationBar/
 ├── index.ts                    # Barrel: NavigationBarProvider, NavigationBar, NavList,
 │                               #   navItems, useNavbar, NavbarAPI, NavItemConfig,
 │                               #   getNavTransform, SLIM_WIDTH, NavState, NavTransform
-├── NavigationBarProvider.tsx   # Владелец: логика состояний, рефы nav/navInner/content/toggle,
+├── NavigationBarProvider.tsx   # Владелец: логика состояний, рефы nav/navInner/toggle,
 │                               #   registerScrollTrigger, Context.Provider
 ├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
 ├── navbarContext.ts            # createContext + useNavbar() + тип NavbarAPI
@@ -70,7 +70,7 @@ src/components/NavigationBar/
 ├── NavList.tsx                 # <ul>{items.map → NavItem}</ul>
 ├── NavList.module.css          # .list
 ├── NavItem.tsx                 # <li> + <NavLink>, иконка/текст в зависимости от isSlim
-├── NavItem.module.css          # .link, .active, .icon, .label, [data-slim]-стили
+├── NavItem.module.css          # .link, .active, .icon, .label, .slim-стили
 └── navItems.ts                 # Конфиг (path, label, icon), деривация от routes
 ```
 
@@ -112,7 +112,9 @@ export const navItems: NavItemConfig[] = routes
 ### NavItem — поведение `isSlim`
 
 - `isSlim === false`: рендерится `<span class="label">{label}</span>` + `<span class="icon">{icon}</span>`
-- `isSlim === true`: текст `.label` скрыт через CSS (`display: none`), иконка `.icon` центрируется, на `<NavLink>` вешается `data-slim` и `tabIndex={-1}`, исключающий ссылку из Tab-навигации
+- `isSlim === true`: текст `.label` не рендерится, иконка `.icon` центрируется
+  (класс `styles.slim`), на `<NavLink>` вешается `tabIndex={-1}`, исключающий
+  ссылку из Tab-навигации
 
 Проп `isSlim` фактически означает «навбар в свёрнутом состоянии» — он `true` как для `slim`, так и для `invisible`.
 
@@ -139,7 +141,7 @@ App.tsx
 └── <NavigationBarProvider />              ← всегда в DOM, владелец анимации
       ├── <NavigationBar navRef navInnerRef toggleRef isSlim hasToggle handleToggle/>
       │     └── <NavList /> → <NavItem> × N
-      ├── <main data-content ref>          ← контентная область
+      ├── <main>                          ← контентная область
       │     └── <Routes>
       │           └── HomePage
       │                 ├── <div ref={spacerRef} />   ← 100dvh спейсер
@@ -161,32 +163,31 @@ HomePage (useEffect)
               └── возвращает cleanup → kill() при размонтировании страницы
 ```
 
-Страница не знает ни о DOM-нодах навбара (`[data-navbar]`, `[data-content]`),
-ни о целевых ширинах — она только отдаёт свой элемент-триггер. Это гарантирует,
+Страница не знает ни о DOM-нодах навбара (`.nav`, `<main>`), ни о целевых
+ширинах — она только отдаёт свой элемент-триггер. Это гарантирует,
 что даже после ручного toggle (который убивает ScrollTrigger-твин)
 принудительный разворот в `fullscreen` сработает при скролле к началу:
 триггер живёт в провайдере и обновляет состояние навбара на границах
 спейсера напрямую.
 
-## Глобальные стили
+## Стили позиционирования
 
-В `src/index.css` определены стили для data-атрибутов:
+Базовое позиционирование и отступы живут в CSS Modules
 
 ```css
-/* Фиксированное позиционирование — GSAP анимирует трансформации */
-[data-navbar] {
+/* NavigationBar.module.css — фиксированное позиционирование; GSAP анимирует трансформации */
+.nav {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100dvh;
   z-index: var(--z-nav-overlay, 1000);
-  background: transparent;
   will-change: transform;
 }
 
-/* Контентная область — статичная правая колонка через CSS-переменную */
-[data-content] {
+/* NavigationBarProvider.module.css — статичная правая колонка через CSS-переменную */
+.main {
   margin-left: var(--nav-content-offset, 0px);
   width: calc(100% - var(--nav-content-offset, 0px));
   transition:
@@ -201,8 +202,8 @@ HomePage (useEffect)
 достигается сдвигом окна через `transform: translateX`, а не `width` — это не
 вызывает reflow при обновлении ScrollTrigger до 60 раз в секунду.
 
-`<main data-content>` не твинится вообще: `--nav-content-offset` выставляет
-провайдер (`getContentOffset`), ширина сразу ориентирована на конечное значение
+`<main>` не твинится вообще: `--nav-content-offset` выставляет провайдер
+(`getContentOffset`), ширина сразу ориентирована на конечное значение
 (`100% − offset`), поэтому при скролле на `/home` контент не едет по диагонали.
 CSS-transition срабатывает только на дискретных изменениях offset (tablet-тоггл
 slim ↔ standard, смена роута/breakpoint) — разовый reflow, не 60fps-scrub.
@@ -238,7 +239,7 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
   `overflow: visible` ради кнопки toggle, поэтому контент уезжает вместе с окном,
   а toggle компенсируется `toggleX`, оставаясь фиксированным в `left: 20`.
 
-**`<main data-content>` — статичная колонка, `getContentOffset`**:
+**`<main>` — статичная колонка, `getContentOffset`**:
 
 | Контекст                                        | Отступ (`--nav-content-offset`) |
 | ----------------------------------------------- | ------------------------------- |
@@ -278,11 +279,11 @@ const isSlim = currentState === 'slim' || currentState === 'invisible';
 
 - Управляет видимостью текста/иконки
 - Выставляет `tabIndex={-1}` на `<NavLink>`
-- Вешает `data-slim` для CSS-селекторов
+- Добавляет класс `styles.slim` для CSS-селекторов
 
 ### Позиционирование toggle
 
-Кнопка toggle рендерится **внутри** `<nav data-navbar>` как дочерний элемент
+Кнопка toggle рендерится **внутри** `<nav>` как дочерний элемент
 и позиционируется через `position: absolute` (относительно навбара):
 
 - **Tablet**: `top: 20px; right: 20px` — в правом верхнем углу навбара. Кнопка —
@@ -295,27 +296,26 @@ const isSlim = currentState === 'slim' || currentState === 'invisible';
 `overflow: hidden`. Это гарантирует, что контент (логотип, ссылки) обрезается,
 когда окно навбара закрыто, а кнопка toggle остаётся видимой вне границ навбара.
 
-## CSS-селекторы slim-режима
+## CSS-классы slim-режима
 
-В `NavItem.module.css` переключение происходит через атрибут `data-slim`,
-который выставляется при `isCollapsed === true` (то есть в состояниях `slim` и `invisible`):
+В `NavItem.module.css` переключение происходит через условный класс `styles.slim`,
+который добавляется при `isCollapsed === true` (то есть в состояниях `slim` и `invisible`):
 
 ```css
-.link[data-slim] {
+.slim {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px 0;
 }
 
-.link[data-slim] .label {
-  display: none;
-}
-
-.link[data-slim] .icon {
+.slim .icon {
   font-size: var(--font-sizes-xl);
 }
 ```
+
+Текстовая метка `.label` не скрывается CSS — она просто не рендерится в JSX
+(`{!isSlim && <span className={styles.label}>...}`).
 
 ## Замена иконок (emoji → React-компоненты)
 
@@ -346,7 +346,7 @@ const routeIcons: Record<string, ReactNode> = {
   окна `nav.x` (тот же эффект, что у `width`, но без reflow);
 - `.navInner` получает контр-сдвиг (`innerX = -navX`), чтобы контент оставался
   привязан к левому краю экрана и не искажался;
-- `<main data-content>` вообще не твинится — это статичная правая колонка:
+- `<main>` вообще не твинится — это статичная правая колонка:
   отступ задаётся CSS-переменной `--nav-content-offset`, ширина сразу
   ориентирована на конечное значение (`100% − offset`), поэтому контент не едет
   по диагонали при скролле на `/home`;
@@ -367,7 +367,7 @@ const routeIcons: Record<string, ReactNode> = {
   кадре. Трансформации живут на композиторе и не вызывают reflow. Это упрощает
   интеграцию со ScrollTrigger и избегает проблем с хешированными именами CSS Modules.
 
-- **`<main data-content>` — статичная колонка, не твинится** — отступ задаётся
+- **`<main>` — статичная колонка, не твинится** — отступ задаётся
   через CSS-переменную `--nav-content-offset` (`getContentOffset`), а ширина —
   `calc(100% − offset)`. На `/home` fullscreen маппится на `standard`, поэтому
   контент сразу ориентирован на конечную ширину (после скролла спейсера) и при
@@ -398,7 +398,7 @@ const routeIcons: Record<string, ReactNode> = {
 - **`tabIndex={-1}` в slim/invisible** — ссылки навбара получают `tabIndex = -1`
   в свёрнутых состояниях, исключая их из фокуса при навигации Tab.
 
-- **Toggle внутри `[data-navbar]`, overflow: hidden на `.navInner`** — кнопка
+- **Toggle внутри `<nav>`, overflow: hidden на `.navInner`** — кнопка
   рендерится внутри навбара с `position: absolute`. На desktop/tablet `.nav` имеет
   `overflow: hidden` — контент и окно обрезаются, кнопка едет вместе с навбаром.
   На mobile `.nav` переключается на `overflow: visible`, а `overflow: hidden`

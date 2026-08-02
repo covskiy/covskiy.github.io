@@ -3,7 +3,7 @@ import { NavList } from './NavList';
 import styles from './NavigationBar.module.css';
 
 export interface NavigationBarProps {
-  /** Реф на `<nav data-navbar>` — владелец (NavigationBarProvider) анимирует его. */
+  /** Реф на `<nav>` — владелец (NavigationBarProvider) анимирует его. */
   navRef: RefObject<HTMLElement | null>;
   /** Реф на `.navInner` — контр-сдвиг контента (counter-translate). */
   navInnerRef: RefObject<HTMLDivElement | null>;
@@ -34,7 +34,7 @@ export function NavigationBar({
   handleToggle,
 }: NavigationBarProps) {
   return (
-    <nav className={styles.nav} data-navbar ref={navRef}>
+    <nav className={styles.nav} ref={navRef}>
       <div ref={navInnerRef} className={styles.navInner}>
         <div className={styles.logo}>✦ Portfolio</div>
         <NavList isSlim={isSlim} />

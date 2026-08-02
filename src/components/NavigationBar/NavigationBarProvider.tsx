@@ -19,11 +19,11 @@ import styles from './NavigationBarProvider.module.css';
 /**
  * NavigationBarProvider — владелец анимации навбара.
  *
- * Полностью инкапсулирует DOM-ноды (`<nav data-navbar>`, `.navInner`,
- * `<main data-content>`) и знает, как их анимировать, но не знает, когда.
- * Контроль над запуском делегируется страницам через Context: страница
- * вызывает `registerScrollTrigger` со своим элементом-триггером, а провайдер
- * на лету создаёт ScrollTrigger, привязанный к собственному таймлайну.
+ * Полностью инкапсулирует DOM-ноды (`<nav>`, `.navInner`, `<main>`) и знает,
+ * как их анимировать, но не знает, когда. Контроль над запуском делегируется
+ * страницам через Context: страница вызывает `registerScrollTrigger` со своим
+ * элементом-триггером, а провайдер на лету создаёт ScrollTrigger, привязанный
+ * к собственному таймлайну.
  *
  * ## Анимация через transforms
  * Навбар всегда занимает `100vw` в раскладке; видимая ширина достигается
@@ -33,10 +33,9 @@ import styles from './NavigationBarProvider.module.css';
  * - `navInner.x` — контр-сдвиг контента (остаётся привязан к левому краю);
  * - `toggle.x` — компенсация кнопки на mobile (`.nav` там `overflow: visible`).
  *
- * Контентная область `<main data-content>` НЕ твинится: она — статичная
- * правая колонка, отступ задаётся CSS-переменной `--nav-content-offset`
- * (см. `getContentOffset`). Это исключает диагональное движение контента
- * при скролле на `/home`.
+ * Контентная область `<main>` НЕ твинится: она — статичная правая колонка,
+ * отступ задаётся CSS-переменной `--nav-content-offset` (см. `getContentOffset`).
+ * Это исключает диагональное движение контента при скролле на `/home`.
  *
  * ## Поведение
  * - **Автоматическое** — ScrollTrigger, зарегистрированный страницей,
@@ -266,9 +265,7 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
           hasToggle={hasToggle}
           handleToggle={handleToggle}
         />
-        <main className={styles.main} data-content>
-          {children}
-        </main>
+        <main className={styles.main}>{children}</main>
       </div>
     </NavbarContext.Provider>
   );

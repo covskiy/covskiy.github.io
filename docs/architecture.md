@@ -193,7 +193,7 @@ covskiy.github.io/
   ├─ Чистый layout-компонент:
   │    └─ <NavigationBarProvider />          ← всегда в DOM
   │         ├─ <NavigationBar navRef navInnerRef toggleRef/>  ← nav (fixed), GSAP твинит x
-  │         └─ <main data-content>            ← статичная колонка, отступ через
+  │         └─ <main>                        ← статичная колонка, отступ через
   │                                            --nav-content-offset (не твинится).
   │                                            Единственный <main> в документе:
   │                                            страницы НЕ рендерят свой <main>,
@@ -329,16 +329,16 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент               | Назначение                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `Logo`                  | Наковальня, drawSVG (Intro)                                                                            |
-| `LogoText`              | Текст "COVSKIY" — SVG morph между формами                                                              |
-| `Tagline`               | Слоган — клавиатура, поэтапная анимация                                                                |
-| `SkipControls`          | Кнопки skip / never-show для Intro                                                                     |
-| `IntroAnimation`        | Intro overlay (position: fixed, поверх layout)                                                         |
-| `NavigationBar`         | Многосостояние: fullscreen / standard / slim / invisible, ScrollTrigger + toggle                       |
-| `NavigationBarProvider` | Владелец анимации навбара: Context API (`registerScrollTrigger`), рендерит nav + `<main data-content>` |
-| `PageTransition`        | Обёртка анимации смены роута                                                                           |
+| Компонент               | Назначение                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| `Logo`                  | Наковальня, drawSVG (Intro)                                                               |
+| `LogoText`              | Текст "COVSKIY" — SVG morph между формами                                                 |
+| `Tagline`               | Слоган — клавиатура, поэтапная анимация                                                   |
+| `SkipControls`          | Кнопки skip / never-show для Intro                                                        |
+| `IntroAnimation`        | Intro overlay (position: fixed, поверх layout)                                            |
+| `NavigationBar`         | Многосостояние: fullscreen / standard / slim / invisible, ScrollTrigger + toggle          |
+| `NavigationBarProvider` | Владелец анимации навбара: Context API (`registerScrollTrigger`), рендерит nav + `<main>` |
+| `PageTransition`        | Обёртка анимации смены роута                                                              |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.
@@ -544,31 +544,31 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 
 ## 11. Сводка файлов — быстрый поиск
 
-| Задача                       | Файл                                                     |
-| ---------------------------- | -------------------------------------------------------- |
-| Точка входа JS               | `src/main.tsx`                                           |
-| Корневой компонент           | `src/App.tsx`                                            |
-| Все роуты                    | `src/routes.tsx`                                         |
-| NavigationBar                | `src/components/NavigationBar/NavigationBarProvider.tsx` |
-| HomePage                     | `src/pages/HomePage/HomePage.tsx`                        |
-| Глобальные стили навбара     | `src/index.css` (`[data-navbar]`, `[data-content]`)      |
-| Breakpoint hook              | `src/utils/breakpoints.ts`                               |
-| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`       |
-| Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`    |
-| Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts`   |
-| NavigationBar (документация) | `docs/Components/NavigationBar.md`                       |
-| HomePage (документация)      | `docs/Pages/HomePage.md`                                 |
-| Типы intro                   | `src/types/intro.types.ts`                               |
-| GSAP-инициализация           | `src/utils/initGsap.ts`                                  |
-| Логгер                       | `src/utils/logger.ts`                                    |
-| Design tokens build          | `sd.config.js`                                           |
-| Design tokens источник       | `design-tokens/*.json`                                   |
-| Design tokens (документация) | `docs/design-tokens.md`                                  |
-| Сгенерированные токены       | `src/styles/*.css`                                       |
-| Preloader HTML               | `index.html`                                             |
-| Vite config                  | `vite.config.ts`                                         |
-| ESLint config                | `eslint.config.js`                                       |
-| Deploy CI                    | `.github/workflows/deploy.yml`                           |
-| Husky hook                   | `.husky/pre-commit`                                      |
-| Скрипты npm                  | `package.json`                                           |
-| Обзор проекта (для AI)       | `AGENTS.md`                                              |
+| Задача                       | Файл                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| Точка входа JS               | `src/main.tsx`                                                               |
+| Корневой компонент           | `src/App.tsx`                                                                |
+| Все роуты                    | `src/routes.tsx`                                                             |
+| NavigationBar                | `src/components/NavigationBar/NavigationBarProvider.tsx`                     |
+| HomePage                     | `src/pages/HomePage/HomePage.tsx`                                            |
+| Стили навбара                | CSS Modules (`NavigationBar.module.css`, `NavigationBarProvider.module.css`) |
+| Breakpoint hook              | `src/utils/breakpoints.ts`                                                   |
+| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`                           |
+| Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`                        |
+| Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts`                       |
+| NavigationBar (документация) | `docs/Components/NavigationBar.md`                                           |
+| HomePage (документация)      | `docs/Pages/HomePage.md`                                                     |
+| Типы intro                   | `src/types/intro.types.ts`                                                   |
+| GSAP-инициализация           | `src/utils/initGsap.ts`                                                      |
+| Логгер                       | `src/utils/logger.ts`                                                        |
+| Design tokens build          | `sd.config.js`                                                               |
+| Design tokens источник       | `design-tokens/*.json`                                                       |
+| Design tokens (документация) | `docs/design-tokens.md`                                                      |
+| Сгенерированные токены       | `src/styles/*.css`                                                           |
+| Preloader HTML               | `index.html`                                                                 |
+| Vite config                  | `vite.config.ts`                                                             |
+| ESLint config                | `eslint.config.js`                                                           |
+| Deploy CI                    | `.github/workflows/deploy.yml`                                               |
+| Husky hook                   | `.husky/pre-commit`                                                          |
+| Скрипты npm                  | `package.json`                                                               |
+| Обзор проекта (для AI)       | `AGENTS.md`                                                                  |

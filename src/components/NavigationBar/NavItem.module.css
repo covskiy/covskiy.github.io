@@ -46,18 +46,14 @@
   display: inline;
 }
 
-/** Ссылка в slim-режиме — центрирует иконку, скрывает текст. */
-.link[data-slim] {
+/** Ссылка в slim-режиме — центрирует иконку. */
+.slim {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px 0;
 }
 
-.link[data-slim] .label {
-  display: none;
-}
-
-.link[data-slim] .icon {
+.slim .icon {
   font-size: var(--font-sizes-xl);
 }

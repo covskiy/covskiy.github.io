@@ -1,13 +1,22 @@
 /**
  * Базовая панель навбара.
  *
- * Ширина управляется GSAP (100vw / 25vw / 80px), здесь заданы только
- * внутренняя структура, фон и граница. На mobile фон прозрачный,
- * граница убирается.
+ * Фиксированное позиционирование: навбар всегда занимает `100vw` в раскладке,
+ * видимая ширина достигается трансформациями (GSAP твинит `x`), а не `width` —
+ * это держит анимацию на композиторе и не вызывает reflow при 60fps-обновлениях
+ * ScrollTrigger. Ширина управляется GSAP (100vw / 25vw / 80px), здесь заданы
+ * только позиционирование, внутренняя структура, фон и граница.
  *
- * @see NavigationBar.tsx — data-navbar + animateNavbar
+ * На mobile фон прозрачный, граница убирается.
  */
 .nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: var(--z-nav-overlay, 1000);
+  will-change: transform;
   display: flex;
   flex-direction: column;
   padding: var(--spacing-lg) var(--spacing-md);

@@ -13,10 +13,9 @@ export interface NavItemProps {
  * Один пункт навигационного меню.
  *
  * В slim-режиме (isSlim === true):
- * - Текстовая метка скрывается (CSS display: none)
- * - Иконка центрируется
+ * - Текстовая метка не рендерится
+ * - Иконка центрируется (класс styles.slim)
  * - Ссылка получает tabIndex={-1} (исключение из Tab-навигации)
- * - На NavLink вешается data-slim для CSS-селекторов
  */
 export function NavItem({ item, isSlim }: NavItemProps) {
   return (
@@ -24,10 +23,9 @@ export function NavItem({ item, isSlim }: NavItemProps) {
       <NavLink
         to={item.path}
         className={({ isActive }) =>
-          isActive ? `${styles.link} ${styles.active}` : styles.link
+          `${styles.link}${isSlim ? ` ${styles.slim}` : ''}${isActive ? ` ${styles.active}` : ''}`
         }
         tabIndex={isSlim ? -1 : 0}
-        data-slim={isSlim || undefined}
       >
         <span className={styles.icon}>{item.icon}</span>
         {!isSlim && <span className={styles.label}>{item.label}</span>}

@@ -8,10 +8,10 @@ import { logger } from '../../utils/logger';
 import { NavigationBar } from './NavigationBar';
 import { NavbarContext, type NavbarAPI } from './navbarContext';
 import {
-  getContentMargin,
+  getContentOffset,
   getDefaultState,
+  getNavTransform,
   getNextState,
-  getWidth,
   type NavState,
 } from './navbarStates';
 import styles from './NavigationBarProvider.module.css';
@@ -19,11 +19,24 @@ import styles from './NavigationBarProvider.module.css';
 /**
  * NavigationBarProvider — владелец анимации навбара.
  *
- * Полностью инкапсулирует DOM-ноды (`<nav data-navbar>`, `<main data-content>`)
- * и знает, как их анимировать, но не знает, когда. Контроль над запуском
- * делегируется страницам через Context: страница вызывает `registerScrollTrigger`
- * со своим элементом-триггером, а провайдер на лету создаёт ScrollTrigger,
- * привязанный к собственному таймлайну.
+ * Полностью инкапсулирует DOM-ноды (`<nav data-navbar>`, `.navInner`,
+ * `<main data-content>`) и знает, как их анимировать, но не знает, когда.
+ * Контроль над запуском делегируется страницам через Context: страница
+ * вызывает `registerScrollTrigger` со своим элементом-триггером, а провайдер
+ * на лету создаёт ScrollTrigger, привязанный к собственному таймлайну.
+ *
+ * ## Анимация через transforms
+ * Навбар всегда занимает `100vw` в раскладке; видимая ширина достигается
+ * трансформациями, а не `width`, чтобы ScrollTrigger-scrub не вызывал
+ * reflow при каждом обновлении (до 60 раз в секунду):
+ * - `nav.x` — сдвиг окна панели влево;
+ * - `navInner.x` — контр-сдвиг контента (остаётся привязан к левому краю);
+ * - `toggle.x` — компенсация кнопки на mobile (`.nav` там `overflow: visible`).
+ *
+ * Контентная область `<main data-content>` НЕ твинится: она — статичная
+ * правая колонка, отступ задаётся CSS-переменной `--nav-content-offset`
+ * (см. `getContentOffset`). Это исключает диагональное движение контента
+ * при скролле на `/home`.
  *
  * ## Поведение
  * - **Автоматическое** — ScrollTrigger, зарегистрированный страницей,
@@ -41,7 +54,8 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const bp = useBreakpoint();
   const navRef = useRef<HTMLElement>(null);
-  const contentRef = useRef<HTMLElement>(null);
+  const navInnerRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const stateRef = useRef<NavState>('fullscreen');
   const [currentState, setCurrentState] = useState<NavState>('fullscreen');
 
@@ -61,33 +75,45 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Прямая GSAP-анимация ширины навбара и отступа контента.
+   * Прямая GSAP-анимация трансформаций навбара.
    *
-   * На mobile отступ контента не трогаем — он принудительно `0` через CSS.
+   * Твинит `x` на `nav` и `.navInner` (и toggle на mobile) — всё на
+   * композиторе, без изменения раскладки. Отступ контента `<main>` не
+   * трогаем: он задаётся статично через `--nav-content-offset`.
    * Все твины используют `overwrite: 'auto'` для корректной обработки
    * конфликтов с ScrollTrigger.
    */
   const animateNavbar = useCallback(
     (state: NavState) => {
       const isMobile = bp === 'mobile';
+      const t = getNavTransform(state, bp, window.innerWidth);
 
       logger.trace('NavigationBar', `animateNavbar → ${state}`, {
-        width: getWidth(state),
         isMobile,
+        ...t,
       });
 
       if (navRef.current) {
         gsap.to(navRef.current, {
-          width: getWidth(state),
+          x: t.navX,
           duration: 0.6,
           ease: 'power2.inOut',
           overwrite: 'auto',
         });
       }
 
-      if (!isMobile && contentRef.current) {
-        gsap.to(contentRef.current, {
-          marginLeft: getContentMargin(state),
+      if (navInnerRef.current) {
+        gsap.to(navInnerRef.current, {
+          x: t.innerX,
+          duration: 0.6,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      }
+
+      if (isMobile && t.toggleX !== null && toggleRef.current) {
+        gsap.to(toggleRef.current, {
+          x: t.toggleX,
           duration: 0.6,
           ease: 'power2.inOut',
           overwrite: 'auto',
@@ -105,21 +131,20 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
    * - `progress === 0` → fullscreen (приоритет автоскролла над ручным toggle)
    * - `progress >= 1` → endState (invisible на mobile / standard на tablet/desktop)
    *
-   * Возвращает cleanup, убивающий триггер и таймлайн — вызывающая сторона
-   * вызывает его при размонтировании.
+   * Таймлайн твинит только композитные трансформации (`x`), поэтому scrub
+   * не вызывает reflow на каждом кадре. Возвращает cleanup, убивающий триггер
+   * и таймлайн — вызывающая сторона вызывает его при размонтировании.
    */
   const registerScrollTrigger = useCallback(
     (trigger: HTMLElement): (() => void) => {
       const isMobile = bp === 'mobile';
       const endState: NavState = isMobile ? 'invisible' : 'standard';
-      const targetWidth = getWidth(endState);
-      const targetMargin = getContentMargin(endState);
+      const t = getNavTransform(endState, bp, window.innerWidth);
 
       logger.info('NavigationBar', 'Регистрация ScrollTrigger', {
         bp,
-        targetWidth,
-        targetMargin,
         endState,
+        ...t,
       });
 
       const tl = gsap.timeline({
@@ -153,18 +178,15 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
       });
 
       if (navRef.current) {
-        tl.to(navRef.current, {
-          width: targetWidth,
-          ease: 'none',
-        });
+        tl.to(navRef.current, { x: t.navX, ease: 'none' }, 0);
       }
 
-      if (!isMobile && contentRef.current) {
-        tl.to(
-          contentRef.current,
-          { marginLeft: targetMargin, ease: 'none' },
-          0,
-        );
+      if (navInnerRef.current) {
+        tl.to(navInnerRef.current, { x: t.innerX, ease: 'none' }, 0);
+      }
+
+      if (isMobile && t.toggleX !== null && toggleRef.current) {
+        tl.to(toggleRef.current, { x: t.toggleX, ease: 'none' }, 0);
       }
 
       return () => {
@@ -223,6 +245,7 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   }, [bp, hasToggle, applyState, animateNavbar]);
 
   const isSlim = currentState === 'slim' || currentState === 'invisible';
+  const contentOffset = getContentOffset(currentState, bp, isHome);
 
   const api = useMemo<NavbarAPI>(
     () => ({ registerScrollTrigger }),
@@ -231,14 +254,19 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
 
   return (
     <NavbarContext.Provider value={api}>
-      <div className={styles.app}>
+      <div
+        className={styles.app}
+        style={{ '--nav-content-offset': contentOffset } as React.CSSProperties}
+      >
         <NavigationBar
           navRef={navRef}
+          navInnerRef={navInnerRef}
+          toggleRef={toggleRef}
           isSlim={isSlim}
           hasToggle={hasToggle}
           handleToggle={handleToggle}
         />
-        <main ref={contentRef} className={styles.main} data-content>
+        <main className={styles.main} data-content>
           {children}
         </main>
       </div>

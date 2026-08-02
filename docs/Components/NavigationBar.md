@@ -14,6 +14,12 @@
 
 Все состояния имеют `position: fixed`, `z-index: 1000` и прозрачный фон.
 
+**Реализация ширины**: навбар всегда занимает `100vw` в раскладке, а видимая
+ширина достигается трансформациями (GSAP твинит `x` на nav, `.navInner` и
+`<main>`). Это держит анимацию на композиторе и не вызывает reflow при
+60fps-обновлениях ScrollTrigger (scrub). Подробнее — в разделе
+«Почему transforms вместо width».
+
 ## Поведение по устройствам
 
 ### Mobile (`< 768px`)
@@ -51,13 +57,13 @@
 src/components/NavigationBar/
 ├── index.ts                    # Barrel: NavigationBarProvider, NavigationBar, NavList,
 │                               #   navItems, useNavbar, NavbarAPI, NavItemConfig,
-│                               #   NAV_STATES, NavState
-├── NavigationBarProvider.tsx   # Владелец: логика состояний, рефы nav/content,
+│                               #   getNavTransform, SLIM_WIDTH, NavState, NavTransform
+├── NavigationBarProvider.tsx   # Владелец: логика состояний, рефы nav/navInner/content/toggle,
 │                               #   registerScrollTrigger, Context.Provider
 ├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
 ├── navbarContext.ts            # createContext + useNavbar() + тип NavbarAPI
-├── navbarStates.ts             # NavState, NAV_STATES + чистые хелперы:
-│                               #   getWidth/getContentMargin/getDefaultState/getNextState
+├── navbarStates.ts             # NavState, NavTransform, SLIM_WIDTH + чистые
+│                               #   хелперы: getNavTransform/getDefaultState/getNextState
 ├── NavigationBar.tsx           # Презентационный: <nav>, логотип, toggle-btn;
 │                               #   пропсы isSlim/hasToggle/handleToggle
 ├── NavigationBar.module.css    # .nav, .navInner, .logo, .toggleBtn
@@ -70,7 +76,8 @@ src/components/NavigationBar/
 
 Barrel (`index.ts`) экспортирует `NavigationBarProvider` (основной компонент,
 оборачивающий layout), `NavigationBar`, `NavList`, `navItems`, хук `useNavbar`,
-конфиг `NAV_STATES` и типы `NavbarAPI`, `NavItemConfig`, `NavState`.
+геометрию `getNavTransform`/`SLIM_WIDTH` и типы `NavbarAPI`, `NavItemConfig`,
+`NavState`, `NavTransform`.
 `NavItem` — внутренний компонент, не экспортируется наружу.
 
 ### navItems.ts
@@ -130,7 +137,7 @@ export const navItems: NavItemConfig[] = routes
 ```
 App.tsx
 └── <NavigationBarProvider />              ← всегда в DOM, владелец анимации
-      ├── <NavigationBar navRef isSlim hasToggle handleToggle/>
+      ├── <NavigationBar navRef navInnerRef toggleRef isSlim hasToggle handleToggle/>
       │     └── <NavList /> → <NavItem> × N
       ├── <main data-content ref>          ← контентная область
       │     └── <Routes>
@@ -140,13 +147,15 @@ App.tsx
       └── Context API:
             └── registerScrollTrigger(trigger) → () => void
 
-Пропсы NavigationBar (не через контекст): isSlim, hasToggle, handleToggle
+Пропсы NavigationBar (не через контекст): isSlim, hasToggle, handleToggle, рефы
 
 HomePage (useEffect)
   └── registerScrollTrigger(spacerRef.current)
         └── NavigationBarProvider создаёт ScrollTrigger + таймлайн
-              ├── scrub: анимация navRef width (100vw → target)
-              ├── scrub: анимация contentRef marginLeft (tablet/desktop)
+              ├── scrub: nav.x (100vw → видимая ширина)
+              ├── scrub: navInner.x (counter-translate контента)
+              ├── main.x НЕ твинится — статичная правая колонка
+              │     (отступ через CSS-переменную --nav-content-offset)
               ├── progress === 0 → fullscreen (авто > ручное)
               ├── progress >= 1 → endState (invisible | standard)
               └── возвращает cleanup → kill() при размонтировании страницы
@@ -164,29 +173,39 @@ HomePage (useEffect)
 В `src/index.css` определены стили для data-атрибутов:
 
 ```css
-/* Фиксированное позиционирование — GSAP анимирует width */
+/* Фиксированное позиционирование — GSAP анимирует трансформации */
 [data-navbar] {
   position: fixed;
   top: 0;
   left: 0;
+  width: 100vw;
   height: 100dvh;
   z-index: var(--z-nav-overlay, 1000);
   background: transparent;
-  will-change: width, height;
+  will-change: transform;
 }
 
-/* Контентная область — margin-left анимируется на tablet/desktop */
+/* Контентная область — статичная правая колонка через CSS-переменную */
 [data-content] {
-  will-change: margin-left;
-}
-
-/* Mobile: контент никогда не сдвигается */
-@media (width < 768px) {
-  [data-content] {
-    margin-left: 0 !important;
-  }
+  margin-left: var(--nav-content-offset, 0px);
+  width: calc(100% - var(--nav-content-offset, 0px));
+  transition:
+    margin-left var(--transitions-duration-medium)
+      var(--transitions-easing-ease-in-out),
+    width var(--transitions-duration-medium)
+      var(--transitions-easing-ease-in-out);
 }
 ```
+
+Навбар всегда `width: 100vw` в раскладке; видимая ширина (25vw / 80px / 0)
+достигается сдвигом окна через `transform: translateX`, а не `width` — это не
+вызывает reflow при обновлении ScrollTrigger до 60 раз в секунду.
+
+`<main data-content>` не твинится вообще: `--nav-content-offset` выставляет
+провайдер (`getContentOffset`), ширина сразу ориентирована на конечное значение
+(`100% − offset`), поэтому при скролле на `/home` контент не едет по диагонали.
+CSS-transition срабатывает только на дискретных изменениях offset (tablet-тоггл
+slim ↔ standard, смена роута/breakpoint) — разовый reflow, не 60fps-scrub.
 
 ## Управление состоянием
 
@@ -196,10 +215,41 @@ HomePage (useEffect)
 | `stateRef`              | `React.Ref<NavState>`                  | Актуальное состояние для логики toggle (без stale closure)  |
 | `registerScrollTrigger` | `(trigger: HTMLElement) => () => void` | Функция из Context API: регистрирует ScrollTrigger страницы |
 
-**NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'` — тип и конфиг
-ширин (`NAV_STATES`) вынесены в `navbarStates.ts` (чистая логика, без React).
-Провайдер использует `getDefaultState`/`getNextState` для пересчёта состояний и
-`getWidth`/`getContentMargin` для GSAP-анимаций.
+**NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'` — тип и геометрия
+состояний вынесены в `navbarStates.ts` (чистая логика, без React). Провайдер
+использует `getDefaultState`/`getNextState` для пересчёта состояний,
+`getNavTransform(state, bp, viewport)` для GSAP-анимаций трансформаций навбара
+и `getContentOffset(state, bp, isHome)` для статичного отступа `<main>`.
+
+**NavTransform** (px, от `viewport = window.innerWidth`):
+
+| Состояние    | `navX`     | `innerX`    | `toggleX`                   |
+| ------------ | ---------- | ----------- | --------------------------- |
+| `fullscreen` | `0`        | `0`         | mobile: `0`, tablet: `null` |
+| `standard`   | `-0.75·vp` | `+0.75·vp`  | `null` (едет с навбаром)    |
+| `slim`       | `-(vp-80)` | `vp/2 - 40` | `null` (едет с навбаром)    |
+| `invisible`  | `-vp`      | `0` (слайд) | `+vp` (контр-сдвиг)         |
+
+- **Counter-translate**: `innerX = -navX` (tablet/desktop) — контент остаётся
+  привязан к левому краю экрана, окно панели «наезжает» на него.
+- **Slim**: `innerX = vp/2 - 40` — иконки, центрированные на 50vw в 100vw-раскладке,
+  попадают в центр окна 80px.
+- **Mobile invisible**: `innerX = 0` (слайд без контр-сдвига) — `.nav` имеет
+  `overflow: visible` ради кнопки toggle, поэтому контент уезжает вместе с окном,
+  а toggle компенсируется `toggleX`, оставаясь фиксированным в `left: 20`.
+
+**`<main data-content>` — статичная колонка, `getContentOffset`**:
+
+| Контекст                                        | Отступ (`--nav-content-offset`) |
+| ----------------------------------------------- | ------------------------------- |
+| mobile (любой роут)                             | `0` (полная ширина)             |
+| `/home` tablet/desktop, `standard`/`fullscreen` | `25vw`                          |
+| `/home` tablet, `slim` (после toggle)           | `80px`                          |
+| `/other` tablet/desktop, `standard`             | `25vw`                          |
+| `/other` tablet, `slim`                         | `80px`                          |
+
+На `/home` fullscreen маппится на `standard` — контент сразу ориентирован на
+конечную ширину (после скролла спейсера) и не двигается при скролле.
 
 ### Триггеры изменения состояния
 
@@ -235,13 +285,15 @@ const isSlim = currentState === 'slim' || currentState === 'invisible';
 Кнопка toggle рендерится **внутри** `<nav data-navbar>` как дочерний элемент
 и позиционируется через `position: absolute` (относительно навбара):
 
-- **Tablet**: `top: 20px; right: 20px` — в правом верхнем углу навбара
-- **Mobile**: `top: 20px; left: 20px` — в левом верхнем углу экрана (всегда видна,
-  даже когда навбар в `invisible`)
+- **Tablet**: `top: 20px; right: 20px` — в правом верхнем углу навбара. Кнопка —
+  дочерний элемент сдвигаемого навбара, поэтому «едет» вместе с правым краем окна.
+- **Mobile**: `top: 20px; left: 20px` — в левом верхнем углу экрана. Кнопка
+  компенсируется GSAP (`toggleX = -navX`), поэтому остаётся на месте, даже когда
+  окно навбара уезжает за экран (invisible).
 
 На mobile навбар имеет `overflow: visible`, а внутренний контейнер `.navInner` —
-`overflow: hidden`. Это гарантирует, что контент (логотип, ссылки) обрезается
-при `width: 0`, а кнопка toggle остаётся видимой вне границ навбара.
+`overflow: hidden`. Это гарантирует, что контент (логотип, ссылки) обрезается,
+когда окно навбара закрыто, а кнопка toggle остаётся видимой вне границ навбара.
 
 ## CSS-селекторы slim-режима
 
@@ -280,11 +332,47 @@ const routeIcons: Record<string, ReactNode> = {
 
 Остальные компоненты (NavItem, NavList, NavigationBar) изменений не требуют.
 
+## Почему transforms вместо width
+
+`width` и `marginLeft` — layout-свойства: их изменение заставляет браузер
+пересчитывать раскладку (reflow) и красить заново. ScrollTrigger с `scrub`
+обновляет свойства твина до 60 раз в секунду — анимация ширины превращается
+в reflow на каждом кадре, что даёт jank на слабых устройствах.
+
+Трансформации (`translateX`) обрабатываются на композиторе GPU и не трогают
+раскладку. Поэтому:
+
+- `.nav` всегда занимает `100vw` в раскладке, видимая ширина задаётся сдвигом
+  окна `nav.x` (тот же эффект, что у `width`, но без reflow);
+- `.navInner` получает контр-сдвиг (`innerX = -navX`), чтобы контент оставался
+  привязан к левому краю экрана и не искажался;
+- `<main data-content>` вообще не твинится — это статичная правая колонка:
+  отступ задаётся CSS-переменной `--nav-content-offset`, ширина сразу
+  ориентирована на конечное значение (`100% − offset`), поэтому контент не едет
+  по диагонали при скролле на `/home`;
+- на mobile кнопка toggle компенсируется отдельным `toggleX`.
+
+Единственная плата — px-значения геометрии навбара запекаются при создании
+твина (как и раньше для `25vw`). `invalidateOnRefresh` пересчитывает позиции
+скролла, а смена breakpoint пересоздаёт анимацию, поэтому при повороте/ресайзе
+поведение не регрессирует. Отступ `<main>` задаётся в `vw`/`px` — он и так
+отзывчив к ресайзу.
+
 ## Ключевые решения
 
-- **CSS Modules + direct GSAP props** — вместо переключения CSS-классов GSAP
-  анимирует CSS-свойства (`width`, `marginLeft`) напрямую. Это упрощает
+- **CSS Modules + transforms вместо width/margin** — вместо переключения
+  CSS-классов GSAP анимирует композитные трансформации (`x`) напрямую.
+  `width`/`marginLeft` — layout-свойства: при scrub ScrollTrigger обновляет их
+  до 60 раз в секунду, заставляя браузер пересчитывать раскладку на каждом
+  кадре. Трансформации живут на композиторе и не вызывают reflow. Это упрощает
   интеграцию со ScrollTrigger и избегает проблем с хешированными именами CSS Modules.
+
+- **`<main data-content>` — статичная колонка, не твинится** — отступ задаётся
+  через CSS-переменную `--nav-content-offset` (`getContentOffset`), а ширина —
+  `calc(100% − offset)`. На `/home` fullscreen маппится на `standard`, поэтому
+  контент сразу ориентирован на конечную ширину (после скролла спейсера) и при
+  скролле не едет по диагонали. Плавность tablet-тоггла slim ↔ standard — через
+  CSS-transition на `margin-left`/`width` (разовый reflow, не 60fps-scrub).
 
 - **`overwrite: 'auto'` только в `animateNavbar`** — прямые `gsap.to()` прерывают
   конфликтующие твины (включая твины от ScrollTrigger). Твины scrub-таймлайна
@@ -312,9 +400,11 @@ const routeIcons: Record<string, ReactNode> = {
 
 - **Toggle внутри `[data-navbar]`, overflow: hidden на `.navInner`** — кнопка
   рендерится внутри навбара с `position: absolute`. На desktop/tablet `.nav` имеет
-  `overflow: hidden`, контент обрезается. На mobile `.nav` переключается на
-  `overflow: visible`, а `overflow: hidden` переносится на `.navInner` — toggle
-  остаётся видимым даже при `width: 0` (invisible-режим).
+  `overflow: hidden` — контент и окно обрезаются, кнопка едет вместе с навбаром.
+  На mobile `.nav` переключается на `overflow: visible`, а `overflow: hidden`
+  переносится на `.navInner`, при этом кнопка компенсируется GSAP (`toggleX`) —
+  она остаётся видимой, даже когда окно навбара полностью уезжает за экран
+  (invisible-режим).
 
 - **Spacer в HomePage, а не в NavigationBar** — невидимый div `100dvh`
   создаётся внутри HomePage, а не в NavigationBar. Это гарантирует,

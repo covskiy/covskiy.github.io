@@ -192,8 +192,12 @@ covskiy.github.io/
   ├─ initGsap()                              ← на модульном уровне (top-level)
   ├─ Чистый layout-компонент:
   │    └─ <NavigationBarProvider />          ← всегда в DOM
-  │         ├─ <NavigationBar navRef/>       ← nav (fixed), GSAP анимирует width
-  │         └─ <main data-content>           ← GSAP анимирует margin-left
+  │         ├─ <NavigationBar navRef navInnerRef toggleRef/>  ← nav (fixed), GSAP твинит x
+  │         └─ <main data-content>            ← статичная колонка, отступ через
+  │                                            --nav-content-offset (не твинится).
+  │                                            Единственный <main> в документе:
+  │                                            страницы НЕ рендерят свой <main>,
+  │                                            их корневой контейнер — <div>
   │              └─ <Routes>
   │                   └─ каждая route обёрнута в <PageTransition>
   └─ Никакой intro/splash-логики. Не импортирует
@@ -212,8 +216,9 @@ covskiy.github.io/
   │    onComplete → setShowIntro(false)
   └─ useEffect → useNavbar().registerScrollTrigger(spacerRef.current)
        ├─ NavigationBarProvider создаёт ScrollTrigger + таймлайн (scrub)
-       ├─ scrub: анимация navRef width (100vw → target)
-       ├─ scrub: анимация contentRef marginLeft (tablet/desktop)
+       ├─ scrub: nav.x (transform, 100vw → видимая ширина)
+       ├─ scrub: navInner.x (counter-translate контента)
+       ├─ main.x НЕ твинится — отступ через --nav-content-offset
        ├─ progress 0 → fullscreen (авто > ручное)
        ├─ progress ≥ 1 → endState (invisible | standard)
        └─ cleanup из registerScrollTrigger → kill() при размонтировании

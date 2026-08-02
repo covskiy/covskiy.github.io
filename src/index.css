@@ -6,40 +6,52 @@
 /**
  * NavigationBar — базовые стили фиксированного позиционирования.
  *
- * GSAP напрямую анимирует ширину и высоту через data-атрибут,
- * поэтому смена CSS-классов не требуется.
+ * Навбар всегда занимает `100vw` в раскладке; видимая ширина достигается
+ * трансформациями (GSAP твинит `x` на nav, `.navInner` и `<main>`), а не
+ * `width` — это держит анимацию на композиторе и не вызывает reflow
+ * при 60fps-обновлениях ScrollTrigger.
  *
  * Свойства, управляемые GSAP:
- * - width (100vw / 25vw / 80px / 0px)
- * - height (100dvh, не меняется между состояниями)
+ * - nav.x — сдвиг окна панели (100vw → видимая ширина)
+ * - navInner.x — контр-сдвиг контента
  *
- * @see src/components/NavigationBar/NavigationBar.tsx
+ * Отступ `<main data-content>` GSAP не управляет — см. секцию ниже
+ * (статичная правая колонка через `--nav-content-offset`).
+ *
+ * @see src/components/NavigationBar/NavigationBarProvider.tsx
  */
 [data-navbar] {
   position: fixed;
   top: 0;
   left: 0;
+  width: 100vw;
   height: 100dvh;
   z-index: var(--z-nav-overlay, 1000);
   background: transparent;
-  will-change: width, height;
+  will-change: transform;
 }
 
 /**
- * Content wrapper — область контента, сдвигаемая при изменении состояния навбара.
+ * Content wrapper — статичная правая колонка.
  *
- * На tablet/desktop GSAP анимирует margin-left для компенсации ширины навбара.
- * На mobile контент не сдвигается.
+ * `<main>` не твинится GSAP (иначе при скролле на `/home` контент ехал бы
+ * по диагонали). Отступ и ширина задаются через CSS-переменную
+ * `--nav-content-offset` (выставляется NavigationBarProvider из
+ * `getContentOffset`): `margin-left = offset`, `width = 100% − offset`.
+ * На mobile offset всегда `0` — контент занимает всю ширину.
  *
- * @see src/App.tsx — атрибут data-content на <main>
+ * CSS-transition срабатывает только на дискретных изменениях offset
+ * (tablet-тоггл slim ↔ standard, смена роута/breakpoint) — разовый reflow,
+ * а не 60fps-scrub.
+ *
+ * @see src/components/NavigationBar/NavigationBarProvider.tsx
  */
 [data-content] {
-  will-change: margin-left;
-}
-
-/* Mobile: контент никогда не сдвигается, перекрывает GSAP */
-@media (width < 768px) {
-  [data-content] {
-    margin-left: 0 !important;
-  }
+  margin-left: var(--nav-content-offset, 0);
+  width: calc(100% - var(--nav-content-offset, 0));
+  transition:
+    margin-left var(--transitions-duration-medium)
+      var(--transitions-easing-ease-in-out),
+    width var(--transitions-duration-medium)
+      var(--transitions-easing-ease-in-out);
 }

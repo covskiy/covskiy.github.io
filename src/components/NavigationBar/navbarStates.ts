@@ -3,27 +3,99 @@ import type { Breakpoint } from '../../utils/breakpoints';
 /** Возможные состояния отображения навбара. */
 export type NavState = 'fullscreen' | 'standard' | 'slim' | 'invisible';
 
-/**
- * Конфиг состояний навбара: ширина навбара и отступ контента.
- *
- * Единственный источник правды для GSAP-анимаций (animateNavbar и
- * scrub-таймлайн из registerScrollTrigger).
- */
-export const NAV_STATES = {
-  fullscreen: { width: '100vw', margin: '0px' },
-  standard: { width: '25vw', margin: '25vw' },
-  slim: { width: '80px', margin: '0px' },
-  invisible: { width: '0px', margin: '0px' },
-} as const satisfies Record<NavState, { width: string; margin: string }>;
+/** Ширина slim-навбара в пикселях (константа для геометрии). */
+export const SLIM_WIDTH = 80;
 
-/** Маппинг состояния → ширина навбара. */
-export function getWidth(state: NavState): string {
-  return NAV_STATES[state].width;
+/** Геометрия навбара для одного состояния (px, вычисляется на лету). */
+export interface NavTransform {
+  /** Сдвиг `<nav data-navbar>` (окно панели). */
+  navX: number;
+  /** Сдвиг `.navInner` — контр-сдвиг контента относительно окна. */
+  innerX: number;
+  /**
+   * Сдвиг кнопки toggle. `null` — кнопка не твинится напрямую
+   * (tablet/desktop: едет вместе с навбаром как его дочерний элемент).
+   */
+  toggleX: number | null;
 }
 
-/** Маппинг состояния → отступ контента (только tablet/desktop). */
-export function getContentMargin(state: NavState): string {
-  return NAV_STATES[state].margin;
+/**
+ * Геометрия навбара для состояния: px-значения `x` для GSAP-твинов.
+ *
+ * Навбар всегда занимает `100vw` в раскладке, видимая ширина достигается
+ * сдвигом окна (`navX`), контент `.navInner` компенсируется `innerX`
+ * (counter-translate), чтобы оставаться привязанным к левому краю экрана.
+ *
+ * - `standard`: `navX = -0.75·vp`, `innerX = +0.75·vp` — контент экран-закреплён,
+ *   окно показывает левые 25vw (обрезается `overflow: hidden` на `.nav`).
+ * - `slim`: `innerX = vp/2 - 40` — иконки, центрированные на 50vw в 100vw-раскладке,
+ *   попадают в центр окна 80px.
+ * - mobile `invisible`: `innerX = 0` (слайд без контр-сдвига), потому что `.nav`
+ *   имеет `overflow: visible` ради кнопки toggle — контент уезжает вместе с окном,
+ *   а toggle компенсируется `toggleX`.
+ */
+export function getNavTransform(
+  state: NavState,
+  bp: Breakpoint,
+  viewport: number,
+): NavTransform {
+  const vp = viewport;
+
+  switch (state) {
+    case 'fullscreen':
+      return {
+        navX: 0,
+        innerX: 0,
+        toggleX: bp === 'mobile' ? 0 : null,
+      };
+    case 'standard':
+      return {
+        navX: -vp * 0.75,
+        innerX: vp * 0.75,
+        toggleX: null,
+      };
+    case 'slim':
+      return {
+        navX: -(vp - SLIM_WIDTH),
+        innerX: vp / 2 - SLIM_WIDTH / 2,
+        toggleX: null,
+      };
+    case 'invisible':
+      return { navX: -vp, innerX: 0, toggleX: vp };
+  }
+}
+
+/**
+ * Отступ контентной области `<main data-content>` для состояния (строка-единица).
+ *
+ * `<main>` — статичная правая колонка: `width = 100% − offset`, `margin-left = offset`.
+ * Она не твинится GSAP (иначе при скролле на `/home` контент ехал бы по диагонали),
+ * а получает offset через CSS-переменную `--nav-content-offset`.
+ *
+ * - mobile → `0` (полная ширина, контент никогда не сдвигается);
+ * - `/home` tablet/desktop → `25vw`, кроме `slim` → `80px`: контент сразу
+ *   ориентирован на конечную ширину (после скролла спейсера навбар = `standard`),
+ *   поэтому не двигается ни на одной фазе скролла;
+ * - `/other` → `25vw` для `standard`, `80px` для `slim`.
+ */
+export function getContentOffset(
+  state: NavState,
+  bp: Breakpoint,
+  isHome: boolean,
+): string {
+  if (bp === 'mobile') return '0px';
+
+  const contentState: NavState =
+    isHome && state === 'fullscreen' ? 'standard' : state;
+
+  switch (contentState) {
+    case 'standard':
+      return '25vw';
+    case 'slim':
+      return `${SLIM_WIDTH}px`;
+    default:
+      return '0px';
+  }
 }
 
 /**

@@ -114,8 +114,9 @@ HomePage (useEffect)
   └── useNavbar().registerScrollTrigger(spacerRef.current)
         │
         NavigationBarProvider
-          ├── GSAP: анимация navRef width (scrub)
-          ├── GSAP: анимация contentRef marginLeft (scrub, tablet/desktop)
+          ├── GSAP: nav.x (transform, scrub — ширина окна навбара)
+          ├── GSAP: navInner.x (counter-translate контента)
+          ├── main.x НЕ твинится — статичная колонка (--nav-content-offset)
           ├── progress 0 / 1 → обновление currentState навбара
           └── cleanup → kill() ScrollTrigger + timeline
 ```

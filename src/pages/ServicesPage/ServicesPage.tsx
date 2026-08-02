@@ -41,7 +41,7 @@ const services = [
 
 function ServicesPage() {
   return (
-    <main className={styles.services}>
+    <div className={styles.services}>
       <h1>Услуги</h1>
       <p className={styles.intro}>
         Мы предлагаем широкий спектр услуг для вашего бизнеса. Выберите то, что
@@ -57,7 +57,7 @@ function ServicesPage() {
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@ import styles from './LandingSections.module.css';
 
 export function LandingSections() {
   return (
-    <main className={styles.home}>
+    <div className={styles.home}>
       <section className={styles.hero}>
         <h1>Добро пожаловать</h1>
         <p className={styles.tagline}>
@@ -37,6 +37,6 @@ export function LandingSections() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

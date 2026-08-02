@@ -14,7 +14,7 @@ components/LandingSections/
 
 ## Структура компонента
 
-- `<main>` — корневой контейнер (`styles.home`)
+- `<div>` — корневой контейнер (`styles.home`)
 - `<section className={styles.hero}>` — hero-секция с заголовком и описанием
 - `<section className={styles.features}>` — секция преимуществ с карточками
   - `<div className={styles.grid}>` — grid-контейнер для карточек

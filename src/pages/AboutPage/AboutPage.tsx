@@ -2,7 +2,7 @@ import styles from './AboutPage.module.css';
 
 function AboutPage() {
   return (
-    <main className={styles.about}>
+    <div className={styles.about}>
       <h1>О нас</h1>
 
       <section className={styles.section}>
@@ -59,7 +59,7 @@ function AboutPage() {
           </li>
         </ul>
       </section>
-    </main>
+    </div>
   );
 }
 

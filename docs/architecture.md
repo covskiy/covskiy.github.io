@@ -120,7 +120,7 @@ covskiy.github.io/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
 │   │   ├── NavigationBar/            # Навигация (4 состояния: fullscreen / standard / slim / invisible)
-│   │   │   ├── NavigationBarProvider.tsx  # Диспетчер сцен: шина + рефы nav/navInner/toggle
+│   │   │   ├── NavigationBarProvider.tsx  # Диспетчер сцен: шина + рефы nav/toggle
 │   │   │   ├── NavigationBarProvider.module.css
 │   │   │   ├── useNavbarLayout.ts    # Корневая сцена раскладки (animate + ScrollTrigger + applyState)
 │   │   │   ├── navbarContext.ts      # createContext + useNavbar() + useNavbarEvent +
@@ -205,9 +205,9 @@ covskiy.github.io/
   ├─ Чистый layout-компонент:
   │    └─ <NavigationBarProvider />          ← всегда в DOM, диспетчер сцен
   │         ├─ Создаёт шину событий (createNavbarEventBus, scoped)
-  │         ├─ Держит рефы корневых нод (nav/navInner/toggle)
+  │         ├─ Держит рефы корневых нод (nav/toggle)
   │         ├─ Подключает useNavbarLayout (корневая сцена раскладки)
-  │         ├─ <NavigationBar navRef navInnerRef toggleRef/>  ← nav (fixed), GSAP твинит x
+  │         ├─ <NavigationBar navRef toggleRef/>  ← nav (fixed), GSAP твинит x
   │         └─ <main>                        ← статичная колонка, отступ через
   │                                            --nav-content-offset (не твинится).
   │                                            Единственный <main> в документе:
@@ -233,13 +233,13 @@ covskiy.github.io/
   └─ useEffect → useNavbar().registerScrollTrigger(spacerRef.current)
        ├─ useNavbarLayout создаёт ScrollTrigger + таймлайн (scrub)
        ├─ scrub: nav.x (transform, 100vw → видимая ширина)
-       ├─ scrub: navInner.x (counter-translate контента)
        ├─ main.x НЕ твинится — отступ через --nav-content-offset
        ├─ ScrollTrigger.onUpdate:
        │    ├─ зовёт scrollListenersRef (низкоуровневый канал для scrub-сцен)
        │    ├─ progress 0 → applyState('fullscreen', 'scroll') → bus.emit('state:change')
-       │    └─ progress ≥ 1 → applyState(endState, 'scroll') → bus.emit('state:change')
-       ├─ bus.on('state:change') → animateNavbar (gsap.to на nav/navInner/toggle)
+       │    ├─ progress ≥ 1 → applyState(endState, 'scroll') → bus.emit('state:change')
+       │    └─ setToggleVisibility(progress ≥ 0.9999) — toggle скрыт наверху и в scrub
+       ├─ bus.on('state:change') → animateNavbar (gsap.to на nav/toggle)
        └─ cleanup из registerScrollTrigger → kill() при размонтировании
 
 Подробнее: `docs/Pages/HomePage.md`.
@@ -348,16 +348,16 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент               | Назначение                                                                                                                                                      |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Logo`                  | Наковальня, drawSVG (Intro)                                                                                                                                     |
-| `LogoText`              | Текст "COVSKIY" — SVG morph между формами                                                                                                                       |
-| `Tagline`               | Слоган — клавиатура, поэтапная анимация                                                                                                                         |
-| `SkipControls`          | Кнопки skip / never-show для Intro                                                                                                                              |
-| `IntroAnimation`        | Intro overlay (position: fixed, поверх layout)                                                                                                                  |
-| `NavigationBar`         | Многосостояние: fullscreen / standard / slim / invisible, ScrollTrigger + toggle                                                                                |
-| `NavigationBarProvider` | Диспетчер сцен навбара: создаёт шину событий, держит рефы nav/navInner/toggle, подключает корневую сцену раскладки (`useNavbarLayout`), рендерит nav + `<main>` |
-| `PageTransition`        | Обёртка анимации смены роута                                                                                                                                    |
+| Компонент               | Назначение                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Logo`                  | Наковальня, drawSVG (Intro)                                                                                                                            |
+| `LogoText`              | Текст "COVSKIY" — SVG morph между формами                                                                                                              |
+| `Tagline`               | Слоган — клавиатура, поэтапная анимация                                                                                                                |
+| `SkipControls`          | Кнопки skip / never-show для Intro                                                                                                                     |
+| `IntroAnimation`        | Intro overlay (position: fixed, поверх layout)                                                                                                         |
+| `NavigationBar`         | Многосостояние: fullscreen / standard / slim / invisible, ScrollTrigger + toggle                                                                       |
+| `NavigationBarProvider` | Диспетчер сцен навбара: создаёт шину событий, держит рефы nav/toggle, подключает корневую сцену раскладки (`useNavbarLayout`), рендерит nav + `<main>` |
+| `PageTransition`        | Обёртка анимации смены роута                                                                                                                           |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.

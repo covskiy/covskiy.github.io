@@ -10,8 +10,6 @@ export const SLIM_WIDTH = 80;
 export interface NavTransform {
   /** Сдвиг `<nav>` (окно панели). */
   navX: number;
-  /** Сдвиг `.navInner` — контр-сдвиг контента относительно окна. */
-  innerX: number;
   /**
    * Сдвиг кнопки toggle. `null` — кнопка не твинится напрямую
    * (tablet/desktop: едет вместе с навбаром как его дочерний элемент).
@@ -23,16 +21,12 @@ export interface NavTransform {
  * Геометрия навбара для состояния: px-значения `x` для GSAP-твинов.
  *
  * Навбар всегда занимает `100vw` в раскладке, видимая ширина достигается
- * сдвигом окна (`navX`), контент `.navInner` компенсируется `innerX`
- * (counter-translate), чтобы оставаться привязанным к левому краю экрана.
+ * сдвигом окна (`navX`).
  *
- * - `standard`: `navX = -0.75·vp`, `innerX = +0.75·vp` — контент экран-закреплён,
- *   окно показывает левые 25vw (обрезается `overflow: hidden` на `.nav`).
- * - `slim`: `innerX = vp/2 - 40` — иконки, центрированные на 50vw в 100vw-раскладке,
- *   попадают в центр окна 80px.
- * - mobile `invisible`: `innerX = 0` (слайд без контр-сдвига), потому что `.nav`
- *   имеет `overflow: visible` ради кнопки toggle — контент уезжает вместе с окном,
- *   а toggle компенсируется `toggleX`.
+ * - `standard`: `navX = -0.75·vp` — окно показывает левые 25vw
+ *   (обрезается `overflow: hidden` на `.nav`).
+ * - `slim`: `navX = -(vp - 80)` — окно 80px у левого края.
+ * - mobile `invisible`: `navX = -vp`, а toggle компенсируется `toggleX`.
  */
 export function getNavTransform(
   state: NavState,
@@ -45,23 +39,20 @@ export function getNavTransform(
     case 'fullscreen':
       return {
         navX: 0,
-        innerX: 0,
         toggleX: bp === 'mobile' ? 0 : null,
       };
     case 'standard':
       return {
         navX: -vp * 0.75,
-        innerX: vp * 0.75,
         toggleX: null,
       };
     case 'slim':
       return {
         navX: -(vp - SLIM_WIDTH),
-        innerX: vp / 2 - SLIM_WIDTH / 2,
         toggleX: null,
       };
     case 'invisible':
-      return { navX: -vp, innerX: 0, toggleX: vp };
+      return { navX: -vp, toggleX: vp };
   }
 }
 

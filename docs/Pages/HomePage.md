@@ -118,14 +118,14 @@ HomePage (useEffect)
           │     └── шина для типизированных сцен
           └── useNavbarLayout (корневая сцена раскладки)
                 ├── GSAP: nav.x (transform, scrub — ширина окна навбара)
-                ├── GSAP: navInner.x (counter-translate контента)
                 ├── main.x НЕ твинится — статичная колонка (--nav-content-offset)
                 ├── applyState(next, source) → bus.emit('state:change')
                 ├── bus.on('state:change') → animateNavbar
                 ├── ScrollTrigger.onUpdate:
                 │     ├── scrollListenersRef (низкоуровневый канал для scrub)
                 │     ├── progress 0  → applyState('fullscreen', 'scroll')
-                │     └── progress ≥ 1 → applyState(endState, 'scroll')
+                │     ├── progress ≥ 1 → applyState(endState, 'scroll')
+                │     └── setToggleVisibility(progress ≥ 0.9999) — toggle скрыт в scrub
                 └── cleanup → kill() ScrollTrigger + timeline
 ```
 

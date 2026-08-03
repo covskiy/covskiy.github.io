@@ -5,8 +5,6 @@ import styles from './NavigationBar.module.css';
 export interface NavigationBarProps {
   /** Реф на `<nav>` — владелец (NavigationBarProvider) анимирует его. */
   navRef: RefObject<HTMLElement | null>;
-  /** Реф на `.navInner` — контр-сдвиг контента (counter-translate). */
-  navInnerRef: RefObject<HTMLDivElement | null>;
   /** Реф на кнопку toggle — компенсация сдвига на mobile. */
   toggleRef: RefObject<HTMLButtonElement | null>;
   /** Признак свёрнутого навбара (slim/invisible). */
@@ -27,7 +25,6 @@ export interface NavigationBarProps {
  */
 export function NavigationBar({
   navRef,
-  navInnerRef,
   toggleRef,
   isSlim,
   hasToggle,
@@ -35,7 +32,7 @@ export function NavigationBar({
 }: NavigationBarProps) {
   return (
     <nav className={styles.nav} ref={navRef}>
-      <div ref={navInnerRef} className={styles.navInner}>
+      <div className={styles.navInner}>
         <div className={styles.logo}>✦ Portfolio</div>
         <NavList isSlim={isSlim} />
       </div>

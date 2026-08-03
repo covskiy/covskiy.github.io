@@ -12,10 +12,10 @@ import styles from './NavigationBarProvider.module.css';
  * NavigationBarProvider — диспетчер сцен навбара.
  *
  * Сам не владеет анимациями: создаёт шину событий (`createNavbarEventBus`),
- * держит рефы корневых DOM-нод (`<nav>`, `<main>`, кнопка toggle) и
+ * держит рефы корневых DOM-нод (`<nav>`, кнопка toggle) и
  * подключает корневую сцену раскладки `useNavbarLayout`, которая
- * единственная знает о геометрии навбара (видимая ширина, counter-translate,
- * позиция toggle на mobile).
+ * единственная знает о геометрии навбара (видимая ширина, позиция toggle
+ * на mobile).
  *
  * Дочерние сцены (NavItem, логотип, будущие расширения) подписываются
  * на шину через `useNavbarEvent` / `useNavbarScrollProgress` и сами
@@ -35,7 +35,6 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const bp = useBreakpoint();
   const navRef = useRef<HTMLElement>(null);
-  const navInnerRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
   /**
@@ -63,7 +62,7 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
    */
   const layout = useNavbarLayout(
     bus,
-    { navRef, navInnerRef, toggleRef },
+    { navRef, toggleRef },
     { scrollListenersRef },
   );
 
@@ -145,7 +144,6 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
       >
         <NavigationBar
           navRef={navRef}
-          navInnerRef={navInnerRef}
           toggleRef={toggleRef}
           isSlim={isSlim}
           hasToggle={hasToggle}

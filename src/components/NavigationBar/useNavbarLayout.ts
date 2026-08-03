@@ -22,7 +22,6 @@ import {
 /** Рефы на корневые DOM-ноды навбара, которыми владеет провайдер. */
 export interface NavbarLayoutRefs {
   navRef: RefObject<HTMLElement | null>;
-  navInnerRef: RefObject<HTMLDivElement | null>;
   toggleRef: RefObject<HTMLButtonElement | null>;
 }
 
@@ -55,11 +54,10 @@ export interface NavbarLayout {
  * useNavbarLayout — корневая сцена раскладки навбара.
  *
  * Единственная сцена, которая знает о геометрии раскладки навбара
- * (видимая ширина, counter-translate контента, позиция toggle на mobile).
- * Владеет рефами корневых DOM-нод (`<nav>`, `<main>`, кнопка toggle) и
- * подписывается на шину событий:
+ * (видимая ширина, позиция toggle на mobile). Владеет рефами корневых
+ * DOM-нод (`<nav>`, кнопка toggle) и подписывается на шину событий:
  *
- * - `'state:change'` → animateNavbar: прямые `gsap.to()` на nav/navInner/toggle.
+ * - `'state:change'` → animateNavbar: прямые `gsap.to()` на nav/toggle.
  *   На шаге 1 layout-сцена сама себе подписчик: она публикует событие в bus,
  *   а затем сама на него реагирует — это даёт единый путь для всех источников
  *   (toggle, route, breakpoint, scroll). Внешние подписчики (NavItem и т. д.)
@@ -80,7 +78,7 @@ export function useNavbarLayout(
 ): NavbarLayout {
   const location = useLocation();
   const bp = useBreakpoint();
-  const { navRef, navInnerRef, toggleRef } = refs;
+  const { navRef, toggleRef } = refs;
   const { scrollListenersRef } = options;
 
   const stateRef = useRef<NavState>('fullscreen');
@@ -110,12 +108,31 @@ export function useNavbarLayout(
   );
 
   /**
+   * Управляет видимостью кнопки toggle на `/home`.
+   *
+   * На `/home` кнопка нужна только когда навбар ушёл за экран (scrub-таймлайн
+   * дошёл до конца спейсера) — во время анимации она скрыта, чтобы пользователь
+   * не мог сломать scrub ручным кликом. Управление идёт напрямую через GSAP
+   * (`autoAlpha` + `pointerEvents`), без React-рендера, из `ScrollTrigger.onUpdate`.
+   */
+  const setToggleVisibility = useCallback(
+    (visible: boolean) => {
+      if (!toggleRef.current) return;
+      gsap.set(toggleRef.current, {
+        autoAlpha: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+      });
+    },
+    [toggleRef],
+  );
+
+  /**
    * Прямая GSAP-анимация трансформаций навбара и синхронизация React-state —
    * реакция на `state:change`.
    *
-   * Твинит `x` на `nav` и `.navInner` (и toggle на mobile) — всё на
-   * композиторе, без изменения раскладки. Отступ контента `<main>` не
-   * трогаем: он задаётся статично через `--nav-content-offset`.
+   * Твинит `x` на `nav` (и toggle на mobile) — всё на композиторе, без
+   * изменения раскладки. Отступ контента `<main>` не трогаем: он задаётся
+   * статично через `--nav-content-offset`.
    *
    * Твины создаются через `contextSafe` и регистрируются в контексте
    * `useGSAP`, поэтому при размонтировании или смене зависимостей они
@@ -158,15 +175,6 @@ export function useNavbarLayout(
             });
           }
 
-          if (navInnerRef.current) {
-            gsap.to(navInnerRef.current, {
-              x: t.innerX,
-              duration: 0.6,
-              ease: 'power2.inOut',
-              overwrite: 'auto',
-            });
-          }
-
           if (isMobile && t.toggleX !== null && toggleRef.current) {
             gsap.to(toggleRef.current, {
               x: t.toggleX,
@@ -188,7 +196,7 @@ export function useNavbarLayout(
       });
     },
     {
-      dependencies: [bus, bp, navRef, navInnerRef, toggleRef],
+      dependencies: [bus, bp, navRef, toggleRef],
       revertOnUpdate: true,
     },
   );
@@ -203,6 +211,9 @@ export function useNavbarLayout(
    *
    * Дополнительно — зовёт подписчиков `scrollListenersRef` напрямую
    * (минуя bus.emit, чтобы не давить 60fps событиями в React-шину).
+   *
+   * Также управляет видимостью кнопки toggle на `/home`: скрывает её во время
+   * scrub-анимации и показывает, когда навбар ушёл за экран (`progress ≈ 1`).
    *
    * Возвращает cleanup, убивающий триггер и таймлайн.
    */
@@ -219,6 +230,10 @@ export function useNavbarLayout(
         endState,
         ...t,
       });
+
+      // Стартуем наверху /home: toggle не нужен, пока навбар в fullscreen.
+      // onUpdate при refresh скорректирует, если пользователь загрузился внизу.
+      setToggleVisibility(false);
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -257,6 +272,13 @@ export function useNavbarLayout(
               );
               applyState(endState, 'scroll');
             }
+
+            // Видимость toggle: скрыт наверху и во время scrub, виден только
+            // когда навбар ушёл за экран (progress ≈ 1). Обратная прокрутка
+            // первым же кадром (progress < 1) скрывает кнопку снова.
+            if (toggleRef.current) {
+              setToggleVisibility(self.progress >= 0.9999);
+            }
           },
         },
       });
@@ -265,14 +287,6 @@ export function useNavbarLayout(
         tl.to(
           navRef.current,
           { x: () => navTransform().navX, ease: 'none' },
-          0,
-        );
-      }
-
-      if (navInnerRef.current) {
-        tl.to(
-          navInnerRef.current,
-          { x: () => navTransform().innerX, ease: 'none' },
           0,
         );
       }
@@ -288,9 +302,19 @@ export function useNavbarLayout(
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
+        // Сброс видимости toggle при уходе с /home (смена роута/breakpoint),
+        // чтобы кнопка не осталась скрытой на других роутах.
+        setToggleVisibility(true);
       };
     },
-    [bp, navRef, navInnerRef, toggleRef, applyState, scrollListenersRef],
+    [
+      bp,
+      navRef,
+      toggleRef,
+      applyState,
+      scrollListenersRef,
+      setToggleVisibility,
+    ],
   );
 
   /**

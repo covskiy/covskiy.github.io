@@ -53,11 +53,15 @@ covskiy.github.io/
   обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
   `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
   `/` всегда рендерит HomePage.
-- **NavigationBarProvider** (Context-Driven Animation Factory) — владеет
-  DOM-нодами навбара (`<nav>`) и контента (`<main>`), знает как их анимировать,
-  но не когда. Страницы регистрируют ScrollTrigger
-  через `useNavbar().registerScrollTrigger(trigger)` (cleanup возвращается
-  странице для `kill()`). Приоритет: автоскролл > ручной toggle.
+- **NavigationBarProvider** (диспетчер сцен) — создаёт шину событий
+  (`createNavbarEventBus`, scoped на провайдер), держит рефы корневых
+  DOM-нод навбара (`<nav>`, `<main>`, кнопка toggle) и подключает
+  корневую сцену раскладки `useNavbarLayout`. Страницы регистрируют
+  ScrollTrigger через `useNavbar().registerScrollTrigger(trigger)`
+  (cleanup возвращается странице для `kill()`). Дочерние сцены
+  (NavItem, логотип, будущие расширения) подписываются на шину через
+  `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои
+  DOM-ноды самостоятельно. Приоритет: автоскролл > ручной toggle.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
   поверх собственного контента и регистрирует ScrollTrigger навбара
@@ -90,19 +94,22 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл                                | Назначение                                                 |
-| ----------------------------------- | ---------------------------------------------------------- |
-| `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги                 |
-| `docs/breakpoints.md`               | Breakpoints: модель, источник правды, CSS/JS использование |
-| `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты                   |
-| `docs/preloader.md`                 | Preloader — описание работы                                |
-| `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)                       |
-| `docs/utils/logger.md`              | API логгера                                                |
-| `docs/Components/Logo.md`           | Анимация логотипа (наковальня)                             |
-| `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)                       |
-| `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)                              |
-| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                                 |
-| `docs/Pages/NotFoundPage.md`        | Описание страницы 404                                      |
+| Файл                                     | Назначение                                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| `docs/architecture.md`                   | Архитектура, роутинг, GSAP, стили, конфиги                                         |
+| `docs/breakpoints.md`                    | Breakpoints: модель, источник правды, CSS/JS использование                         |
+| `docs/design-tokens.md`                  | Сборка design tokens, маппинг, градиенты                                           |
+| `docs/preloader.md`                      | Preloader — описание работы                                                        |
+| `docs/logging-rules.md`                  | Соглашения по логгеру (теги, уровни)                                               |
+| `docs/utils/logger.md`                   | API логгера                                                                        |
+| `docs/Components/Logo.md`                | Анимация логотипа (наковальня)                                                     |
+| `docs/Components/LogoText.md`            | Анимация текста логотипа (SVG morph)                                               |
+| `docs/Components/NavigationBar.md`       | Архитектура навбара: сценовая композиция, шина, состояния                          |
+| `docs/Components/navbarEventBus.md`      | API шины событий навбара (NavbarEventMap, NavbarSource)                            |
+| `docs/Components/adding-navbar-scene.md` | Рецепт: добавление новой сцены в навбар (useNavbarEvent / useNavbarScrollProgress) |
+| `docs/Components/Tagline.md`             | Анимация слогана (клавиатура)                                                      |
+| `docs/Components/IntroAnimation.md`      | Хореография Intro-анимации                                                         |
+| `docs/Pages/NotFoundPage.md`             | Описание страницы 404                                                              |
 
 ## Зависимости
 

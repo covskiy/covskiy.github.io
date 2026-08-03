@@ -26,6 +26,7 @@ const MODULE_COLORS: Record<string, string> = {
   useSparkCanvas: '#04b3bf',
   NavigationBar: '#8b5cf6',
   HomePage: '#ec4899',
+  navbarEventBus: '#58bb5a',
 };
 
 const warnedModules = new Set<string>();

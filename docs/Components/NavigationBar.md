@@ -56,12 +56,19 @@
 ```
 src/components/NavigationBar/
 ├── index.ts                    # Barrel: NavigationBarProvider, NavigationBar, NavList,
-│                               #   navItems, useNavbar, NavbarAPI, NavItemConfig,
-│                               #   getNavTransform, SLIM_WIDTH, NavState, NavTransform
-├── NavigationBarProvider.tsx   # Владелец: логика состояний, рефы nav/navInner/toggle,
-│                               #   registerScrollTrigger, Context.Provider
+│                               #   navItems, useNavbar, useNavbarEvent,
+│                               #   useNavbarScrollProgress, NavbarAPI, NavbarEventBus,
+│                               #   NavbarSource, NavbarEventMap, getNavTransform, SLIM_WIDTH,
+│                               #   NavState, NavTransform, NavbarLayout, NavbarLayoutRefs
+├── NavigationBarProvider.tsx   # Диспетчер сцен: шина событий, рефы nav/navInner/toggle,
+│                               #   scrollListenersRef, useNavbarLayout, Context.Provider
 ├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
+├── useNavbarLayout.ts          # Корневая сцена раскладки: animateNavbar, applyState,
+│                               #   registerScrollTrigger (scrub + ScrollTrigger.onUpdate),
+│                               #   подписка на state:change
 ├── navbarContext.ts            # createContext + useNavbar() + тип NavbarAPI
+│                               #   + хуки useNavbarEvent/useNavbarScrollProgress
+├── navbarEventBus.ts           # createNavbarEventBus + NavbarEventMap + NavbarSource
 ├── navbarStates.ts             # NavState, NavTransform, SLIM_WIDTH + чистые
 │                               #   хелперы: getNavTransform/getDefaultState/getNextState
 ├── NavigationBar.tsx           # Презентационный: <nav>, логотип, toggle-btn;
@@ -70,6 +77,7 @@ src/components/NavigationBar/
 ├── NavList.tsx                 # <ul>{items.map → NavItem}</ul>
 ├── NavList.module.css          # .list
 ├── NavItem.tsx                 # <li> + <NavLink>, иконка/текст в зависимости от isSlim
+│                               #   + демо-сцена: fade-in иконки при входе в slim
 ├── NavItem.module.css          # .link, .active, .icon, .label, .slim-стили
 └── navItems.ts                 # Конфиг (path, label, icon), деривация от routes
 ```
@@ -126,49 +134,133 @@ export const navItems: NavItemConfig[] = routes
 - `logger` — `src/utils/logger.ts`
 - `routes` — `src/routes.tsx` (через `navItems.ts`)
 
-## Архитектура: Context-Driven Animation Factory
+## Архитектура: Scene-Composition через EventBus
 
-**владелец** (`NavigationBarProvider`)
-полностью инкапсулирует DOM-ноды и суть анимации (какие свойства меняются,
-с какой скоростью), но контроль над тем, когда и от чего анимация запускается
-(скролл со страницы), делегирует наружу через React Context функцией
-`registerScrollTrigger`.
+Навбар — это набор **сцен** (Scene-Composition): независимых подписчиков
+на типизированную шину событий, каждый из которых владеет своими
+DOM-нодами и GSAP-таймлайнами. Провайдер (`NavigationBarProvider`)
+больше **не хранит все рефы** и **не владеет единой анимационной
+последовательностью** — он только диспетчеризует события и держит
+контракт для страниц.
+
+### Слои
+
+| Слой               | Что делает                                                                                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Шина**           | `createNavbarEventBus()` — типизированный pub/sub (`NavbarEventMap`)                                                                                                                                                           |
+| **Диспетчер**      | `NavigationBarProvider` — создаёт шину, держит рефы корневых нод, прокидывает API в context                                                                                                                                    |
+| **Корневая сцена** | `useNavbarLayout` — единственная сцена, знающая о геометрии навбара: animateNavbar (прямые `gsap.to` на nav/navInner/toggle), applyState (единая точка записи state), `registerScrollTrigger` (scrub-таймлайн), `handleToggle` |
+| **Дочерние сцены** | NavItem, логотип, будущие расширения — подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды самостоятельно                                                                       |
 
 ### Поток данных
 
 ```
 App.tsx
-└── <NavigationBarProvider />              ← всегда в DOM, владелец анимации
+└── <NavigationBarProvider />              ← диспетчер
+      │  (создаёт bus, scrollListenersRef, регистрирует useNavbarLayout)
       ├── <NavigationBar navRef navInnerRef toggleRef isSlim hasToggle handleToggle/>
       │     └── <NavList /> → <NavItem> × N
-      ├── <main>                          ← контентная область
+      │           └── useNavbarEvent('state:change', ...) — демо-сцена fade-in иконки
+      ├── <main>                          ← контентная область (статичная правая колонка)
       │     └── <Routes>
       │           └── HomePage
       │                 ├── <div ref={spacerRef} />   ← 100dvh спейсер
       │                 └── <LandingSections />
+      │                 └── useEffect:
+      │                       registerScrollTrigger(spacerRef.current)
       └── Context API:
-            └── registerScrollTrigger(trigger) → () => void
+            ├── registerScrollTrigger(trigger) → () => void   (контракт для страниц)
+            ├── getState() → NavState                          (синхронный snapshot)
+            ├── events: NavbarEventBus                          (типизированная шина)
+            └── onScrollProgress(listener) → () => void         (60fps низкоуровневый канал)
 
-Пропсы NavigationBar (не через контекст): isSlim, hasToggle, handleToggle, рефы
-
-HomePage (useEffect)
-  └── registerScrollTrigger(spacerRef.current)
-        └── NavigationBarProvider создаёт ScrollTrigger + таймлайн
-              ├── scrub: nav.x (100vw → видимая ширина)
-              ├── scrub: navInner.x (counter-translate контента)
-              ├── main.x НЕ твинится — статичная правая колонка
-              │     (отступ через CSS-переменную --nav-content-offset)
-              ├── progress === 0 → fullscreen (авто > ручное)
-              ├── progress >= 1 → endState (invisible | standard)
-              └── возвращает cleanup → kill() при размонтировании страницы
+useNavbarLayout (корневая сцена):
+  applyState(next, source):
+    stateRef.current = next
+    setCurrentState(next)
+    bus.emit('state:change', { state, prev, source })
+  bus.on('state:change'):
+    animateNavbar: gsap.to(nav / navInner / toggle) с overwrite: 'auto'
+  registerScrollTrigger(trigger):
+    gsap.timeline({ scrollTrigger: { ..., onUpdate } })
+      onUpdate:
+        listeners.forEach(l => l({ progress, direction }))   ← низкоуровневый канал
+        if progress === 0  → applyState('fullscreen', 'scroll')
+        if progress >= 1   → applyState(endState, 'scroll')
 ```
 
-Страница не знает ни о DOM-нодах навбара (`.nav`, `<main>`), ни о целевых
-ширинах — она только отдаёт свой элемент-триггер. Это гарантирует,
-что даже после ручного toggle (который убивает ScrollTrigger-твин)
-принудительный разворот в `fullscreen` сработает при скролле к началу:
-триггер живёт в провайдере и обновляет состояние навбара на границах
-спейсера напрямую.
+### Что знает каждый уровень
+
+| Уровень                          | Знает                                                                           | НЕ знает                        |
+| -------------------------------- | ------------------------------------------------------------------------------- | ------------------------------- |
+| `NavigationBarProvider`          | Роут, breakpoint, рефы корневых нод (`nav/navInner/toggle`), шина, layout-сцена | DOM NavItem, иконки, логотип    |
+| `useNavbarLayout`                | Геометрия раскладки (`getNavTransform`), ScrollTrigger, scrub                   | Содержимое пунктов меню, иконки |
+| Дочерняя сцена (NavItem и т. д.) | Своя DOM-нода, `prev → next` state через шину                                   | DOM соседей, общую анимацию     |
+
+### Контракты
+
+**Для страниц** (через `useNavbar()`):
+
+- `registerScrollTrigger(trigger: HTMLElement) => () => void` — контракт
+  сохранён без изменений. Внутри — фасад над `useNavbarLayout`.
+
+**Для дочерних сцен** (через `useNavbar()` или хуки):
+
+- `getState()` — синхронный snapshot текущего состояния.
+- `events.on(event, listener)` — низкоуровневая подписка на шину.
+- `useNavbarEvent(event, listener, deps?)` — React-обёртка с latest-ref
+  (listener всегда видит свежее замыкание, не нужно оборачивать
+  в `useCallback`).
+- `onScrollProgress(listener)` / `useNavbarScrollProgress(listener)` —
+  низкоуровневый канал для 60fps scrub-подписчиков. Listener вызывается
+  из `ScrollTrigger.onUpdate` напрямую, минуя React-рендер.
+
+### Принципы
+
+1. **Шина scoped на провайдер** — `createNavbarEventBus()` вызывается
+   один раз через `useMemo([])` в `NavigationBarProvider`. Если в
+   будущем потребуется кросс-провайдерный доступ (например,
+   `IntroAnimation` ↔ Navbar), переход на singleton возможен без
+   изменения потребителей — они получают `events` через context.
+
+2. **`applyState` — единственная точка записи состояния.** Любой
+   источник (toggle/route/breakpoint/scroll) проходит через неё и
+   публикует `state:change` с указанием `source` в payload. Это даёт
+   подписчикам возможность фильтровать события по источнику.
+
+3. **`scroll:progress` идёт через отдельный канал** — не через
+   `events.emit`, чтобы 60fps события не попадали в React-шину.
+   Провайдер владеет `scrollListenersRef: RefObject<Set<Listener>>`,
+   layout-сцена дёргает listener-ов напрямую из `ScrollTrigger.onUpdate`.
+
+4. **Дочерние сцены не знают о DOM корневого навбара** — они получают
+   только логические события. Это означает, что появление нового
+   элемента внутри навбара (логотип, badge, индикатор секции)
+   реализуется как новая сцена, без изменения провайдера или
+   layout-сцены.
+
+5. **`NavItem` — демо-сцена end-to-end.** Фаза 1 проверяет пайплайн
+   шины: при первом переходе навбара в `slim` иконка делает fade-in
+   с подскоком через `gsap.fromTo`. Это дополняет существующее
+   поведение (`isSlim` пропом) и легко откатывается удалением хука.
+
+### Будущая интеграция с IntroAnimation (задел)
+
+`NavbarSource` уже включает вариант `'intro'`, зарезервированный под
+сценарий, когда IntroAnimation завершается и инициирует «вход» навбара.
+
+Сейчас `applyState` всегда получает source из контекста NavigationBarProvider
+(`'toggle' | 'route' | 'breakpoint' | 'scroll'`). При появлении интеграции:
+
+1. IntroAnimation `onComplete` либо вызовет
+   `useNavbar().events.emit('state:change', { state, prev, source: 'intro' })`,
+   либо (если у IntroAnimation появится свой контракт через context)
+   напрямую через низкоуровневый API.
+2. Дочерние сцены, желающие отреагировать именно на завершение intro,
+   фильтруют: `useNavbarEvent('state:change', (p) => p.source === 'intro' && run())`.
+
+Для этого потребуется поднять bus до singleton (отдельная задача фазы 2) —
+контракт API уже зафиксирован.
 
 ## Стили позиционирования
 
@@ -210,17 +302,30 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 
 ## Управление состоянием
 
-| Сущность                | Тип                                    | Назначение                                                  |
-| ----------------------- | -------------------------------------- | ----------------------------------------------------------- |
-| `currentState`          | `React.State<NavState>`                | UI-состояние для пропа `isSlim` в NavigationBar             |
-| `stateRef`              | `React.Ref<NavState>`                  | Актуальное состояние для логики toggle (без stale closure)  |
-| `registerScrollTrigger` | `(trigger: HTMLElement) => () => void` | Функция из Context API: регистрирует ScrollTrigger страницы |
+| Сущность                   | Где живёт                         | Назначение                                                           |
+| -------------------------- | --------------------------------- | -------------------------------------------------------------------- |
+| `currentState`             | `useNavbarLayout` (state)         | UI-состояние для пропа `isSlim` в NavigationBar                      |
+| `stateRef`                 | `useNavbarLayout` (ref)           | Актуальное состояние для логики toggle (без stale closure)           |
+| `applyState(next, source)` | `useNavbarLayout`                 | **Единственная точка записи state.** Публикует `state:change` в шину |
+| `registerScrollTrigger`    | `useNavbarLayout` (через API)     | Функция из Context API: регистрирует ScrollTrigger страницы          |
+| `scrollListenersRef`       | `NavigationBarProvider` (ref)     | Низкоуровневый канал для 60fps scrub-подписчиков                     |
+| `bus: NavbarEventBus`      | `NavigationBarProvider` (useMemo) | Типизированная шина событий                                          |
 
 **NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'` — тип и геометрия
 состояний вынесены в `navbarStates.ts` (чистая логика, без React). Провайдер
 использует `getDefaultState`/`getNextState` для пересчёта состояний,
 `getNavTransform(state, bp, viewport)` для GSAP-анимаций трансформаций навбара
 и `getContentOffset(state, bp, isHome)` для статичного отступа `<main>`.
+
+**NavbarSource** (источник `state:change`):
+
+| Значение     | Когда                                                     |
+| ------------ | --------------------------------------------------------- |
+| `toggle`     | Клик по ☰ / ← (ручной toggle)                            |
+| `route`      | Смена pathname через react-router                         |
+| `breakpoint` | Смена breakpoint (mobile / tablet / desktop)              |
+| `scroll`     | ScrollTrigger на спейсере достиг границы (progress 0 / 1) |
+| `intro`      | Зарезервировано для будущей интеграции с IntroAnimation   |
 
 **NavTransform** (px, от `viewport = window.innerWidth`):
 
@@ -386,6 +491,22 @@ const routeIcons: Record<string, ReactNode> = {
   состояние навбара только в дискретных точках (progress 0 / 1) на границах
   спейсера. Магическая строка `navbar:setstate` + `window.dispatchEvent`
   удалены.
+
+- **Сценовая композиция через типизированный EventBus** — навбар
+  разделён на корневую сцену раскладки (`useNavbarLayout`) и
+  дочерние сцены (`NavItem`, будущие расширения). Все сцены
+  подписаны на `NavbarEventBus` через `useNavbarEvent` и реагируют
+  на изменения состояния самостоятельно, не уведомляя провайдер.
+  Это устраняет «толстый scrub-таймлайн» и регистрацию всех
+  анимируемых DOM-узлов через рефы в родителе.
+
+- **Двухканальная публикация прогресса скролла** — дискретные события
+  идут через `events.emit` (`'state:change'`, `'route:change'`,
+  `'breakpoint:change'`), непрерывный scrub-прогресс — через
+  низкоуровневый канал `onScrollProgress` напрямую из
+  `ScrollTrigger.onUpdate`. Это исключает 60fps события из React-шины
+  и сохраняет предсказуемую производительность для scrub-сцен
+  (бегущая подсветка активной ссылки и т. п.).
 
 - **`useBreakpoint` через `matchMedia`** — в отличие от `resize`,
   `matchMedia` не срабатывает на каждом пикселе и корректно реагирует

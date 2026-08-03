@@ -57,6 +57,8 @@ covskiy.github.io/
 │   │   ├── Logo.md
 │   │   ├── LogoText.md
 │   │   ├── NavigationBar.md
+│   │   ├── navbarEventBus.md
+│   │   ├── adding-navbar-scene.md
 │   │   ├── SkipControls.md
 │   │   ├── SlimProgressBar.md
 │   │   └── Tagline.md
@@ -118,11 +120,21 @@ covskiy.github.io/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
 │   │   ├── NavigationBar/            # Навигация (4 состояния: fullscreen / standard / slim / invisible)
-│   │   │   ├── NavigationBarProvider.tsx  # Владелец анимации + Context API
+│   │   │   ├── NavigationBarProvider.tsx  # Диспетчер сцен: шина + рефы nav/navInner/toggle
 │   │   │   ├── NavigationBarProvider.module.css
-│   │   │   ├── navbarContext.ts      # createContext + useNavbar()
+│   │   │   ├── useNavbarLayout.ts    # Корневая сцена раскладки (animate + ScrollTrigger + applyState)
+│   │   │   ├── navbarContext.ts      # createContext + useNavbar() + useNavbarEvent +
+│   │   │   │                         #   useNavbarScrollProgress
+│   │   │   ├── navbarEventBus.ts     # createNavbarEventBus + NavbarEventMap + NavbarSource
+│   │   │   ├── navbarStates.ts       # NavState / getNavTransform / getDefaultState / getNextState
 │   │   │   ├── NavigationBar.tsx     # Презентационный nav
-│   │   │   └── NavigationBar.module.css
+│   │   │   ├── NavList.tsx           # <ul> пунктов меню
+│   │   │   ├── NavItem.tsx           # <li> + <NavLink> + демо-сцена fade-in иконки
+│   │   │   ├── navItems.ts           # Конфиг (path/label/icon), деривация от routes
+│   │   │   ├── NavigationBar.module.css
+│   │   │   ├── NavList.module.css
+│   │   │   ├── NavItem.module.css
+│   │   │   └── index.ts
 │   │   └── PageTransition/           # Обёртка анимации смены роута
 │   │       └── PageTransition.tsx
 │   ├── pages/
@@ -191,7 +203,10 @@ covskiy.github.io/
 [App.tsx]
   ├─ initGsap()                              ← на модульном уровне (top-level)
   ├─ Чистый layout-компонент:
-  │    └─ <NavigationBarProvider />          ← всегда в DOM
+  │    └─ <NavigationBarProvider />          ← всегда в DOM, диспетчер сцен
+  │         ├─ Создаёт шину событий (createNavbarEventBus, scoped)
+  │         ├─ Держит рефы корневых нод (nav/navInner/toggle)
+  │         ├─ Подключает useNavbarLayout (корневая сцена раскладки)
   │         ├─ <NavigationBar navRef navInnerRef toggleRef/>  ← nav (fixed), GSAP твинит x
   │         └─ <main>                        ← статичная колонка, отступ через
   │                                            --nav-content-offset (не твинится).
@@ -203,7 +218,8 @@ covskiy.github.io/
   └─ Никакой intro/splash-логики. Не импортирует
        IntroAnimation, introStorage, useLocation, useState, useEffect.
 
-Подробнее о NavigationBar: `docs/Components/NavigationBar.md`.
+Подробнее о NavigationBar: `docs/Components/NavigationBar.md`,
+о шине: `docs/Components/navbarEventBus.md`.
 
 [HomePage]
   ├─ useState: showIntro
@@ -215,12 +231,15 @@ covskiy.github.io/
   │    createPortal(<IntroAnimation />, document.body) — overlay поверх контента
   │    onComplete → setShowIntro(false)
   └─ useEffect → useNavbar().registerScrollTrigger(spacerRef.current)
-       ├─ NavigationBarProvider создаёт ScrollTrigger + таймлайн (scrub)
+       ├─ useNavbarLayout создаёт ScrollTrigger + таймлайн (scrub)
        ├─ scrub: nav.x (transform, 100vw → видимая ширина)
        ├─ scrub: navInner.x (counter-translate контента)
        ├─ main.x НЕ твинится — отступ через --nav-content-offset
-       ├─ progress 0 → fullscreen (авто > ручное)
-       ├─ progress ≥ 1 → endState (invisible | standard)
+       ├─ ScrollTrigger.onUpdate:
+       │    ├─ зовёт scrollListenersRef (низкоуровневый канал для scrub-сцен)
+       │    ├─ progress 0 → applyState('fullscreen', 'scroll') → bus.emit('state:change')
+       │    └─ progress ≥ 1 → applyState(endState, 'scroll') → bus.emit('state:change')
+       ├─ bus.on('state:change') → animateNavbar (gsap.to на nav/navInner/toggle)
        └─ cleanup из registerScrollTrigger → kill() при размонтировании
 
 Подробнее: `docs/Pages/HomePage.md`.
@@ -329,16 +348,16 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент               | Назначение                                                                                |
-| ----------------------- | ----------------------------------------------------------------------------------------- |
-| `Logo`                  | Наковальня, drawSVG (Intro)                                                               |
-| `LogoText`              | Текст "COVSKIY" — SVG morph между формами                                                 |
-| `Tagline`               | Слоган — клавиатура, поэтапная анимация                                                   |
-| `SkipControls`          | Кнопки skip / never-show для Intro                                                        |
-| `IntroAnimation`        | Intro overlay (position: fixed, поверх layout)                                            |
-| `NavigationBar`         | Многосостояние: fullscreen / standard / slim / invisible, ScrollTrigger + toggle          |
-| `NavigationBarProvider` | Владелец анимации навбара: Context API (`registerScrollTrigger`), рендерит nav + `<main>` |
-| `PageTransition`        | Обёртка анимации смены роута                                                              |
+| Компонент               | Назначение                                                                                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Logo`                  | Наковальня, drawSVG (Intro)                                                                                                                                     |
+| `LogoText`              | Текст "COVSKIY" — SVG morph между формами                                                                                                                       |
+| `Tagline`               | Слоган — клавиатура, поэтапная анимация                                                                                                                         |
+| `SkipControls`          | Кнопки skip / never-show для Intro                                                                                                                              |
+| `IntroAnimation`        | Intro overlay (position: fixed, поверх layout)                                                                                                                  |
+| `NavigationBar`         | Многосостояние: fullscreen / standard / slim / invisible, ScrollTrigger + toggle                                                                                |
+| `NavigationBarProvider` | Диспетчер сцен навбара: создаёт шину событий, держит рефы nav/navInner/toggle, подключает корневую сцену раскладки (`useNavbarLayout`), рендерит nav + `<main>` |
+| `PageTransition`        | Обёртка анимации смены роута                                                                                                                                    |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.
@@ -544,31 +563,38 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 
 ## 11. Сводка файлов — быстрый поиск
 
-| Задача                       | Файл                                                                         |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| Точка входа JS               | `src/main.tsx`                                                               |
-| Корневой компонент           | `src/App.tsx`                                                                |
-| Все роуты                    | `src/routes.tsx`                                                             |
-| NavigationBar                | `src/components/NavigationBar/NavigationBarProvider.tsx`                     |
-| HomePage                     | `src/pages/HomePage/HomePage.tsx`                                            |
-| Стили навбара                | CSS Modules (`NavigationBar.module.css`, `NavigationBarProvider.module.css`) |
-| Breakpoint hook              | `src/utils/breakpoints.ts`                                                   |
-| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`                           |
-| Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`                        |
-| Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts`                       |
-| NavigationBar (документация) | `docs/Components/NavigationBar.md`                                           |
-| HomePage (документация)      | `docs/Pages/HomePage.md`                                                     |
-| Типы intro                   | `src/types/intro.types.ts`                                                   |
-| GSAP-инициализация           | `src/utils/initGsap.ts`                                                      |
-| Логгер                       | `src/utils/logger.ts`                                                        |
-| Design tokens build          | `sd.config.js`                                                               |
-| Design tokens источник       | `design-tokens/*.json`                                                       |
-| Design tokens (документация) | `docs/design-tokens.md`                                                      |
-| Сгенерированные токены       | `src/styles/*.css`                                                           |
-| Preloader HTML               | `index.html`                                                                 |
-| Vite config                  | `vite.config.ts`                                                             |
-| ESLint config                | `eslint.config.js`                                                           |
-| Deploy CI                    | `.github/workflows/deploy.yml`                                               |
-| Husky hook                   | `.husky/pre-commit`                                                          |
-| Скрипты npm                  | `package.json`                                                               |
-| Обзор проекта (для AI)       | `AGENTS.md`                                                                  |
+| Задача                        | Файл                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Точка входа JS                | `src/main.tsx`                                                                                                           |
+| Корневой компонент            | `src/App.tsx`                                                                                                            |
+| Все роуты                     | `src/routes.tsx`                                                                                                         |
+| NavigationBar (провайдер)     | `src/components/NavigationBar/NavigationBarProvider.tsx`                                                                 |
+| NavigationBar (layout-сцена)  | `src/components/NavigationBar/useNavbarLayout.ts`                                                                        |
+| NavigationBar (шина)          | `src/components/NavigationBar/navbarEventBus.ts`                                                                         |
+| NavigationBar (context)       | `src/components/NavigationBar/navbarContext.ts`                                                                          |
+| NavigationBar (геометрия)     | `src/components/NavigationBar/navbarStates.ts`                                                                           |
+| NavigationBar (презентация)   | `src/components/NavigationBar/NavigationBar.tsx`                                                                         |
+| HomePage                      | `src/pages/HomePage/HomePage.tsx`                                                                                        |
+| Стили навбара                 | CSS Modules (`NavigationBar.module.css`, `NavigationBarProvider.module.css`, `NavItem.module.css`, `NavList.module.css`) |
+| Breakpoint hook               | `src/utils/breakpoints.ts`                                                                                               |
+| Intro animation               | `src/components/IntroAnimation/IntroAnimation.tsx`                                                                       |
+| Intro storage                 | `src/components/IntroAnimation/utils/introStorage.ts`                                                                    |
+| Skip-логика                   | `src/components/IntroAnimation/hooks/useSplashSkip.ts`                                                                   |
+| NavigationBar (документация)  | `docs/Components/NavigationBar.md`                                                                                       |
+| NavbarEventBus (документация) | `docs/Components/navbarEventBus.md`                                                                                      |
+| Adding navbar scene (рецепт)  | `docs/Components/adding-navbar-scene.md`                                                                                 |
+| HomePage (документация)       | `docs/Pages/HomePage.md`                                                                                                 |
+| Типы intro                    | `src/types/intro.types.ts`                                                                                               |
+| GSAP-инициализация            | `src/utils/initGsap.ts`                                                                                                  |
+| Логгер                        | `src/utils/logger.ts`                                                                                                    |
+| Design tokens build           | `sd.config.js`                                                                                                           |
+| Design tokens источник        | `design-tokens/*.json`                                                                                                   |
+| Design tokens (документация)  | `docs/design-tokens.md`                                                                                                  |
+| Сгенерированные токены        | `src/styles/*.css`                                                                                                       |
+| Preloader HTML                | `index.html`                                                                                                             |
+| Vite config                   | `vite.config.ts`                                                                                                         |
+| ESLint config                 | `eslint.config.js`                                                                                                       |
+| Deploy CI                     | `.github/workflows/deploy.yml`                                                                                           |
+| Husky hook                    | `.husky/pre-commit`                                                                                                      |
+| Скрипты npm                   | `package.json`                                                                                                           |
+| Обзор проекта (для AI)        | `AGENTS.md`                                                                                                              |

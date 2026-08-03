@@ -47,9 +47,9 @@ const [showIntro, setShowIntro] = useState(
 
 ## ScrollTrigger
 
-ScrollTrigger создаёт **NavigationBarProvider** через `registerScrollTrigger`,
-который HomePage вызывает в `useEffect`. Пересоздаётся только при смене
-breakpoint (`dependencies: [registerScrollTrigger, bp]`).
+ScrollTrigger создаёт **useNavbarLayout** (корневая сцена раскладки навбара)
+через `registerScrollTrigger`, который HomePage вызывает в `useEffect`.
+Пересоздаётся только при смене breakpoint (`dependencies: [registerScrollTrigger, bp]`).
 
 ### Спейсер
 
@@ -114,14 +114,26 @@ HomePage (useEffect)
   └── useNavbar().registerScrollTrigger(spacerRef.current)
         │
         NavigationBarProvider
-          ├── GSAP: nav.x (transform, scrub — ширина окна навбара)
-          ├── GSAP: navInner.x (counter-translate контента)
-          ├── main.x НЕ твинится — статичная колонка (--nav-content-offset)
-          ├── progress 0 / 1 → обновление currentState навбара
-          └── cleanup → kill() ScrollTrigger + timeline
+          ├── bus: NavbarEventBus (createNavbarEventBus, scoped)
+          │     └── шина для типизированных сцен
+          └── useNavbarLayout (корневая сцена раскладки)
+                ├── GSAP: nav.x (transform, scrub — ширина окна навбара)
+                ├── GSAP: navInner.x (counter-translate контента)
+                ├── main.x НЕ твинится — статичная колонка (--nav-content-offset)
+                ├── applyState(next, source) → bus.emit('state:change')
+                ├── bus.on('state:change') → animateNavbar
+                ├── ScrollTrigger.onUpdate:
+                │     ├── scrollListenersRef (низкоуровневый канал для scrub)
+                │     ├── progress 0  → applyState('fullscreen', 'scroll')
+                │     └── progress ≥ 1 → applyState(endState, 'scroll')
+                └── cleanup → kill() ScrollTrigger + timeline
 ```
 
-Детальнее: `docs/Components/NavigationBar.md`.
+Дочерние сцены (`NavItem`, будущие) подписываются на шину через
+`useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды
+самостоятельно — без участия провайдера.
+Детальнее: `docs/Components/NavigationBar.md`, API шины:
+`docs/Components/navbarEventBus.md`.
 
 ## Ключевые решения
 
@@ -133,10 +145,13 @@ HomePage (useEffect)
 - **Жизненный цикл триггера — на странице** — создание в `useEffect`,
   уничтожение через cleanup из `registerScrollTrigger` при размонтировании
   или смене breakpoint.
-- **`overwrite: 'auto'`** только в прямых твинах `animateNavbar` — гарантирует,
-  что ручной toggle не сломает ScrollTrigger при повторном скролле. Твины
-  внутри scrub-таймлайна `registerScrollTrigger` идут без `overwrite` (им это
-  не нужно — они живут в собственном timeline).
+- **`overwrite: 'auto'`** только в прямых твинах `animateNavbar` —
+  гарантирует, что ручной toggle не сломает ScrollTrigger при повторном
+  скролле. Твины внутри scrub-таймлайна `registerScrollTrigger` идут без
+  `overwrite` (им это не нужно — они живут в собственном timeline).
+  `animateNavbar` теперь живёт в `useNavbarLayout` (корневая сцена
+  раскладки) и подписана на `bus.on('state:change')` — единый путь
+  публикации → реакции для всех источников (toggle/route/breakpoint/scroll).
 - **Spacer общий для всех bp** — единый механизм анимации навбара,
   независимо от устройства, с разными целевыми значениями.
 - **IntroAnimation — overlay, не замена контента** — `LandingSections` всегда

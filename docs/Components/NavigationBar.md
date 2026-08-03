@@ -34,10 +34,22 @@
 
 **На `/home` toggle виден только когда навбар ушёл за экран** (`progress ≈ 1`): наверху
 (fullscreen) и во время scrub-анимации спейсера кнопка скрыта (`autoAlpha: 0`), чтобы
-пользователь не мог сломать scrub ручным кликом. Обратная прокрутка первым же кадром
-снова скрывает кнопку. Когда навбар в `invisible`, кнопка `☰` видна; при ручном
+пользователь не мог сломать scrub ручным кликом. Исключение — **ручное состояние**
+(источник `toggle`): пока навбар вручную развёрнут (`fullscreen`, кнопка `←`) или вручную
+свёрнут (`invisible`, кнопка `☰`), кнопка остаётся доступной, даже когда scroll пересекает
+спейсер. Обратная прокрутка первым же кадром снова скрывает кнопку у «скролловых» состояний.
+Когда навбар в `invisible` (из скролла), кнопка `☰` видна; при ручном
 открытии навбара в `fullscreen` кнопка (`←`) остаётся доступной, чтобы вернуться
 в `invisible`.
+
+**Ручной `fullscreen` «держится» до верха страницы (mobile).** Если навбар вручную развёрнут
+(клик `☰`) и пользователь скроллит вверх, при пересечении нижней границы спейсера scrub
+НЕ схлопывает навбар и не берёт управление: scrub-таймлайн «запинен» к своему крайнему
+положению (`progress = 0`, fullscreen). Переключение на scrub происходит только на самом
+верху страницы (`progress ≈ 0`), где `applyState('fullscreen', 'scroll')` перезаписывает
+источник на `scroll` и снимает пин — дальше обычный scrub `fullscreen → invisible` при
+скролле вниз. Если навбар НЕ был вручную развёрнут (ушёл за экран скроллом, `invisible`),
+при подъёме scrub ведёт его `invisible → fullscreen`, как и раньше.
 
 ### Tablet (`768 – 1024px`)
 
@@ -196,9 +208,12 @@ useNavbarLayout (корневая сцена):
     gsap.timeline({ scrollTrigger: { ..., onUpdate } })
       onUpdate:
         listeners.forEach(l => l({ progress, direction }))   ← низкоуровневый канал
-        if progress === 0  → applyState('fullscreen', 'scroll')
-        if progress >= 1   → applyState(endState, 'scroll')
-        setToggleVisibility(progress >= 0.9999)              ← кнопка видна только в конце спейсера
+        isMobilePin = isMobile && source === 'toggle'
+                      && state ∈ {fullscreen, invisible}    ← ручное состояние
+        if progress === 0  → applyState('fullscreen', 'scroll')   (снимает пин)
+        if progress === 1  → applyState(endState, 'scroll')  (пропускается при isMobilePin)
+        if isMobilePin     → tl.progress(fullscreen ? 0 : 1) ← «пин» ручного состояния
+        setToggleVisibility(progress === 1 || isMobilePin)   ← кнопка видна и при ручном состоянии
 ```
 
 ### Что знает каждый уровень
@@ -415,9 +430,10 @@ const isSlim = currentState === 'slim' || currentState === 'invisible';
 
 **Видимость на `/home`** управляется из `registerScrollTrigger.onUpdate` через
 `setToggleVisibility` (`gsap.set` с `autoAlpha` + `pointerEvents`), без React-рендера:
-кнопка скрыта наверху (fullscreen) и во время scrub-анимации, видна только когда
-навбар ушёл за экран (`progress ≈ 1`). Cleanup триггера сбрасывает видимость в
-исходную при уходе с `/home`.
+кнопка скрыта наверху (fullscreen) и во время scrub-анимации, видна когда
+навбар ушёл за экран (`progress ≈ 1`) или пока состояние задано вручную
+(`source === 'toggle'` — ручной fullscreen → `←`, ручной invisible → `☰`).
+Cleanup триггера сбрасывает видимость в исходную при уходе с `/home`.
 
 ## CSS-классы slim-режима
 
@@ -505,11 +521,22 @@ const routeIcons: Record<string, ReactNode> = {
 
 - **Toggle скрыт во время scrub на `/home`** — видимость управляется из
   `registerScrollTrigger.onUpdate` через `setToggleVisibility` (`gsap.set` с
-  `autoAlpha` + `pointerEvents`, без React-рендера). Кнопка видна только когда
+  `autoAlpha` + `pointerEvents`, без React-рендера). Кнопка видна когда
   навбар ушёл за экран (`progress ≈ 1`); наверху (fullscreen) и в полёте
   scrub-анимации (в обе стороны) скрыта, чтобы пользователь не мог сломать
-  анимацию ручным кликом. Cleanup триггера сбрасывает видимость при уходе
-  с `/home`. Поведение идентично для mobile и tablet.
+  анимацию ручным кликом. Исключение (mobile): пока состояние задано вручную
+  (`source === 'toggle'`), кнопка видна и в полёте — ручной fullscreen
+  показывает `←`, ручной invisible — `☰`. Cleanup триггера сбрасывает видимость
+  при уходе с `/home`. Поведение идентично для mobile и tablet.
+
+- **Ручной fullscreen «держится» до верха (mobile)** — scrub-таймлайн
+  «запинен» к своему крайнему положению, пока состояние задано вручную:
+  `fullscreen` → `tl.progress(0)`, `invisible` → `tl.progress(1)`. Скролл
+  (в любую сторону) не схлопывает навбар и не ведёт его через scrub —
+  переключение на scrub происходит только на самом верху страницы
+  (`progress ≈ 0`), где `applyState('fullscreen', 'scroll')` перезаписывает
+  источник и снимает пин. Источник состояния отслеживается в
+  `stateSourceRef` и фиксируется в `applyState` даже при `prev === next`.
 
 - **Context-Driven Animation Factory вместо custom event** — NavigationBar
   инкапсулирует DOM и анимацию, а страница делегирует управление через
@@ -541,7 +568,9 @@ const routeIcons: Record<string, ReactNode> = {
 
 - **Приоритет: автоскролл > ручное переключение** — при скролле к началу
   страницы ScrollTrigger принудительно разворачивает навбар в `fullscreen`,
-  переопределяя предыдущее ручное `slim` или `invisible` состояние.
+  переопределяя предыдущее ручное `slim` или `invisible` состояние. На mobile
+  ручной `fullscreen` уступает автоскроллу только на самом верху страницы:
+  до `progress ≈ 0` scrub-таймлайн запинен и не переопределяет ручное состояние.
 
 - **`tabIndex={-1}` в slim/invisible** — ссылки навбара получают `tabIndex = -1`
   в свёрнутых состояниях, исключая их из фокуса при навигации Tab.

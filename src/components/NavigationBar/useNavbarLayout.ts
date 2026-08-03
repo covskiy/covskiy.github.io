@@ -84,6 +84,14 @@ export function useNavbarLayout(
   const stateRef = useRef<NavState>('fullscreen');
   const [currentState, setCurrentState] = useState<NavState>('fullscreen');
 
+  /**
+   * Последний источник, записавший состояние. Позволяет отличить ручное
+   * состояние (toggle) от скроллового: пока состояние задано вручную на
+   * mobile, scrub-таймлайн «запинен» к своему крайнему положению, и скролл
+   * не двигает навбар, пока не будет достигнут верх страницы.
+   */
+  const stateSourceRef = useRef<NavbarSource>('route');
+
   const isHome = location.pathname === '/' || location.pathname === '/home';
   const hasToggle = bp !== 'desktop';
 
@@ -98,6 +106,10 @@ export function useNavbarLayout(
    */
   const applyState = useCallback(
     (next: NavState, source: NavbarSource): NavState => {
+      // Источник фиксируем даже при prev === next: повторный applyState
+      // с source='scroll' на верху страницы должен снять «пин» ручного
+      // состояния (иначе навбар остался бы развёрнутым после возврата).
+      stateSourceRef.current = source;
       const prev = stateRef.current;
       if (prev === next) return prev;
       stateRef.current = next;
@@ -209,11 +221,20 @@ export function useNavbarLayout(
    * - `progress ≈ 0` → fullscreen (приоритет автоскролла над ручным toggle)
    * - `progress ≈ 1` → endState (invisible на mobile / standard на tablet/desktop)
    *
+   * На mobile, пока состояние задано вручную (toggle), scrub-таймлайн
+   * «запинен» к своему крайнему положению (`fullscreen` → progress 0,
+   * `invisible` → progress 1): скролл не схлопывает навбар и не ведёт его
+   * через scrub. Управление scrub'ом возвращается только на самом верху
+   * страницы (`progress ≈ 0`), где `applyState('fullscreen', 'scroll')`
+   * перезаписывает источник и снимает пин.
+   *
    * Дополнительно — зовёт подписчиков `scrollListenersRef` напрямую
    * (минуя bus.emit, чтобы не давить 60fps событиями в React-шину).
    *
    * Также управляет видимостью кнопки toggle на `/home`: скрывает её во время
-   * scrub-анимации и показывает, когда навбар ушёл за экран (`progress ≈ 1`).
+   * scrub-анимации и показывает, когда навбар ушёл за экран (`progress ≈ 1`)
+   * или пока состояние задано вручную (ручной fullscreen → ←, ручной
+   * invisible → ☰).
    *
    * Возвращает cleanup, убивающий триггер и таймлайн.
    */
@@ -259,13 +280,24 @@ export function useNavbarLayout(
               listeners.forEach((l) => l(snapshot));
             }
 
+            // Mobile: пока состояние задано вручную (toggle), scrub-таймлайн
+            // «запинен» к своему крайнему положению (fullscreen → 0,
+            // invisible → 1) — скролл не должен схлопывать навбар и вести
+            // его через scrub. Управление scrub'ом возвращается только на
+            // самом верху страницы (progress ≈ 0).
+            const isMobilePin =
+              isMobile &&
+              stateSourceRef.current === 'toggle' &&
+              (stateRef.current === 'fullscreen' ||
+                stateRef.current === 'invisible');
+
             if (self.progress <= 0.0001) {
               logger.info(
                 'NavbarLayout',
                 'Скролл к началу — принудительный fullscreen',
               );
               applyState('fullscreen', 'scroll');
-            } else if (self.progress >= 0.9999) {
+            } else if (self.progress >= 0.9999 && !isMobilePin) {
               logger.debug(
                 'NavbarLayout',
                 `Скролл к концу спейсера → ${endState}`,
@@ -273,11 +305,24 @@ export function useNavbarLayout(
               applyState(endState, 'scroll');
             }
 
-            // Видимость toggle: скрыт наверху и во время scrub, виден только
-            // когда навбар ушёл за экран (progress ≈ 1). Обратная прокрутка
-            // первым же кадром (progress < 1) скрывает кнопку снова.
+            if (isMobilePin) {
+              self.animation?.progress(
+                stateRef.current === 'fullscreen' ? 0 : 1,
+                true,
+              );
+            }
+
+            // Видимость toggle: скрыт наверху и во время scrub, виден когда
+            // навбар ушёл за экран (progress ≈ 1) или пока состояние задано
+            // вручную (ручной fullscreen → ←, ручной invisible → ☰).
+            const manualState =
+              isMobile &&
+              stateSourceRef.current === 'toggle' &&
+              (stateRef.current === 'fullscreen' ||
+                stateRef.current === 'invisible');
+
             if (toggleRef.current) {
-              setToggleVisibility(self.progress >= 0.9999);
+              setToggleVisibility(self.progress >= 0.9999 || manualState);
             }
           },
         },

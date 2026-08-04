@@ -85,6 +85,12 @@ export function useNavbarLayout(
   const [currentState, setCurrentState] = useState<NavState>('fullscreen');
 
   /**
+   * Ссылка на активный ScrollTrigger страницы (например, спейсера на /home).
+   * Используется для программной прокрутки к концу спейсера при ручном скрытии навбара.
+   */
+  const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+
+  /**
    * Последний источник, записавший состояние. Позволяет отличить ручное
    * состояние (toggle) от скроллового: пока состояние задано вручную на
    * mobile, scrub-таймлайн «запинен» к своему крайнему положению, и скролл
@@ -364,6 +370,8 @@ export function useNavbarLayout(
         },
       });
 
+      scrollTriggerRef.current = tl.scrollTrigger ?? null;
+
       if (navRef.current) {
         tl.to(
           navRef.current,
@@ -383,6 +391,7 @@ export function useNavbarLayout(
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
+        scrollTriggerRef.current = null;
         // Сброс видимости toggle при уходе с /home (смена роута/breakpoint),
         // чтобы кнопка не осталась скрытой на других роутах.
         setToggleVisibility(true);
@@ -439,7 +448,26 @@ export function useNavbarLayout(
 
     const prev = applyState(next, 'toggle');
     logger.info('NavbarLayout', `Toggle: ${prev} → ${next} (${bp})`);
-  }, [bp, hasToggle, applyState]);
+
+    // Проматываем spacer если мы сворачиваем навбар на мобильном профиле домашней страницы
+    if (
+      next === 'invisible' &&
+      bp === 'mobile' &&
+      isHome &&
+      scrollTriggerRef.current
+    ) {
+      const targetScroll = scrollTriggerRef.current.end;
+      // Не скроллим, если пользователь уже ниже конца спейсера
+      if (window.scrollY < targetScroll) {
+        gsap.to(window, {
+          scrollTo: { y: targetScroll, autoKill: false },
+          duration: 0.6,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      }
+    }
+  }, [bp, hasToggle, applyState, isHome]);
 
   return {
     currentState,

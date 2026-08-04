@@ -81,7 +81,8 @@ export function useNavbar(): NavbarAPI {
 /**
  * React-обёртка над `events.on` — подписка на дискретные события шины.
  *
- * Подходит для `state:change`, `route:change`, `breakpoint:change`. Для
+ * Подходит для `state:change`, `route:change`, `breakpoint:change`,
+ * `spacer:enter`, `spacer:leave`. Для
  * `scroll:progress` предпочтительнее `useNavbarScrollProgress` —
  * он работает через низкоуровневый канал и не вызывает ререндер.
  *

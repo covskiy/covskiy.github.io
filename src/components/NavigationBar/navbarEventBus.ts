@@ -32,9 +32,10 @@ export type NavbarSource =
  *
  * События делятся на две группы по частоте:
  *
- * - Дискретные (`state:change`, `route:change`, `breakpoint:change`)
- *   — безопасны для React-подписчиков через `useNavbarEvent`. Срабатывают
- *   на границах состояния, не чаще нескольких раз за навигацию.
+ * - Дискретные (`state:change`, `route:change`, `breakpoint:change`,
+ *   `spacer:enter`, `spacer:leave`) — безопасны для React-подписчиков
+ *   через `useNavbarEvent`. Срабатывают на границах состояния,
+ *   не чаще нескольких раз за навигацию.
  *
  * - Непрерывные (`scroll:progress`) — публикуются до 60 раз в секунду
  *   при scrub. Для них в `NavbarAPI` предусмотрен отдельный низкоуровневый
@@ -62,6 +63,18 @@ export interface NavbarEventMap {
     progress: number;
     direction: 1 | -1;
   };
+  /**
+   * Спейсер страницы (зарегистрированный через `registerScrollTrigger`)
+   * полностью ушёл за верхний край экрана: скролл вниз, `progress ≈ 1`.
+   * См. `onLeave` ScrollTrigger в `useNavbarLayout`.
+   */
+  'spacer:leave': object;
+  /**
+   * Спейсер страницы снова появился во вьюпорте: скролл вверх,
+   * `progress` упал ниже 1. См. `onEnterBack` ScrollTrigger
+   * в `useNavbarLayout`.
+   */
+  'spacer:enter': object;
 }
 
 export type EventName = keyof NavbarEventMap;

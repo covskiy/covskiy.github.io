@@ -61,8 +61,29 @@ bus.off('state:change', sameListener);
 | `'route:change'`      | `{ pathname, prev }`      | Смена pathname через react-router                                      |
 | `'breakpoint:change'` | `{ bp, prev }`            | Смена breakpoint (mobile/tablet/desktop)                               |
 | `'scroll:progress'`   | `{ progress, direction }` | **Непрерывный прогресс scrub** — для согласованных последовательностей |
+| `'spacer:enter'`      | `{}`                      | Спейсер снова появился во вьюпорте (скролл вверх, `progress < 1`)      |
+| `'spacer:leave'`      | `{}`                      | Спейсер полностью ушёл за экран (скролл вниз, `progress ≈ 1`)          |
 
 `source` в `state:change`: `'toggle' | 'route' | 'breakpoint' | 'scroll' | 'intro'`.
+
+## Спейсер-события (`spacer:enter` / `spacer:leave`)
+
+Эмитятся из колбэков ScrollTrigger в `useNavbarLayout.registerScrollTrigger`
+и привязаны к зарегистрированному спейсеру страницы (сейчас — только `/`,
+`HomePage`). Направление кодируется самим событием:
+
+- `'spacer:leave'` — скролл вниз: низ спейсера пересёк верх вьюпорта
+  (`progress ≈ 1`), спейсер больше не виден. `onLeave`.
+- `'spacer:enter'` — скролл вверх: низ спейсера вернулся во вьюпорт
+  (`progress < 1`), спейсер снова на экране. `onEnterBack`.
+
+Оба события дискретные и срабатывают не чаще нескольких раз за навигацию —
+подписываться безопасно через `useNavbarEvent`. Payload пустой, при
+необходимости расширяется (например, `direction`).
+
+Начальное состояние синхронизируется через `onRefresh`: если пользователь
+загрузил страницу уже ниже спейсера, на подписку приходит `'spacer:leave'`.
+Пока спейсер не зарегистрирован (другие роуты), события не эмитятся.
 
 ## Источники (`NavbarSource`)
 

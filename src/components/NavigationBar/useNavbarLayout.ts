@@ -256,6 +256,24 @@ export function useNavbarLayout(
       // onUpdate при refresh скорректирует, если пользователь загрузился внизу.
       setToggleVisibility(false);
 
+      // Трекинг видимости спейсера для дискретной эмиссии 'spacer:enter'/
+      // 'spacer:leave'. Локальная переменная живёт столько же, сколько
+      // регистрация (намеренно НЕ ref): при перерегистрации (смена bp)
+      // состояние сбрасывается, и onRefresh заново синхронизирует его.
+      let spacerOff = false;
+      const emitSpacerLeave = () => {
+        if (spacerOff) return;
+        spacerOff = true;
+        logger.debug('NavbarLayout', 'Спейсер полностью ушёл за экран');
+        bus.emit('spacer:leave', {});
+      };
+      const emitSpacerEnter = () => {
+        if (!spacerOff) return;
+        spacerOff = false;
+        logger.debug('NavbarLayout', 'Спейсер снова появился во вьюпорте');
+        bus.emit('spacer:enter', {});
+      };
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger,
@@ -263,6 +281,24 @@ export function useNavbarLayout(
           end: 'bottom top',
           scrub: true,
           invalidateOnRefresh: true,
+          // Скролл вниз: низ спейсера пересёк верх вьюпорта — спейсер ушёл
+          // с экрана (progress ≈ 1). Эмитим 'spacer:leave'.
+          onLeave: emitSpacerLeave,
+          // Скролл вверх: низ спейсера вернулся во вьюпорт (progress < 1).
+          // Эмитим 'spacer:enter'.
+          onEnterBack: emitSpacerEnter,
+          // Синхронизация начального состояния: если страница загружена
+          // уже ниже спейсера (progress ≈ 1), ScrollTrigger может не вызвать
+          // onLeave при создании — отдаём событие отсюда. Guard-функции
+          // защищают от дублей (ScrollTrigger сам дёргает onLeave/onEnterBack
+          // при refresh, если состояние изменилось).
+          onRefresh: (self: ScrollTrigger) => {
+            if (self.progress >= 0.9999) {
+              emitSpacerLeave();
+            } else {
+              emitSpacerEnter();
+            }
+          },
           onUpdate: (self: ScrollTrigger) => {
             logger.trace(
               'NavbarLayout',
@@ -357,6 +393,7 @@ export function useNavbarLayout(
       navRef,
       toggleRef,
       applyState,
+      bus,
       scrollListenersRef,
       setToggleVisibility,
     ],

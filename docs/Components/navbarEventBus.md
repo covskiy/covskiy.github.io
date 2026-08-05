@@ -60,11 +60,28 @@ bus.off('state:change', sameListener);
 | `'state:change'`      | `{ state, prev, source }` | Любая смена состояния (toggle/route/breakpoint/scroll)                 |
 | `'route:change'`      | `{ pathname, prev }`      | Смена pathname через react-router                                      |
 | `'breakpoint:change'` | `{ bp, prev }`            | Смена breakpoint (mobile/tablet/desktop)                               |
+| `'toggle:request'`    | `{}`                      | Клик по кнопке toggle (☰ / ←) — интент ручного переключения           |
 | `'scroll:progress'`   | `{ progress, direction }` | **Непрерывный прогресс scrub** — для согласованных последовательностей |
 | `'spacer:enter'`      | `{}`                      | Спейсер снова появился во вьюпорте (скролл вверх, `progress < 1`)      |
 | `'spacer:leave'`      | `{}`                      | Спейсер полностью ушёл за экран (скролл вниз, `progress ≈ 1`)          |
 
 `source` в `state:change`: `'toggle' | 'route' | 'breakpoint' | 'scroll' | 'intro'`.
+
+## Событие `'toggle:request'` (ручное переключение)
+
+Публикует дочерняя сцена `ToggleButton` по клику на кнопку (☰ / ←):
+
+```ts
+// ToggleButton.tsx
+const { events } = useNavbar();
+onClick={() => events.emit('toggle:request', {})}
+```
+
+Обработчик живёт в `useNavbarToggle` (layout-сцена): вычисляет следующее
+состояние через `getNextState(stateRef.current, bp)` и применяет его через
+`applyState(next, 'toggle')`. Payload пустой — интент, детали считает
+приёмник. Это системное событие-интент (а не «болтовня» дочерней сцены),
+поэтому оно допустимо в шине.
 
 ## Спейсер-события (`spacer:enter` / `spacer:leave`)
 

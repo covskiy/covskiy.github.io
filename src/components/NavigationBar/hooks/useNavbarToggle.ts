@@ -1,13 +1,15 @@
-import { useCallback, type RefObject } from 'react';
+import { useCallback, useEffect, type RefObject } from 'react';
 import gsap from 'gsap';
 import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { Breakpoint } from '../../../utils/breakpoints';
 import { logger } from '../../../utils/logger';
+import type { NavbarEventBus } from '../core/navbarEventBus';
 import { getNextState, hasToggleFor } from '../core/navbarStates';
 import type { NavbarStateApi } from './useNavbarState';
 
 /** Опции `useNavbarToggle` — сцена ручного переключения состояния навбара. */
 export interface NavbarToggleOptions {
+  bus: NavbarEventBus;
   bp: Breakpoint;
   state: Pick<
     NavbarStateApi,
@@ -22,22 +24,27 @@ export interface NavbarToggleOptions {
 /**
  * useNavbarToggle — сцена ручного переключения состояния навбара.
  *
- * Реакция на клик по кнопке toggle (☰ / ←). Вычисляет следующее состояние через
+ * Подписчик на событие `'toggle:request'`, которое публикует дочерняя
+ * сцена `ToggleButton` (клик по ☰ / ←). Вычисляет следующее состояние через
  * `getNextState`, применяет его через `applyState(next, 'toggle')`, сохраняет
  * ручной tablet-выбор (`slim`/`standard`) между страницами и уведомляет scrub-сцену
  * о смене предпочтения через `retargetScrub`. На `/home` (mobile) сворачивание
  * навбара в `invisible` дополнительно прокручивает страницу к концу спейсера.
+ *
+ * Подписка пересоздаётся при смене зависимостей (`bp`, `applyState` и т. д.) —
+ * редкие события, переподписка дешевле latest-ref паттерна.
  */
 export function useNavbarToggle({
+  bus,
   bp,
   state,
   scrollTriggerRef,
   retargetScrub,
-}: NavbarToggleOptions): () => void {
+}: NavbarToggleOptions): void {
   const { applyState, stateRef, preferredRef, isHomeRef } = state;
 
   /** Ручное переключение: клик по ☰ / ←. */
-  return useCallback(() => {
+  const handleToggleRequest = useCallback(() => {
     if (!hasToggleFor(bp)) {
       logger.warn(
         'NavbarLayout',
@@ -96,4 +103,9 @@ export function useNavbarToggle({
     scrollTriggerRef,
     retargetScrub,
   ]);
+
+  useEffect(
+    () => bus.on('toggle:request', handleToggleRequest),
+    [bus, handleToggleRequest],
+  );
 }

@@ -70,8 +70,7 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
     { scrollListenersRef, initialIsHome: isHomePath(location.pathname) },
   );
 
-  const { currentState, registerScrollTrigger, handleToggle, getHomeEndState } =
-    layout;
+  const { currentState, registerScrollTrigger, getHomeEndState } = layout;
 
   const isHome = isHomePath(location.pathname);
   const hasToggle = hasToggleFor(bp);
@@ -157,7 +156,6 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
           toggleRef={toggleRef}
           isSlim={isSlim}
           hasToggle={hasToggle}
-          handleToggle={handleToggle}
         />
         <main className={styles.main}>{children}</main>
       </div>

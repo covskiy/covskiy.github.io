@@ -28,15 +28,12 @@ export interface NavbarLayoutRefs {
  *   и публикует прогресс через низкоуровневый канал (см. `scrollListenersRef`).
  * - `scrollListenersRef` — Set, через который `ScrollTrigger.onUpdate` зовёт
  *   подписчиков напрямую (без bus.emit и без React-рендера).
- * - `handleToggle()` — клик по кнопке toggle (☰ / ←). Использует
- *   `getNextState(current, bp)` для вычисления следующего состояния.
  */
 export interface NavbarLayout {
   currentState: NavState;
   applyState: (next: NavState, source: NavbarSource) => NavState;
   registerScrollTrigger: (trigger: HTMLElement) => () => void;
   scrollListenersRef: RefObject<Set<ScrollProgressListener>>;
-  handleToggle: () => void;
   /**
    * Эффективное конечное состояние навбара на `/home` (после скролла
    * спейсера). Читает `preferredRef` на лету: `mobile → invisible`,
@@ -58,7 +55,7 @@ export interface NavbarLayout {
  * - `useNavbarAnimation` — дискретная GSAP-анимация корневых нод
  *   (реакция на `state:change` через layout-эффект `useGSAP`);
  * - `useNavbarScrubTrigger` — scrub-таймлайн `/home` (`registerScrollTrigger`);
- * - `useNavbarToggle` — ручное переключение состояния по клику.
+ * - `useNavbarToggle` — подписчик на `toggle:request` (клик по кнопке toggle).
  *
  * Дочерние сцены (NavItem, логотип и т. д.) НЕ подписаны на layout —
  * они реагируют только на дискретные `state:change` (или `scroll:progress`,
@@ -95,7 +92,9 @@ export function useNavbarLayout(
     state,
   });
 
-  const handleToggle = useNavbarToggle({
+  // Сцена ручного переключения: подписчик на 'toggle:request' от ToggleButton.
+  useNavbarToggle({
+    bus,
     bp,
     state,
     scrollTriggerRef: scrub.scrollTriggerRef,
@@ -107,7 +106,6 @@ export function useNavbarLayout(
     applyState: state.applyState,
     registerScrollTrigger: scrub.registerScrollTrigger,
     scrollListenersRef,
-    handleToggle,
     getHomeEndState: state.getHomeEndState,
   };
 }

@@ -64,6 +64,12 @@ export interface NavbarEventMap {
     direction: 1 | -1;
   };
   /**
+   * Пользователь кликнул по кнопке toggle (☰ / ←) — интент вручную
+   * переключить состояние навбара. Публикуется дочерней сценой
+   * `ToggleButton`; обработчик живёт в `useNavbarToggle`.
+   */
+  'toggle:request': object;
+  /**
    * Спейсер страницы (зарегистрированный через `registerScrollTrigger`)
    * полностью ушёл за верхний край экрана: скролл вниз, `progress ≈ 1`.
    * См. `onLeave` ScrollTrigger в `useNavbarLayout`.

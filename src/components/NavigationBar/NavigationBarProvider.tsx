@@ -66,7 +66,8 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
     { scrollListenersRef },
   );
 
-  const { currentState, registerScrollTrigger, handleToggle } = layout;
+  const { currentState, registerScrollTrigger, handleToggle, getHomeEndState } =
+    layout;
 
   const isHome = location.pathname === '/' || location.pathname === '/home';
   const hasToggle = bp !== 'desktop';
@@ -134,7 +135,12 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   );
 
   const isSlim = currentState === 'slim' || currentState === 'invisible';
-  const contentOffset = getContentOffset(currentState, bp, isHome);
+  const contentOffset = getContentOffset(
+    currentState,
+    bp,
+    isHome,
+    getHomeEndState(),
+  );
 
   return (
     <NavbarContext.Provider value={api}>

@@ -16,6 +16,7 @@ import {
   getDefaultState,
   getNavTransform,
   getNextState,
+  isPreferredStateValid,
   type NavState,
 } from './navbarStates';
 
@@ -48,6 +49,13 @@ export interface NavbarLayout {
     Set<(p: { progress: number; direction: 1 | -1 }) => void>
   >;
   handleToggle: () => void;
+  /**
+   * Эффективное конечное состояние навбара на `/home` (после скролла
+   * спейсера). Читает `preferredRef` на лету: `mobile → invisible`,
+   * `tablet` с ручным выбором → `slim`/`standard`, иначе `standard`.
+   * Используется провайдером для отступа `<main>` и scrub-таймлайном.
+   */
+  getHomeEndState: () => NavState;
 }
 
 /**
@@ -85,10 +93,39 @@ export function useNavbarLayout(
   const [currentState, setCurrentState] = useState<NavState>('fullscreen');
 
   /**
+   * Ручной tablet-выбор (`slim`/`standard`), персистируемый между роутами.
+   *
+   * Запоминается в `handleToggle` на tablet. Используется:
+   * - как целевое состояние при смене роута/breakpoint на не-home страницах
+   *   (защита от «моргания» границы навбар/контент: без него ручной `standard`
+   *   сбрасывался бы в дефолтный `slim`);
+   * - как состояние восстановления после принудительного fullscreen на верху
+   *   `/home` (вместо жёсткого `standard` скролл к низу возвращает ручной `slim`).
+   *
+   * Хранится только для tablet: на mobile отступ контента всегда 0 (моргания нет),
+   * на desktop кнопка toggle отсутствует. Невалидные для bp значения чистятся
+   * в route/breakpoint-эффекте.
+   */
+  const preferredRef = useRef<NavState | null>(null);
+
+  /**
    * Ссылка на активный ScrollTrigger страницы (например, спейсера на /home).
    * Используется для программной прокрутки к концу спейсера при ручном скрытии навбара.
    */
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+
+  /**
+   * Ссылка на nav-твин scrub-таймлайна `/home`.
+   *
+   * GSAP оценивает function-based (и вообще) значения твина один раз при первом
+   * рендере и НЕ пересчитывает их при последующем скролле. Целевое состояние
+   * таймлайна зависит от `preferredRef` (slim/standard), который меняется ручным
+   * toggle в любой момент жизни триггера. Поэтому при смене предпочтения nav-твин
+   * пересоздаётся через `retargetScrubRef` с зафиксированным стартом `x: 0`
+   * (fullscreen) и свежим целевым `x`.
+   */
+  const navScrubTweenRef = useRef<gsap.core.Tween | null>(null);
+  const retargetScrubRef = useRef<(() => void) | null>(null);
 
   /**
    * Последний источник, записавший состояние. Позволяет отличить ручное
@@ -100,6 +137,21 @@ export function useNavbarLayout(
 
   const isHome = location.pathname === '/' || location.pathname === '/home';
   const hasToggle = bp !== 'desktop';
+
+  /**
+   * Эффективное конечное состояние навбара на `/home` (после скролла спейсера).
+   *
+   * На mobile — `invisible`; на tablet — ручной выбор (`slim`/`standard`), если
+   * он есть в `preferredRef`, иначе `standard`; desktop — `standard`. Читает
+   * ref на лету (без пересоздания колбэка), поэтому провайдер использует его
+   * для отступа `<main>`, а scrub-таймлайн — как целевое состояние в конце
+   * спейсера.
+   */
+  const getHomeEndState = useCallback<() => NavState>(() => {
+    if (bp === 'mobile') return 'invisible';
+    if (bp === 'tablet' && preferredRef.current) return preferredRef.current;
+    return 'standard';
+  }, [bp]);
 
   /**
    * Применяет состояние: обновляет ref и публикует `state:change` в шину.
@@ -247,14 +299,17 @@ export function useNavbarLayout(
   const registerScrollTrigger = useCallback(
     (trigger: HTMLElement): (() => void) => {
       const isMobile = bp === 'mobile';
-      const endState: NavState = isMobile ? 'invisible' : 'standard';
+      // Целевое состояние в конце спейсера (progress ≈ 1) — общая логика
+      // с `getHomeEndState`: mobile → invisible, tablet → ручной выбор или
+      // standard, desktop → standard. preferredRef меняется ручным toggle
+      // в любой момент жизни триггера, поэтому таргет читается на лету.
       const navTransform = () =>
-        getNavTransform(endState, bp, window.innerWidth);
+        getNavTransform(getHomeEndState(), bp, window.innerWidth);
       const t = navTransform();
 
       logger.info('NavbarLayout', 'Регистрация ScrollTrigger', {
         bp,
-        endState,
+        endState: getHomeEndState(),
         ...t,
       });
 
@@ -342,9 +397,9 @@ export function useNavbarLayout(
             } else if (self.progress >= 0.9999 && !isMobilePin) {
               logger.debug(
                 'NavbarLayout',
-                `Скролл к концу спейсера → ${endState}`,
+                `Скролл к концу спейсера → ${getHomeEndState()}`,
               );
-              applyState(endState, 'scroll');
+              applyState(getHomeEndState(), 'scroll');
             }
 
             if (isMobilePin) {
@@ -372,13 +427,25 @@ export function useNavbarLayout(
 
       scrollTriggerRef.current = tl.scrollTrigger ?? null;
 
-      if (navRef.current) {
-        tl.to(
+      // Пересоздание nav-твина scrub-таймлайна. GSAP берёт значение твина один
+      // раз при первом рендере, поэтому при смене `preferredRef` таргет был бы
+      // устаревшим. `fromTo` с фиксированным стартом `x: 0` (fullscreen) и свежим
+      // целевым `x` пересоздаётся каждый раз, когда цель меняется (см.
+      // `retargetScrubRef` в `handleToggle`).
+      const buildNavTween = () => {
+        if (!navRef.current) return;
+        // Timeline.fromTo типизирован как возвращающий `this` (Timeline), хотя
+        // в рантайме возвращает добавленный `Tween`; каст через `unknown`.
+        navScrubTweenRef.current?.kill();
+        navScrubTweenRef.current = tl.fromTo(
           navRef.current,
-          { x: () => navTransform().navX, ease: 'none' },
+          { x: 0 },
+          { x: navTransform().navX, ease: 'none' },
           0,
-        );
-      }
+        ) as unknown as gsap.core.Tween;
+      };
+      retargetScrubRef.current = buildNavTween;
+      buildNavTween();
 
       if (isMobile && t.toggleX !== null && toggleRef.current) {
         tl.to(
@@ -391,6 +458,8 @@ export function useNavbarLayout(
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
+        navScrubTweenRef.current = null;
+        retargetScrubRef.current = null;
         scrollTriggerRef.current = null;
         // Сброс видимости toggle при уходе с /home (смена роута/breakpoint),
         // чтобы кнопка не осталась скрытой на других роутах.
@@ -405,18 +474,34 @@ export function useNavbarLayout(
       bus,
       scrollListenersRef,
       setToggleVisibility,
+      getHomeEndState,
     ],
   );
 
   /**
    * Реакция на смену роута или breakpoint.
    *
-   * Пересчитывает целевое состояние через `getDefaultState` и публикует
-   * `state:change` через `applyState`. Layout-анимация (animateNavbar)
-   * срабатывает на опубликованном событии через подписку bus.on выше.
+   * Пересчитывает целевое состояние и публикует `state:change` через
+   * `applyState`. Layout-анимация (animateNavbar) срабатывает на
+   * опубликованном событии через подписку bus.on выше.
+   *
+   * На `/home` всегда стартует `fullscreen` (intro-позиция; восстановление
+   * ручного состояния делает scrub-эффект при прокрутке вниз). На других
+   * роутах приоритет у персистируемого ручного tablet-выбора
+   * (`preferredRef`) — чтобы при переходе между страницами не было
+   * «моргания» границы навбар/контент. Невалидное для текущего bp
+   * предпочтение чистится, и берётся роутовый дефолт.
    */
   useEffect(() => {
-    const target = getDefaultState(bp, isHome);
+    let target: NavState;
+    if (isHome) {
+      target = 'fullscreen';
+    } else {
+      if (!isPreferredStateValid(preferredRef.current, bp)) {
+        preferredRef.current = null;
+      }
+      target = preferredRef.current ?? getDefaultState(bp, isHome);
+    }
     const prev = applyState(target, isHome ? 'route' : 'breakpoint');
 
     if (prev !== target) {
@@ -449,6 +534,17 @@ export function useNavbarLayout(
     const prev = applyState(next, 'toggle');
     logger.info('NavbarLayout', `Toggle: ${prev} → ${next} (${bp})`);
 
+    // Ручной tablet-выбор (slim/standard) сохраняем между страницами:
+    // при смене роута он становится целевым состоянием, чтобы не было
+    // «моргания» границы навбар/контент (25vw ↔ 80px).
+    if (bp === 'tablet' && (next === 'slim' || next === 'standard')) {
+      preferredRef.current = next;
+      // Пересоздаём nav-твин scrub-таймлайна с новым таргетом: GSAP берёт
+      // значение твина один раз при рендере, без пересоздания скролл к низу
+      // /home вёл бы навбар в устаревшее `standard` вместо ручного `slim`.
+      retargetScrubRef.current?.();
+    }
+
     // Проматываем spacer если мы сворачиваем навбар на мобильном профиле домашней страницы
     if (
       next === 'invisible' &&
@@ -475,5 +571,6 @@ export function useNavbarLayout(
     registerScrollTrigger,
     scrollListenersRef,
     handleToggle,
+    getHomeEndState,
   };
 }

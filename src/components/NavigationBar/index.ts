@@ -7,7 +7,11 @@ export {
   useNavbarEvent,
   useNavbarScrollProgress,
 } from './navbarContext';
-export { getNavTransform, SLIM_WIDTH } from './navbarStates';
+export {
+  getNavTransform,
+  isPreferredStateValid,
+  SLIM_WIDTH,
+} from './navbarStates';
 export {
   createNavbarEventBus,
   type NavbarEventBus,

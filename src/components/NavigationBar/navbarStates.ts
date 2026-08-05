@@ -64,20 +64,24 @@ export function getNavTransform(
  * а получает offset через CSS-переменную `--nav-content-offset`.
  *
  * - mobile → `0` (полная ширина, контент никогда не сдвигается);
- * - `/home` tablet/desktop → `25vw`, кроме `slim` → `80px`: контент сразу
- *   ориентирован на конечную ширину (после скролла спейсера навбар = `standard`),
- *   поэтому не двигается ни на одной фазе скролла;
+ * - `/home` tablet/desktop → `25vw` (`standard`) или `80px` (`slim`): контент
+ *   сразу ориентирован на конечную ширину (состояние, в которое навбар приходит
+ *   после скролла спейсера — `homeEndState`), поэтому не двигается ни на одной
+ *   фазе скролла. `fullscreen` на `/home` маппится на `homeEndState`, а не на
+ *   жёсткий `standard`, чтобы при ручном `slim` контент не был шире навбара
+ *   всю дорогу и не расширялся в конце;
  * - `/other` → `25vw` для `standard`, `80px` для `slim`.
  */
 export function getContentOffset(
   state: NavState,
   bp: Breakpoint,
   isHome: boolean,
+  homeEndState?: NavState,
 ): string {
   if (bp === 'mobile') return '0px';
 
   const contentState: NavState =
-    isHome && state === 'fullscreen' ? 'standard' : state;
+    isHome && state === 'fullscreen' ? (homeEndState ?? 'standard') : state;
 
   switch (contentState) {
     case 'standard':
@@ -99,6 +103,23 @@ export function getDefaultState(bp: Breakpoint, isHome: boolean): NavState {
   if (isHome) return 'fullscreen';
   if (bp === 'mobile') return 'invisible';
   return bp === 'tablet' ? 'slim' : 'standard';
+}
+
+/**
+ * Валидно ли «предпочтительное» ручное состояние для breakpoint.
+ *
+ * Персистируем только tablet-состояния (slim/standard): на tablet есть сдвиг
+ * контента (`--nav-content-offset`), из-за которого сброс состояния при смене
+ * роута даёт «моргание» границы навбар/контент. На mobile отступ всегда 0,
+ * на desktop toggle отсутствует — для них предпочтение не хранится.
+ */
+export function isPreferredStateValid(
+  state: NavState | null,
+  bp: Breakpoint,
+): boolean {
+  if (state === null) return false;
+  if (bp === 'tablet') return state === 'slim' || state === 'standard';
+  return false;
 }
 
 /**

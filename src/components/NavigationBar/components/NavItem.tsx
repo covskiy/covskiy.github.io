@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { NavLink } from 'react-router';
 import gsap from 'gsap';
 import type { NavItemConfig } from './navItems';
-import { useNavbarEvent } from './navbarContext';
+import { useNavbarEvent } from '../core/navbarContext';
 import styles from './NavItem.module.css';
 import { useGSAP } from '@gsap/react';
 

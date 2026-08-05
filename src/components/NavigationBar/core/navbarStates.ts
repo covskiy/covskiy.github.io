@@ -1,4 +1,5 @@
-import type { Breakpoint } from '../../utils/breakpoints';
+import type { Breakpoint } from '../../../utils/breakpoints';
+import type { NavbarSource } from './navbarEventBus';
 
 /** Возможные состояния отображения навбара. */
 export type NavState = 'fullscreen' | 'standard' | 'slim' | 'invisible';
@@ -117,6 +118,41 @@ export function getDefaultState(bp: Breakpoint, isHome: boolean): NavState {
   if (isHome) return 'fullscreen';
   if (bp === 'mobile') return 'invisible';
   return bp === 'tablet' ? 'slim' : 'standard';
+}
+
+/**
+ * Эффективное конечное состояние навбара на `/home` (после скролла спейсера).
+ *
+ * На mobile — `invisible`; на tablet — ручной выбор (`slim`/`standard`), если
+ * он есть, иначе `standard`; desktop — `standard`. Чистая версия логики
+ * `getHomeEndState` из `useNavbarState`: используется провайдером для отступа
+ * `<main>` и scrub-таймлайном как целевое состояние в конце спейсера.
+ */
+export function homeEndStateFor(
+  bp: Breakpoint,
+  preferred: NavState | null,
+): NavState {
+  if (bp === 'mobile') return 'invisible';
+  if (bp === 'tablet' && preferred) return preferred;
+  return 'standard';
+}
+
+/**
+ * Признак ручного состояния на mobile (`source === 'toggle'` и состояние навбара
+ * в крайних позициях). Используется в `onUpdate` ScrollTrigger: пока состояние
+ * задано вручную, scrub-таймлайн «запинен» к своему крайнему положению, и скролл
+ * не должен схлопывать навбар.
+ */
+export function isManualMobileState(
+  bp: Breakpoint,
+  source: NavbarSource,
+  state: NavState,
+): boolean {
+  return (
+    bp === 'mobile' &&
+    source === 'toggle' &&
+    (state === 'fullscreen' || state === 'invisible')
+  );
 }
 
 /**

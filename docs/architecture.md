@@ -122,19 +122,25 @@ covskiy.github.io/
 │   │   ├── NavigationBar/            # Навигация (4 состояния: fullscreen / standard / slim / invisible)
 │   │   │   ├── NavigationBarProvider.tsx  # Диспетчер сцен: шина + рефы nav/toggle
 │   │   │   ├── NavigationBarProvider.module.css
-│   │   │   ├── useNavbarLayout.ts    # Корневая сцена раскладки (animate + ScrollTrigger + applyState)
-│   │   │   ├── navbarContext.ts      # createContext + useNavbar() + useNavbarEvent +
-│   │   │   │                         #   useNavbarScrollProgress
-│   │   │   ├── navbarEventBus.ts     # createNavbarEventBus + NavbarEventMap + NavbarSource
-│   │   │   ├── navbarStates.ts       # NavState / getNavTransform / getDefaultState / getNextState
 │   │   │   ├── NavigationBar.tsx     # Презентационный nav
-│   │   │   ├── NavList.tsx           # <ul> пунктов меню
-│   │   │   ├── NavItem.tsx           # <li> + <NavLink> + демо-сцена fade-in иконки
-│   │   │   ├── navItems.ts           # Конфиг (path/label/icon), деривация от routes
 │   │   │   ├── NavigationBar.module.css
-│   │   │   ├── NavList.module.css
-│   │   │   ├── NavItem.module.css
-│   │   │   └── index.ts
+│   │   │   ├── index.ts
+│   │   │   ├── components/
+│   │   │   │   ├── NavList.tsx           # <ul> пунктов меню
+│   │   │   │   ├── NavItem.tsx           # <li> + <NavLink> + демо-сцена fade-in иконки
+│   │   │   │   ├── navItems.ts           # Конфиг (path/label/icon), деривация от routes
+│   │   │   │   ├── NavList.module.css
+│   │   │   │   └── NavItem.module.css
+│   │   │   ├── core/
+│   │   │   │   ├── navbarContext.ts    # createContext + useNavbar() + useNavbarEvent + useNavbarScrollProgress
+│   │   │   │   ├── navbarEventBus.ts   # createNavbarEventBus + NavbarEventMap + NavbarSource
+│   │   │   │   └── navbarStates.ts     # NavState / getNavTransform / getDefaultState / getNextState
+│   │   │   └── hooks/
+│   │   │       ├── useNavbarLayout.ts    # Корневая сцена раскладки (animate + ScrollTrigger + applyState)
+│   │   │       ├── useNavbarAnimation.ts
+│   │   │       ├── useNavbarScrubTrigger.ts
+│   │   │       ├── useNavbarState.ts
+│   │   │       └──  useNavbarToggle.ts
 │   │   └── PageTransition/           # Обёртка анимации смены роута
 │   │       └── PageTransition.tsx
 │   ├── pages/
@@ -569,10 +575,10 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Корневой компонент            | `src/App.tsx`                                                                                                            |
 | Все роуты                     | `src/routes.tsx`                                                                                                         |
 | NavigationBar (провайдер)     | `src/components/NavigationBar/NavigationBarProvider.tsx`                                                                 |
-| NavigationBar (layout-сцена)  | `src/components/NavigationBar/useNavbarLayout.ts`                                                                        |
-| NavigationBar (шина)          | `src/components/NavigationBar/navbarEventBus.ts`                                                                         |
-| NavigationBar (context)       | `src/components/NavigationBar/navbarContext.ts`                                                                          |
-| NavigationBar (геометрия)     | `src/components/NavigationBar/navbarStates.ts`                                                                           |
+| NavigationBar (layout-сцена)  | `src/components/NavigationBar/hooks/useNavbarLayout.ts`                                                                  |
+| NavigationBar (шина)          | `src/components/NavigationBar/core/navbarEventBus.ts`                                                                    |
+| NavigationBar (context)       | `src/components/NavigationBar/core/navbarContext.ts`                                                                     |
+| NavigationBar (геометрия)     | `src/components/NavigationBar/core/navbarStates.ts`                                                                      |
 | NavigationBar (презентация)   | `src/components/NavigationBar/NavigationBar.tsx`                                                                         |
 | HomePage                      | `src/pages/HomePage/HomePage.tsx`                                                                                        |
 | Стили навбара                 | CSS Modules (`NavigationBar.module.css`, `NavigationBarProvider.module.css`, `NavItem.module.css`, `NavList.module.css`) |

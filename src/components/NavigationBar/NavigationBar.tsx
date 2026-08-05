@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { NavList } from './NavList';
+import { NavList } from './components/NavList';
 import styles from './NavigationBar.module.css';
 
 export interface NavigationBarProps {

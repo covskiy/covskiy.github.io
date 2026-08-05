@@ -1,17 +1,17 @@
 export { NavigationBarProvider } from './NavigationBarProvider';
 export { NavigationBar } from './NavigationBar';
-export { NavList } from './NavList';
-export { navItems } from './navItems';
+export { NavList } from './components/NavList';
+export { navItems } from './components/navItems';
 export {
   useNavbar,
   useNavbarEvent,
   useNavbarScrollProgress,
-} from './navbarContext';
+} from './core/navbarContext';
 export {
   getNavTransform,
   isPreferredStateValid,
   SLIM_WIDTH,
-} from './navbarStates';
+} from './core/navbarStates';
 export {
   createNavbarEventBus,
   type NavbarEventBus,
@@ -19,8 +19,8 @@ export {
   type NavbarSource,
   type EventName,
   type Listener,
-} from './navbarEventBus';
-export type { NavbarAPI } from './navbarContext';
-export type { NavItemConfig } from './navItems';
-export type { NavState, NavTransform } from './navbarStates';
-export type { NavbarLayout, NavbarLayoutRefs } from './useNavbarLayout';
+} from './core/navbarEventBus';
+export type { NavbarAPI } from './core/navbarContext';
+export type { NavItemConfig } from './components/navItems';
+export type { NavState, NavTransform } from './core/navbarStates';
+export type { NavbarLayout, NavbarLayoutRefs } from './hooks/useNavbarLayout';

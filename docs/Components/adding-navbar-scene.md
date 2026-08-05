@@ -175,7 +175,7 @@ React-рендеров в flame chart).
 
 - `docs/Components/navbarEventBus.md` — полный API шины
 - `docs/Components/NavigationBar.md` — что знает каждый уровень
-- `src/components/NavigationBar/NavItem.tsx` — живой пример
+- `src/components/NavigationBar/components/NavItem.tsx` — живой пример
   минимальной сцены (fade-in иконки при входе в slim)
-- `src/components/NavigationBar/useNavbarLayout.ts` — единственная
+- `src/components/NavigationBar/hooks/useNavbarLayout.ts` — единственная
   сцена, которой разрешено трогать корневые ноды

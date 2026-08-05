@@ -1,6 +1,6 @@
-import type { Breakpoint } from '../../utils/breakpoints';
+import type { Breakpoint } from '../../../utils/breakpoints';
 import type { NavState } from './navbarStates';
-import { logger } from '../../utils/logger';
+import { logger } from '../../../utils/logger';
 
 /**
  * Источник изменения состояния навбара.

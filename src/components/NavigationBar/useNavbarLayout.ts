@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from 'react';
-import { useLocation } from 'react-router';
+import { useCallback, useRef, useState, type RefObject } from 'react';
 import gsap from 'gsap';
 import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -16,6 +9,8 @@ import {
   getDefaultState,
   getNavTransform,
   getNextState,
+  hasToggleFor,
+  isHomePath,
   isPreferredStateValid,
   type NavState,
 } from './navbarStates';
@@ -82,12 +77,15 @@ export interface NavbarLayout {
 export function useNavbarLayout(
   bus: NavbarEventBus,
   refs: NavbarLayoutRefs,
-  options: { scrollListenersRef: NavbarLayout['scrollListenersRef'] },
+  options: {
+    scrollListenersRef: NavbarLayout['scrollListenersRef'];
+    /** IsHome на момент первого рендера (без него layout не знает роута, пока шина не заэмитит route:change). */
+    initialIsHome: boolean;
+  },
 ): NavbarLayout {
-  const location = useLocation();
   const bp = useBreakpoint();
   const { navRef, toggleRef } = refs;
-  const { scrollListenersRef } = options;
+  const { scrollListenersRef, initialIsHome } = options;
 
   const stateRef = useRef<NavState>('fullscreen');
   const [currentState, setCurrentState] = useState<NavState>('fullscreen');
@@ -135,8 +133,13 @@ export function useNavbarLayout(
    */
   const stateSourceRef = useRef<NavbarSource>('route');
 
-  const isHome = location.pathname === '/' || location.pathname === '/home';
-  const hasToggle = bp !== 'desktop';
+  /**
+   * Признак домашней страницы. Обновляется из события `route:change` шины
+   * (единственный источник триггера смены роута), инициализируется значением
+   * от провайдера. Используется в `handleToggle` (автоскролл на /home)
+   * и при пересчёте целевого состояния.
+   */
+  const isHomeRef = useRef(initialIsHome);
 
   /**
    * Эффективное конечное состояние навбара на `/home` (после скролла спейсера).
@@ -176,6 +179,38 @@ export function useNavbarLayout(
     },
     [bus],
   );
+
+  /**
+   * Пересчёт целевого состояния навбара при смене роута/устройства.
+   *
+   * Вызывается из подписок шины `route:change` / `breakpoint:change` и один раз
+   * на монтировании (провайдер не эмитит события на первом рендере). На `/home`
+   * всегда стартует `fullscreen` (intro-позиция; восстановление ручного состояния
+   * делает scrub-эффект при прокрутке вниз). На других роутах приоритет у
+   * персистируемого ручного tablet-выбора (`preferredRef`) — чтобы при переходе
+   * между страницами не было «моргания» границы навбар/контент. Невалидное для
+   * текущего bp предпочтение чистится, и берётся роутовый дефолт.
+   */
+  const recomputeTarget = useCallback(() => {
+    const isHome = isHomeRef.current;
+    let target: NavState;
+    if (isHome) {
+      target = 'fullscreen';
+    } else {
+      if (!isPreferredStateValid(preferredRef.current, bp)) {
+        preferredRef.current = null;
+      }
+      target = preferredRef.current ?? getDefaultState(bp, isHome);
+    }
+    const prev = applyState(target, isHome ? 'route' : 'breakpoint');
+
+    if (prev !== target) {
+      logger.info(
+        'NavbarLayout',
+        `Смена роута/устройства (${bp}): ${prev} → ${target}`,
+      );
+    }
+  }, [bp, applyState]);
 
   /**
    * Управляет видимостью кнопки toggle на `/home`.
@@ -256,7 +291,10 @@ export function useNavbarLayout(
         },
       );
 
-      return bus.on('state:change', ({ state, prev, source }) => {
+      // Подписки на дискретные события шины — шина является единственным
+      // источником триггеров смены роута/устройства. Layout больше НЕ читает
+      // react-router/breakpoint напрямую для пересчёта состояния.
+      const offState = bus.on('state:change', ({ state, prev, source }) => {
         if (state === prev) return;
         // React-state синхронизируется здесь (в колбэке подписчика), а не
         // синхронно в эффекте — это и есть реактивный мост для `isSlim`/
@@ -264,9 +302,29 @@ export function useNavbarLayout(
         setCurrentState(state);
         animateNavbar(state, source);
       });
+
+      const offRoute = bus.on('route:change', ({ pathname }) => {
+        isHomeRef.current = isHomePath(pathname);
+        recomputeTarget();
+      });
+
+      const offBreakpoint = bus.on('breakpoint:change', () => {
+        recomputeTarget();
+      });
+
+      // Провайдер не эмитит route:change/breakpoint:change на первом рендере
+      // (инит идёт через initialIsHome), поэтому начальное целевое состояние
+      // вычисляем здесь же.
+      recomputeTarget();
+
+      return () => {
+        offState();
+        offRoute();
+        offBreakpoint();
+      };
     },
     {
-      dependencies: [bus, bp, navRef, toggleRef],
+      dependencies: [bus, bp, navRef, toggleRef, recomputeTarget],
       revertOnUpdate: true,
     },
   );
@@ -440,11 +498,31 @@ export function useNavbarLayout(
         navScrubTweenRef.current = tl.fromTo(
           navRef.current,
           { x: 0 },
-          { x: navTransform().navX, ease: 'none' },
+          {
+            x: navTransform().navX,
+            ease: 'none',
+            // `immediateRender: false` — иначе добавление fromTo в живой
+            // scrub-таймлайн мгновенно выставляет навбар в `x: 0` (fullscreen)
+            // в момент toggle, рассогласуя позицию DOM с playhead'ом ScrollTrigger.
+            immediateRender: false,
+          },
           0,
         ) as unknown as gsap.core.Tween;
       };
-      retargetScrubRef.current = buildNavTween;
+
+      /**
+       * Пересборка nav-твина при смене ручного выбора (в отличие от первичной
+       * сборки). kill + re-add меняет `tl.duration()` (например, 0.5 → 0 →
+       * 0.5), что рассогласует scrub-маппинг ScrollTrigger — он перестаёт
+       * корректно вести навбар. Поэтому после пересоздания таймлайн возвращается
+       * в согласованное состояние через `refresh()` (при `invalidateOnRefresh`
+       * заодно перечитываются позиции и текущий playhead).
+       */
+      const retargetScrub = () => {
+        buildNavTween();
+        tl.scrollTrigger?.refresh();
+      };
+      retargetScrubRef.current = retargetScrub;
       buildNavTween();
 
       if (isMobile && t.toggleX !== null && toggleRef.current) {
@@ -478,43 +556,9 @@ export function useNavbarLayout(
     ],
   );
 
-  /**
-   * Реакция на смену роута или breakpoint.
-   *
-   * Пересчитывает целевое состояние и публикует `state:change` через
-   * `applyState`. Layout-анимация (animateNavbar) срабатывает на
-   * опубликованном событии через подписку bus.on выше.
-   *
-   * На `/home` всегда стартует `fullscreen` (intro-позиция; восстановление
-   * ручного состояния делает scrub-эффект при прокрутке вниз). На других
-   * роутах приоритет у персистируемого ручного tablet-выбора
-   * (`preferredRef`) — чтобы при переходе между страницами не было
-   * «моргания» границы навбар/контент. Невалидное для текущего bp
-   * предпочтение чистится, и берётся роутовый дефолт.
-   */
-  useEffect(() => {
-    let target: NavState;
-    if (isHome) {
-      target = 'fullscreen';
-    } else {
-      if (!isPreferredStateValid(preferredRef.current, bp)) {
-        preferredRef.current = null;
-      }
-      target = preferredRef.current ?? getDefaultState(bp, isHome);
-    }
-    const prev = applyState(target, isHome ? 'route' : 'breakpoint');
-
-    if (prev !== target) {
-      logger.info(
-        'NavbarLayout',
-        `Смена роута "${location.pathname}" (${bp}): ${prev} → ${target}`,
-      );
-    }
-  }, [location.pathname, bp, isHome, applyState]);
-
   /** Ручное переключение: клик по ☰ / ←. */
   const handleToggle = useCallback(() => {
-    if (!hasToggle) {
+    if (!hasToggleFor(bp)) {
       logger.warn(
         'NavbarLayout',
         'Toggle вызван на desktop — кнопка скрыта, игнорируем',
@@ -549,7 +593,7 @@ export function useNavbarLayout(
     if (
       next === 'invisible' &&
       bp === 'mobile' &&
-      isHome &&
+      isHomeRef.current &&
       scrollTriggerRef.current
     ) {
       const targetScroll = scrollTriggerRef.current.end;
@@ -563,7 +607,7 @@ export function useNavbarLayout(
         });
       }
     }
-  }, [bp, hasToggle, applyState, isHome]);
+  }, [bp, applyState]);
 
   return {
     currentState,

@@ -5,7 +5,7 @@ import { NavigationBar } from './NavigationBar';
 import { NavbarContext, type NavbarAPI } from './navbarContext';
 import { createNavbarEventBus } from './navbarEventBus';
 import { useNavbarLayout } from './useNavbarLayout';
-import { getContentOffset } from './navbarStates';
+import { getContentOffset, hasToggleFor, isHomePath } from './navbarStates';
 import styles from './NavigationBarProvider.module.css';
 
 /**
@@ -63,14 +63,14 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const layout = useNavbarLayout(
     bus,
     { navRef, toggleRef },
-    { scrollListenersRef },
+    { scrollListenersRef, initialIsHome: isHomePath(location.pathname) },
   );
 
   const { currentState, registerScrollTrigger, handleToggle, getHomeEndState } =
     layout;
 
-  const isHome = location.pathname === '/' || location.pathname === '/home';
-  const hasToggle = bp !== 'desktop';
+  const isHome = isHomePath(location.pathname);
+  const hasToggle = hasToggleFor(bp);
 
   /**
    * Публикация смены роута в шину. Дочерние сцены, зависящие от pathname

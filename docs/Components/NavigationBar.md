@@ -75,6 +75,11 @@ scrub-анимации, видна в состояниях `standard` / `slim` (
 через scrub при прокрутке вниз. Scrub-таймлайн пересоздаёт свой nav-твин при каждом
 изменении ручного выбора (GSAP вычисляет значения твина один раз при рендере),
 иначе скролл к низу `/home` вёл бы навбар в устаревший `standard` вместо `slim`.
+Ретаргет строится как `fromTo` со стартом `x: 0` и `immediateRender: false`
+(иначе добавление твина в живой scrub-таймлайн мгновенно выставляло бы навбар
+в fullscreen в момент toggle), а после kill+re-add вызывается
+`tl.scrollTrigger?.refresh()` — пересоздание меняет `tl.duration()`, что
+рассогласует scrub-маппинг ScrollTrigger.
 На mobile и desktop предпочтение не хранится (на mobile отступа контента нет,
 на desktop toggle отсутствует).
 
@@ -101,7 +106,7 @@ src/components/NavigationBar/
 ├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
 ├── useNavbarLayout.ts          # Корневая сцена раскладки: animateNavbar, applyState,
 │                               #   registerScrollTrigger (scrub + ScrollTrigger.onUpdate),
-│                               #   подписка на state:change
+│                               #   recomputeTarget + подписки route:change/breakpoint:change
 ├── navbarContext.ts            # createContext + useNavbar() + тип NavbarAPI
 │                               #   + хуки useNavbarEvent/useNavbarScrollProgress
 ├── navbarEventBus.ts           # createNavbarEventBus + NavbarEventMap + NavbarSource
@@ -184,7 +189,7 @@ DOM-нодами и GSAP-таймлайнами. Провайдер (`Navigation
 | Слой               | Что делает                                                                                                                                                                                                            |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Шина**           | `createNavbarEventBus()` — типизированный pub/sub (`NavbarEventMap`)                                                                                                                                                  |
-| **Диспетчер**      | `NavigationBarProvider` — создаёт шину, держит рефы корневых нод, прокидывает API в context                                                                                                                           |
+| **Диспетчер**      | `NavigationBarProvider` — создаёт шину, держит рефы корневых нод, читает `useLocation`/`useBreakpoint` и публикует `route:change`/`breakpoint:change`, прокидывает API в context                                      |
 | **Корневая сцена** | `useNavbarLayout` — единственная сцена, знающая о геометрии навбара: animateNavbar (прямые `gsap.to` на nav/toggle), applyState (единая точка записи state), `registerScrollTrigger` (scrub-таймлайн), `handleToggle` |
 | **Дочерние сцены** | NavItem, логотип, будущие расширения — подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды самостоятельно                                                              |
 
@@ -213,10 +218,16 @@ App.tsx
 useNavbarLayout (корневая сцена):
   applyState(next, source):
     stateRef.current = next
-    setCurrentState(next)
     bus.emit('state:change', { state, prev, source })
+  bus.on('route:change', { pathname }):
+    isHomeRef.current = isHomePath(pathname)
+    recomputeTarget()                        ← пересчёт целевого состояния
+  bus.on('breakpoint:change', { bp }):
+    recomputeTarget()
   bus.on('state:change'):
+    setCurrentState(state)                   ← React-мост для isSlim/contentOffset
     animateNavbar: gsap.to(nav / toggle) с overwrite: 'auto'
+  (инициализация: recomputeTarget() один раз на монтировании)
   registerScrollTrigger(trigger):
     gsap.timeline({ scrollTrigger: { ..., onUpdate } })
       onUpdate:
@@ -342,14 +353,16 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 
 ## Управление состоянием
 
-| Сущность                   | Где живёт                         | Назначение                                                           |
-| -------------------------- | --------------------------------- | -------------------------------------------------------------------- |
-| `currentState`             | `useNavbarLayout` (state)         | UI-состояние для пропа `isSlim` в NavigationBar                      |
-| `stateRef`                 | `useNavbarLayout` (ref)           | Актуальное состояние для логики toggle (без stale closure)           |
-| `applyState(next, source)` | `useNavbarLayout`                 | **Единственная точка записи state.** Публикует `state:change` в шину |
-| `registerScrollTrigger`    | `useNavbarLayout` (через API)     | Функция из Context API: регистрирует ScrollTrigger страницы          |
-| `scrollListenersRef`       | `NavigationBarProvider` (ref)     | Низкоуровневый канал для 60fps scrub-подписчиков                     |
-| `bus: NavbarEventBus`      | `NavigationBarProvider` (useMemo) | Типизированная шина событий                                          |
+| Сущность                   | Где живёт                         | Назначение                                                                            |
+| -------------------------- | --------------------------------- | ------------------------------------------------------------------------------------- |
+| `currentState`             | `useNavbarLayout` (state)         | UI-состояние для пропа `isSlim` в NavigationBar                                       |
+| `stateRef`                 | `useNavbarLayout` (ref)           | Актуальное состояние для логики toggle (без stale closure)                            |
+| `applyState(next, source)` | `useNavbarLayout`                 | **Единственная точка записи state.** Публикует `state:change` в шину                  |
+| `recomputeTarget()`        | `useNavbarLayout`                 | Пересчёт целевого состояния из `route:change` / `breakpoint:change` и на монтировании |
+| `isHomeRef`                | `useNavbarLayout` (ref)           | Признак `/home`; обновляется из `route:change`, инициализируется провайдером          |
+| `registerScrollTrigger`    | `useNavbarLayout` (через API)     | Функция из Context API: регистрирует ScrollTrigger страницы                           |
+| `scrollListenersRef`       | `NavigationBarProvider` (ref)     | Низкоуровневый канал для 60fps scrub-подписчиков                                      |
+| `bus: NavbarEventBus`      | `NavigationBarProvider` (useMemo) | Типизированная шина событий                                                           |
 
 **NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'` — тип и геометрия
 состояний вынесены в `navbarStates.ts` (чистая логика, без React). Провайдер
@@ -402,11 +415,19 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 
 ### Триггеры изменения состояния
 
-1. **Смена роута** — `useGSAP` с `dependencies: [location.pathname, bp]`
-2. **Смена breakpoint** — `useGSAP` с `dependencies: [location.pathname, bp]`
+1. **Смена роута** — провайдер эмитит `route:change` в шину; layout-сцена
+   обновляет `isHomeRef` и вызывает `recomputeTarget()`
+2. **Смена breakpoint** — провайдер эмитит `breakpoint:change` в шину;
+   layout-сцена вызывает `recomputeTarget()`
 3. **Ручной toggle** — `handleToggle` по клику на кнопку
 4. **Событие ScrollTrigger** — страница вызывает `registerScrollTrigger` в `useEffect`;
    границы спейсера (progress 0 / 1) обновляют состояние внутри провайдера
+
+> Шина — единственный источник триггеров смены роута/устройства: layout НЕ читает
+> `useLocation`/`useBreakpoint` для пересчёта состояния. Провайдер держит
+> `useLocation`/`useBreakpoint` только для эмиссии событий и отступа `<main>`,
+> а стартовый `isHome` передаёт в layout через `initialIsHome` (на первом рендере
+> шина событий не эмитит).
 
 ### Поток `currentState → isSlim`
 

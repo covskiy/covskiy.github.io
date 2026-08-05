@@ -6,6 +6,20 @@ export type NavState = 'fullscreen' | 'standard' | 'slim' | 'invisible';
 /** Ширина slim-навбара в пикселях (константа для геометрии). */
 export const SLIM_WIDTH = 80;
 
+/**
+ * Является ли pathname домашней страницей (там работает scrub-спейсер).
+ * Единственный источник правды для `isHome` — используется и провайдером,
+ * и layout-сценой.
+ */
+export function isHomePath(pathname: string): boolean {
+  return pathname === '/' || pathname === '/home';
+}
+
+/** Доступна ли кнопка toggle для breakpoint (скрыта только на desktop). */
+export function hasToggleFor(bp: Breakpoint): boolean {
+  return bp !== 'desktop';
+}
+
 /** Геометрия навбара для одного состояния (px, вычисляется на лету). */
 export interface NavTransform {
   /** Сдвиг `<nav>` (окно панели). */

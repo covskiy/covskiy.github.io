@@ -13,13 +13,18 @@ NavigationBarProvider
   │   ├─ on/off/emit: типизированный pub/sub
   │   └─ listeners: Map<EventName, Set<Listener>>
   │
-  └─ scrollListenersRef: RefObject<Set<ListenerProgress>>
-      (низкоуровневый канал для 60fps scrub-подписчиков)
+  ├─ scrollListenersRef: RefObject<Set<ListenerProgress>>
+  │   (низкоуровневый канал для 60fps scrub-подписчиков)
+  │
+  └─ toggleVisibilityListenersRef: RefObject<Set<(visible: boolean) => void>>
+      (низкоуровневый канал видимости кнопки toggle — scrub-производная)
 ```
 
 **Шина** предназначена для дискретных событий. Для непрерывного
 прогресса скролла (`scroll:progress`) используется **отдельный
-канал**, чтобы не давить 60fps событиями на React.
+канал**, чтобы не давить 60fps событиями на React. Видимость кнопки
+toggle (scrub-производная) тоже идёт через отдельный канал —
+`NavbarAPI.onToggleVisibility` / `useNavbarToggleVisibility`, не через bus.
 
 ## API шины
 
@@ -160,6 +165,23 @@ useNavbarScrollProgress(({ progress, direction }) => {
 Listener вызывается из `ScrollTrigger.onUpdate` напрямую,
 минуя `bus.emit` и React-рендер.
 
+### `useNavbarToggleVisibility`
+
+React-обёртка над `onToggleVisibility` для подписчика видимости кнопки
+toggle (`ToggleButton`). Scrub-сцена вычисляет видимость в
+`ScrollTrigger.onUpdate` (`progress ≈ 1 || manualState`) и зовёт
+listener-ов напрямую — через `bus` это событие **не проходит**.
+
+```ts
+useNavbarToggleVisibility((visible) => {
+  // НЕ используйте setState — только gsap.set к своей DOM-ноде
+  gsap.set(ref.current, {
+    autoAlpha: visible ? 1 : 0,
+    pointerEvents: visible ? 'auto' : 'none',
+  });
+});
+```
+
 ## Низкоуровневый API (`NavbarAPI`)
 
 ```ts
@@ -170,13 +192,14 @@ interface NavbarAPI {
   onScrollProgress: (
     listener: (p: { progress: number; direction: 1 | -1 }) => void,
   ) => () => void;
+  onToggleVisibility: (listener: (visible: boolean) => void) => () => void;
 }
 ```
 
 Получается через `useNavbar()`:
 
 ```ts
-const { events, getState, onScrollProgress } = useNavbar();
+const { events, getState, onScrollProgress, onToggleVisibility } = useNavbar();
 ```
 
 ## Демо-сцена: `NavItem` fade-in

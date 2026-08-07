@@ -6,6 +6,7 @@ export {
   useNavbar,
   useNavbarEvent,
   useNavbarScrollProgress,
+  useNavbarToggleVisibility,
 } from './core/navbarContext';
 export {
   getNavTransform,

@@ -25,15 +25,10 @@ export function hasToggleFor(bp: Breakpoint): boolean {
 export interface NavTransform {
   /** Сдвиг `<nav>` (окно панели). */
   navX: number;
-  /**
-   * Сдвиг кнопки toggle. `null` — кнопка не твинится напрямую
-   * (tablet/desktop: едет вместе с навбаром как его дочерний элемент).
-   */
-  toggleX: number | null;
 }
 
 /**
- * Геометрия навбара для состояния: px-значения `x` для GSAP-твинов.
+ * Геометрия навбара для состояния: px-значение `x` для GSAP-твинов.
  *
  * Навбар всегда занимает `100vw` в раскладке, видимая ширина достигается
  * сдвигом окна (`navX`).
@@ -41,33 +36,26 @@ export interface NavTransform {
  * - `standard`: `navX = -0.75·vp` — окно показывает левые 25vw
  *   (обрезается `overflow: hidden` на `.nav`).
  * - `slim`: `navX = -(vp - 80)` — окно 80px у левого края.
- * - mobile `invisible`: `navX = -vp`, а toggle компенсируется `toggleX`.
+ * - `invisible`: `navX = -vp` — окно уходит за экран.
+ *
+ * Кнопка toggle больше не твинится `x`: на mobile она fixed-сиблинг
+ * навбара (вне трансформированного `.nav`), на tablet едет с его краем.
  */
 export function getNavTransform(
   state: NavState,
-  bp: Breakpoint,
   viewport: number,
 ): NavTransform {
   const vp = viewport;
 
   switch (state) {
     case 'fullscreen':
-      return {
-        navX: 0,
-        toggleX: bp === 'mobile' ? 0 : null,
-      };
+      return { navX: 0 };
     case 'standard':
-      return {
-        navX: -vp * 0.75,
-        toggleX: null,
-      };
+      return { navX: -vp * 0.75 };
     case 'slim':
-      return {
-        navX: -(vp - SLIM_WIDTH),
-        toggleX: null,
-      };
+      return { navX: -(vp - SLIM_WIDTH) };
     case 'invisible':
-      return { navX: -vp, toggleX: vp };
+      return { navX: -vp };
   }
 }
 

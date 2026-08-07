@@ -6,19 +6,18 @@ import { logger } from '../../../utils/logger';
 import type { NavbarEventBus, NavbarSource } from '../core/navbarEventBus';
 import { getNavTransform, type NavState } from '../core/navbarStates';
 
-/** Опции `useNavbarAnimation` — сцена дискретной анимации корневых нод навбара. */
+/** Опции `useNavbarAnimation` — сцена дискретной анимации корневой ноды навбара. */
 export interface NavbarAnimationOptions {
   bus: NavbarEventBus;
   bp: Breakpoint;
   navRef: RefObject<HTMLElement | null>;
-  toggleRef: RefObject<HTMLButtonElement | null>;
 }
 
 /**
  * useNavbarAnimation — сцена дискретной анимации раскладки навбара.
  *
- * Реагирует на `state:change` из шины и твинит `x` на `nav` (и toggle на mobile)
- * прямыми `gsap.to()` — всё на композиторе, без изменения раскладки. Отступ
+ * Реагирует на `state:change` из шины и твинит `x` на `nav` прямыми
+ * `gsap.to()` — всё на композиторе, без изменения раскладки. Отступ
  * контента `<main>` не трогается: он задаётся статично через
  * `--nav-content-offset`.
  *
@@ -31,12 +30,14 @@ export interface NavbarAnimationOptions {
  * `useNavbarScrubTrigger`: отдельный tween с `overwrite:'auto'` убил бы его
  * активные твины на тех же таргетах, и скролл перестал бы двигать навбар.
  * Поэтому скролл-источник здесь НЕ анимируется.
+ *
+ * Кнопка toggle не твинится вовсе: её нодой владеет `ToggleButton`
+ * (fixed-сиблинг на mobile / absolute на tablet).
  */
 export function useNavbarAnimation({
   bus,
   bp,
   navRef,
-  toggleRef,
 }: NavbarAnimationOptions): void {
   useGSAP(
     (_ctx, contextSafe) => {
@@ -47,26 +48,17 @@ export function useNavbarAnimation({
           if (source === 'scroll') return;
 
           const isMobile = bp === 'mobile';
-          const t = getNavTransform(state, bp, window.innerWidth);
+          const t = getNavTransform(state, window.innerWidth);
 
           logger.trace(
             'NavbarLayout',
             `animate → ${state} (source=${source})`,
-            { isMobile, ...t },
+            { isMobile, navX: t.navX },
           );
 
           if (navRef.current) {
             gsap.to(navRef.current, {
               x: t.navX,
-              duration: 0.6,
-              ease: 'power2.inOut',
-              overwrite: 'auto',
-            });
-          }
-
-          if (isMobile && t.toggleX !== null && toggleRef.current) {
-            gsap.to(toggleRef.current, {
-              x: t.toggleX,
               duration: 0.6,
               ease: 'power2.inOut',
               overwrite: 'auto',
@@ -84,7 +76,7 @@ export function useNavbarAnimation({
       });
     },
     {
-      dependencies: [bus, bp, navRef, toggleRef],
+      dependencies: [bus, bp, navRef],
       revertOnUpdate: true,
     },
   );

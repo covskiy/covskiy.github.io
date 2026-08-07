@@ -211,9 +211,9 @@ covskiy.github.io/
   ├─ Чистый layout-компонент:
   │    └─ <NavigationBarProvider />          ← всегда в DOM, диспетчер сцен
   │         ├─ Создаёт шину событий (createNavbarEventBus, scoped)
-  │         ├─ Держит рефы корневых нод (nav/toggle)
+  │         ├─ Держит рефы корневых нод (nav; кнопку toggle — сама сцена)
   │         ├─ Подключает useNavbarLayout (корневая сцена раскладки)
-  │         ├─ <NavigationBar navRef toggleRef/>  ← nav (fixed), GSAP твинит x
+  │         ├─ <NavigationBar navRef/>         ← nav (fixed), GSAP твинит x
   │         └─ <main>                        ← статичная колонка, отступ через
   │                                            --nav-content-offset (не твинится).
   │                                            Единственный <main> в документе:

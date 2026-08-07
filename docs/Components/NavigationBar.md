@@ -98,18 +98,22 @@ scrub-анимации, видна в состояниях `standard` / `slim` (
 src/components/NavigationBar/
 ├── index.ts                    # Barrel: NavigationBarProvider, NavigationBar, NavList,
 │                               #   navItems, useNavbar, useNavbarEvent,
-│                               #   useNavbarScrollProgress, NavbarAPI, NavbarEventBus,
+│                               #   useNavbarScrollProgress, useNavbarToggleVisibility,
+│                               #   NavbarAPI, NavbarEventBus,
 │                               #   NavbarSource, NavbarEventMap, getNavTransform, SLIM_WIDTH,
 │                               #   NavState, NavTransform, NavbarLayout, NavbarLayoutRefs
-├── NavigationBarProvider.tsx   # Диспетчер сцен: шина событий, рефы nav/toggle,
-│                               #   scrollListenersRef, useNavbarLayout, Context.Provider
+├── NavigationBarProvider.tsx   # Диспетчер сцен: шина событий, реф nav,
+│                               #   scrollListenersRef, toggleVisibilityListenersRef,
+│                               #   useNavbarLayout, Context.Provider
 ├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
-├── NavigationBar.tsx           # Презентационный: <nav>, логотип, <ToggleButton>;
-│                               #   пропсы isSlim/hasToggle (+ рефы)
+├── NavigationBar.tsx           # Презентационный: <nav>, логотип, <ToggleButton>; пропсы
+│                               #   isSlim/hasToggle (+ ref nav). Placement toggle по bp
 ├── NavigationBar.module.css    # .nav, .navInner, .logo
 ├── components/                 # Презентационные компоненты и конфиг
-│   ├── ToggleButton.tsx            # Сцена кнопки ☰ / ←: клик → bus 'toggle:request'
-│   ├── ToggleButton.module.css     # .toggleBtn (+ mobile-правило left: 20px)
+│   ├── ToggleButton.tsx            # Самостоятельная сцена ☰ / ←: своя нода, клик → bus
+│   │                               #   'toggle:request', видимость через useNavbarToggleVisibility
+│   ├── ToggleButton.module.css     # .toggleBtn + позиционные модификаторы
+│   │                               #   --fixed (mobile) / --absolute (tablet)
 │   ├── NavList.tsx                 # <ul>{items.map → NavItem}</ul>
 │   ├── NavList.module.css          # .list
 │   ├── NavItem.tsx                 # <li> + <NavLink>, иконка/текст в зависимости от isSlim
@@ -123,15 +127,16 @@ src/components/NavigationBar/
 │   │                               #   preferredRef/isHomeRef), applyState, getHomeEndState,
 │   │                               #   recomputeTarget + подписки route/breakpoint/state:change
 │   ├── useNavbarAnimation.ts       # Сцена дискретной анимации: animateNavbar (useGSAP)
-│   │                               #   реакция на state:change
+│   │                               #   реакция на state:change (только nav.x)
 │   ├── useNavbarScrubTrigger.ts    # Сцена scrub: registerScrollTrigger (ScrollTrigger +
-│   │                               #   onUpdate), spacer:enter/leave, setToggleVisibility,
-│   │                               #   navScrubTween/retargetScrub
+│   │                               #   onUpdate), spacer:enter/leave, видимость toggle
+│   │                               #   (notifyToggleVisibility), navScrubTween/retargetScrub
 │   └── useNavbarToggle.ts          # Сцена ручного переключения: подписчик
 │                                   #   на bus 'toggle:request'
 └── core/                       # Чистая логика без React
     ├── navbarContext.ts            # createContext + useNavbar() + тип NavbarAPI
-    │                               #   + хуки useNavbarEvent/useNavbarScrollProgress
+    │                               #   + хуки useNavbarEvent/useNavbarScrollProgress/
+    │                               #   useNavbarToggleVisibility
     ├── navbarEventBus.ts           # createNavbarEventBus + NavbarEventMap + NavbarSource
     └── navbarStates.ts             # NavState, NavTransform, SLIM_WIDTH + чистые
                                     #   хелперы: getNavTransform/getDefaultState/getNextState
@@ -205,17 +210,19 @@ DOM-нодами и GSAP-таймлайнами. Провайдер (`Navigation
 | **Шина**           | `createNavbarEventBus()` — типизированный pub/sub (`NavbarEventMap`)                                                                                                                                                                                                                                                                                                                                                                   |
 | **Диспетчер**      | `NavigationBarProvider` — создаёт шину, держит рефы корневых нод, читает `useLocation`/`useBreakpoint` и публикует `route:change`/`breakpoint:change`, прокидывает API в context                                                                                                                                                                                                                                                       |
 | **Корневая сцена** | `useNavbarLayout` — композер над четырьмя под-сценами (`useNavbarState` — состояние и подписки, `useNavbarAnimation` — дискретная анимация, `useNavbarScrubTrigger` — scrub/ScrollTrigger и видимость toggle, `useNavbarToggle` — ручное переключение). Единственная сцена, знающая о геометрии навбара: animateNavbar, applyState (единая точка записи state), `registerScrollTrigger` (scrub-таймлайн), подписка на `toggle:request` |
-| **Дочерние сцены** | `ToggleButton` (клик → `toggle:request`), NavItem, логотип, будущие расширения — подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды самостоятельно                                                                                                                                                                                                                                     |
+| **Дочерние сцены** | `ToggleButton` (self-нода, клик → `toggle:request`, видимость через `useNavbarToggleVisibility`), NavItem, логотип, будущие расширения — подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды самостоятельно                                                                                                                                                                             |
 
 ### Поток данных
 
 ```
 App.tsx
 └── <NavigationBarProvider />              ← диспетчер
-      │  (создаёт bus, scrollListenersRef, регистрирует useNavbarLayout)
-      ├── <NavigationBar navRef toggleRef isSlim hasToggle/>
-      │     ├── <ToggleButton />           ← сцена кнопки ☰ / ←
+      │  (создаёт bus, scrollListenersRef, toggleVisibilityListenersRef, регистрирует useNavbarLayout)
+      ├── <NavigationBar navRef isSlim hasToggle/>
+      │     ├── <ToggleButton isSlim hasToggle/>   ← mobile: fixed-сиблинг вне <nav>;
+      │     │     │                                  tablet: внутри <nav>
       │     │     └── onClick → useNavbar().events.emit('toggle:request')
+      │     │     └── useNavbarToggleVisibility(v => gsap.set(ref, ...))  ← видимость на /home
       │     └── <NavList /> → <NavItem> × N
       │           └── useNavbarEvent('state:change', ...) — демо-сцена fade-in иконки
       ├── <main>                          ← контентная область (статичная правая колонка)
@@ -229,7 +236,8 @@ App.tsx
             ├── registerScrollTrigger(trigger) → () => void   (контракт для страниц)
             ├── getState() → NavState                          (синхронный snapshot)
             ├── events: NavbarEventBus                          (типизированная шина)
-            └── onScrollProgress(listener) → () => void         (60fps низкоуровневый канал)
+            ├── onScrollProgress(listener) → () => void         (60fps низкоуровневый канал)
+            └── onToggleVisibility(listener) → () => void       (канал видимости toggle)
 
 useNavbarLayout (композер корневой сцены; логика распределена по под-сценам):
   applyState(next, source):                       ← useNavbarState
@@ -257,16 +265,17 @@ useNavbarLayout (композер корневой сцены; логика ра
         if progress === 0  → applyState('fullscreen', 'scroll')   (снимает пин)
         if progress === 1  → applyState(endState, 'scroll')  (пропускается при isMobilePin)
         if isMobilePin     → tl.progress(fullscreen ? 0 : 1) ← «пин» ручного состояния
-        setToggleVisibility(progress === 1 || isMobilePin)   ← кнопка видна и при ручном состоянии
+        notifyToggleVisibility(progress === 1 || isMobilePin) ← через toggleVisibilityListenersRef;
+                                                                применяет ToggleButton (gsap.set)
 ```
 
 ### Что знает каждый уровень
 
-| Уровень                                        | Знает                                                                              | НЕ знает                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------- |
-| `NavigationBarProvider`                        | Роут, breakpoint, рефы корневых нод (`nav/toggle`), шина, layout-сцена             | DOM NavItem, иконки, логотип    |
-| `useNavbarLayout`                              | Геометрия раскладки (`getNavTransform`), ScrollTrigger, scrub                      | Содержимое пунктов меню, иконки |
-| Дочерняя сцена (ToggleButton, NavItem и т. д.) | Своя DOM-нода (у toggle — пока shared `toggleRef`), `prev → next` state через шину | DOM соседей, общую анимацию     |
+| Уровень                                        | Знает                                                                                                                       | НЕ знает                        |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `NavigationBarProvider`                        | Роут, breakpoint, рефы корневых нод (`nav`), шина, layout-сцена, каналы `scrollListenersRef`/`toggleVisibilityListenersRef` | DOM NavItem, иконки, логотип    |
+| `useNavbarLayout`                              | Геометрия раскладки (`getNavTransform`), ScrollTrigger, scrub                                                               | Содержимое пунктов меню, иконки |
+| Дочерняя сцена (ToggleButton, NavItem и т. д.) | Своя DOM-нода (у toggle — собственная), `prev → next` state через шину                                                      | DOM соседей, общую анимацию     |
 
 ### Контракты
 
@@ -285,6 +294,10 @@ useNavbarLayout (композер корневой сцены; логика ра
 - `onScrollProgress(listener)` / `useNavbarScrollProgress(listener)` —
   низкоуровневый канал для 60fps scrub-подписчиков. Listener вызывается
   из `ScrollTrigger.onUpdate` напрямую, минуя React-рендер.
+- `onToggleVisibility(listener)` / `useNavbarToggleVisibility(listener)` —
+  низкоуровневый канал видимости кнопки toggle (scrub-производная `progress ≈ 1
+|| manualState`). Scrub зовёт listener-ов из `ScrollTrigger.onUpdate`, а
+  `ToggleButton` применяет `gsap.set` к своей ноде — без React-рендера.
 
 ### Принципы
 
@@ -304,25 +317,32 @@ useNavbarLayout (композер корневой сцены; логика ра
    Провайдер владеет `scrollListenersRef: RefObject<Set<Listener>>`,
    layout-сцена дёргает listener-ов напрямую из `ScrollTrigger.onUpdate`.
 
-4. **Дочерние сцены не знают о DOM корневого навбара** — они получают
+4. **Видимость toggle — тоже канал, не bus** — решение о видимости
+   (`progress ≈ 1 || manualState`) принимается в scrub-сцене, где и
+   вычисляется прогресс. Scrub не владеет нодой кнопки, поэтому публикует
+   видимость через `toggleVisibilityListenersRef` (владеет провайдер),
+   а `ToggleButton` применяет её через `gsap.set` к своей ноде — по образцу
+   `onScrollProgress` и без React-рендера.
+
+5. **Дочерние сцены не знают о DOM корневого навбара** — они получают
    только логические события. Это означает, что появление нового
    элемента внутри навбара (логотип, badge, индикатор секции)
    реализуется как новая сцена, без изменения провайдера или
    layout-сцены.
 
-5. **`NavItem` — демо-сцена end-to-end.** Фаза 1 проверяет пайплайн
+6. **`NavItem` — демо-сцена end-to-end.** Фаза 1 проверяет пайплайн
    шины: при первом переходе навбара в `slim` иконка делает fade-in
    с подскоком через `gsap.fromTo`. Это дополняет существующее
    поведение (`isSlim` пропом) и легко откатывается удалением хука.
 
-6. **Toggle — дочерняя сцена `ToggleButton`.** Кнопка публикует системный
-   интент `toggle:request` в шину (клик), обработчик состояния живёт в
-   `useNavbarToggle` (layout-сцена). Рендер глифа/aria остаётся на
+7. **Toggle — самостоятельная сцена `ToggleButton`.** Кнопка публикует
+   системный интент `toggle:request` в шину (клик), обработчик состояния
+   живёт в `useNavbarToggle` (layout-сцена). Рендер глифа/aria остаётся на
    React-пропе `isSlim` — по правилу «проп вместо шины для условного
-   рендера». DOM-нода кнопки на текущей фазе остаётся shared
-   (`toggleRef` владеет провайдер): её анимируют layout/scrub-сцены
-   (`toggleX` на mobile, видимость на `/home`). Полная декомпозиция
-   ноды — задел (см. «Задел: владение DOM-нодой toggle»).
+   рендера». Сцена полностью владеет своей DOM-нодой: на mobile это
+   `position: fixed`-сиблинг навбара (вне трансформированного `.nav`),
+   на tablet — `position: absolute` внутри `.nav`; видимость на `/home`
+   кнопка применяет к себе через `useNavbarToggleVisibility` (см. ниже).
 
 ### Будущая интеграция с IntroAnimation (задел)
 
@@ -342,24 +362,27 @@ useNavbarLayout (композер корневой сцены; логика ра
 Для этого потребуется поднять bus до singleton (отдельная задача фазы 2) —
 контракт API уже зафиксирован.
 
-### Задел: владение DOM-нодой toggle (Фаза 2)
+### Задел: fixed-сиблинг вместо противофазы
 
-На текущей фазе `ToggleButton` — сцена только по событийной части (эмитит
-`toggle:request`) и рендеру (глиф/aria по `isSlim`). DOM-ноду кнопки
-по-прежнему анимирует провайдер через shared `toggleRef`:
+На mobile кнопка toggle — настоящий `position: fixed` элемент, рендерящийся
+**сиблингом** навбара (вне трансформированного `.nav`). Трансформация на
+`.nav` создаёт containing block, из-за которого `position: fixed` у потомка
+не срабатывал — поэтому раньше кнопка компенсировалась GSAP-противофазой
+(`toggleX = -navX`). Теперь противофазы нет вовсе:
 
-- дискретный `toggleX` на mobile — `useNavbarAnimation` (реакция на `state:change`);
-- scrub `toggleX` на `/home` (mobile) — `tl.to(toggleRef, ...)` в scrub-таймлайне
-  (`useNavbarScrubTrigger`);
-- видимость на `/home` — `setToggleVisibility` (`autoAlpha`/`pointerEvents`)
-  из `ScrollTrigger.onUpdate`.
+- дискретный `toggleX` — удалён из `useNavbarAnimation` (твиним только `nav.x`);
+- scrub `toggleX` — удалён из scrub-таймлайна `useNavbarScrubTrigger`;
+- поле `toggleX` — удалено из `NavTransform`, `getNavTransform(state, viewport)`
+  возвращает только `navX`;
+- `toggleRef` исчез из провайдера/layout/animation/scrub — нодой владеет сам
+  `ToggleButton` (собственный `ref`);
+- mobile `.nav { overflow: visible }` вернулся к `overflow: hidden` на всех bp.
 
-Фаза 2 перенесёт анимацию ноды внутрь `ToggleButton` (владение собственным
-рефом): дискретный `toggleX` — по `state:change`, scrub — через
-`useNavbarScrollProgress`, видимость — через отдельный низкоуровневый канал
-`onToggleVisibility` (по образцу `onScrollProgress`, решение о видимости
-остаётся в scrub-сцене). Тогда `toggleRef` уходит из провайдера и
-`NavigationBar` полностью.
+Placement кнопки определяет `NavigationBar` по breakpoint: на mobile —
+`{hasToggle && isMobile && <ToggleButton/>}` как сиблинг после `</nav>`,
+на tablet — внутри `<nav>`. Позиция задаётся CSS-модификатором сцены
+(`--fixed` / `--absolute`), а видимость на `/home` — через низкоуровневый
+канал `onToggleVisibility` (решение остаётся в scrub-сцене).
 
 ## Стили позиционирования
 
@@ -415,7 +438,7 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 **NavState**: `'fullscreen' | 'standard' | 'slim' | 'invisible'` — тип и геометрия
 состояний вынесены в `navbarStates.ts` (чистая логика, без React). Провайдер
 использует `getDefaultState`/`getNextState` для пересчёта состояний,
-`getNavTransform(state, bp, viewport)` для GSAP-анимаций трансформаций навбара
+`getNavTransform(state, viewport)` для GSAP-анимаций трансформаций навбара
 и `getContentOffset(state, bp, isHome)` для статичного отступа `<main>`.
 
 **NavbarSource** (источник `state:change`):
@@ -430,20 +453,22 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 
 **NavTransform** (px, от `viewport = window.innerWidth`):
 
-| Состояние    | `navX`     | `toggleX`                   |
-| ------------ | ---------- | --------------------------- |
-| `fullscreen` | `0`        | mobile: `0`, tablet: `null` |
-| `standard`   | `-0.75·vp` | `null` (едет с навбаром)    |
-| `slim`       | `-(vp-80)` | `null` (едет с навбаром)    |
-| `invisible`  | `-vp`      | `+vp` (контр-сдвиг)         |
+| Состояние    | `navX`     |
+| ------------ | ---------- |
+| `fullscreen` | `0`        |
+| `standard`   | `-0.75·vp` |
+| `slim`       | `-(vp-80)` |
+| `invisible`  | `-vp`      |
 
 - **Модель окна**: навбар всегда `100vw`, видимая ширина — сдвиг окна `navX`.
   Counter-translate контента убран: `.navInner` движется вместе с окном и на
   tablet/desktop в `standard`/`slim` обрезается `overflow: hidden` (промежуточное
   состояние до новой модели layout).
-- **Mobile invisible**: `.nav` имеет `overflow: visible` ради кнопки toggle,
-  поэтому контент уезжает вместе с окном, а toggle компенсируется `toggleX`,
-  оставаясь фиксированным в `left: 20`.
+- **Mobile invisible**: `.nav` имеет `overflow: hidden` на всех bp (контент
+  обрезается окном). Кнопка toggle — `position: fixed`-сиблинг навбара (вне
+  трансформированного `.nav`), поэтому остаётся фиксированной в `left: 20`,
+  даже когда окно навбара уезжает за экран. Никакой компенсации `toggleX`
+  не требуется.
 
 **`<main>` — статичная колонка, `getContentOffset`**:
 
@@ -484,12 +509,7 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 // NavigationBarProvider.tsx
 const isSlim = currentState === 'slim' || currentState === 'invisible';
 
-<NavigationBar
-  navRef={navRef}
-  toggleRef={toggleRef}
-  isSlim={isSlim}
-  hasToggle={hasToggle}
-/>;
+<NavigationBar navRef={navRef} isSlim={isSlim} hasToggle={hasToggle} />;
 ```
 
 `isSlim` прокидывается пропсом в `NavigationBar` (не через контекст) и дальше —
@@ -501,22 +521,28 @@ const isSlim = currentState === 'slim' || currentState === 'invisible';
 
 ### Позиционирование toggle
 
-Кнопка toggle (`ToggleButton`) рендерится **внутри** `<nav>` как дочерний
-элемент и позиционируется через `position: absolute` (относительно навбара).
-Стили живут в собственном CSS-модуле `ToggleButton.module.css`:
+Кнопка toggle (`ToggleButton`) — самостоятельная сцена, владеет своей DOM-нодой.
+Lifecycle placement задаёт `NavigationBar` по breakpoint:
 
-- **Tablet**: `top: 20px; right: 20px` — в правом верхнем углу навбара. Кнопка —
-  дочерний элемент сдвигаемого навбара, поэтому «едет» вместе с правым краем окна.
-- **Mobile**: `top: 20px; left: 20px` — в левом верхнем углу экрана. Кнопка
-  компенсируется GSAP (`toggleX = -navX`), поэтому остаётся на месте, даже когда
-  окно навбара уезжает за экран (invisible).
+- **Tablet**: кнопка рендерится **внутри** `<nav>`, позиция `position: absolute;
+top: 20px; right: 20px` (модификатор `--absolute`) — в правом верхнем углу
+  навбара. Кнопка — дочерний элемент сдвигаемого навбара, поэтому «едет»
+  вместе с правым краем окна при slim↔standard.
+- **Mobile**: кнопка рендерится **сиблингом** после `</nav>`, `position: fixed;
+top: 20px; left: 20px` (модификатор `--fixed`) — в левом верхнем углу экрана.
+  Это настоящий fixed-элемент вне трансформированного `.nav` (трансформация
+  создаёт containing block для потомков, из-за которого fixed у потомка не
+  работает), поэтому не «едет» с окном и виден, даже когда навбар ушёл
+  за экран (invisible).
 
-На mobile навбар имеет `overflow: visible`, а внутренний контейнер `.navInner` —
-`overflow: hidden`. Это гарантирует, что контент (логотип, ссылки) обрезается,
-когда окно навбара закрыто, а кнопка toggle остаётся видимой вне границ навбара.
+`.nav` имеет `overflow: hidden` на всех bp: контент (логотип, ссылки)
+обрезается окном навбара в свёрнутых состояниях, а fixed-сиблинг toggle —
+вне клапа.
 
 **Видимость на `/home`** управляется из `registerScrollTrigger.onUpdate` через
-`setToggleVisibility` (`gsap.set` с `autoAlpha` + `pointerEvents`), без React-рендера:
+`notifyToggleVisibility` (решение `progress ≈ 1 || manualState`), публикуется
+в низкоуровневый канал `toggleVisibilityListenersRef`, а применяет её сам
+`ToggleButton` (`gsap.set` с `autoAlpha` + `pointerEvents`), без React-рендера:
 кнопка скрыта наверху (fullscreen) и во время scrub-анимации, видна когда
 навбар ушёл за экран (`progress ≈ 1`) или пока состояние задано вручную
 (`source === 'toggle'` — ручной fullscreen → `←`, ручной invisible → `☰`).
@@ -577,7 +603,8 @@ const routeIcons: Record<string, ReactNode> = {
   отступ задаётся CSS-переменной `--nav-content-offset`, ширина сразу
   ориентирована на конечное значение (`100% − offset`), поэтому контент не едет
   по диагонали при скролле на `/home`;
-- на mobile кнопка toggle компенсируется отдельным `toggleX`.
+- на mobile кнопка toggle — `position: fixed`-сиблинг навбара (вне
+  трансформированного `.nav`), компенсация `toggleX` не нужна.
 
 Единственная плата — px-значения геометрии навбара запекаются при создании
 твина (как и раньше для `25vw`). `invalidateOnRefresh` пересчитывает позиции
@@ -608,13 +635,14 @@ const routeIcons: Record<string, ReactNode> = {
   в `registerScrollTrigger` пишутся без `overwrite` — они привязаны к своему
   timeline и не конкурируют с внешними твинами.
 
-- **Toggle скрыт во время scrub на `/home`** — видимость управляется из
-  `registerScrollTrigger.onUpdate` через `setToggleVisibility` (`gsap.set` с
-  `autoAlpha` + `pointerEvents`, без React-рендера). Кнопка видна когда
-  навбар ушёл за экран (`progress ≈ 1`); наверху (fullscreen) и в полёте
-  scrub-анимации (в обе стороны) скрыта, чтобы пользователь не мог сломать
-  анимацию ручным кликом. Исключение (mobile): пока состояние задано вручную
-  (`source === 'toggle'`), кнопка видна и в полёте — ручной fullscreen
+- **Toggle скрыт во время scrub на `/home`** — видимость вычисляется в
+  `registerScrollTrigger.onUpdate` (`progress ≈ 1 || manualState`) и публикуется
+  через низкоуровневый канал `toggleVisibilityListenersRef`. Применяет её сам
+  `ToggleButton` (`gsap.set` с `autoAlpha` + `pointerEvents`, без React-рендера).
+  Кнопка видна когда навбар ушёл за экран (`progress ≈ 1`); наверху (fullscreen)
+  и в полёте scrub-анимации (в обе стороны) скрыта, чтобы пользователь не мог
+  сломать анимацию ручным кликом. Исключение (mobile): пока состояние задано
+  вручную (`source === 'toggle'`), кнопка видна и в полёте — ручной fullscreen
   показывает `←`, ручной invisible — `☰`. Cleanup триггера сбрасывает видимость
   при уходе с `/home`. Поведение идентично для mobile и tablet.
 
@@ -650,8 +678,9 @@ const routeIcons: Record<string, ReactNode> = {
   `NavigationBar` и завершает сценовую модель: ручное переключение проходит
   через ту же шину, что и `route`/`breakpoint`/`scroll`. Рендер глифа/aria
   оставлен на React-пропе `isSlim` (по правилу «проп вместо шины для
-  условного рендера»). Владение DOM-нодой остаётся за провайдером
-  (`toggleRef`) — см. «Задел: владение DOM-нодой toggle».
+  условного рендера»). Сцена полностью владеет своей DOM-нодой
+  (см. «Позиционирование toggle»): `toggleRef` убран из провайдера,
+  layout и scrub.
 
 - **Двухканальная публикация прогресса скролла** — дискретные события
   идут через `events.emit` (`'state:change'`, `'route:change'`,
@@ -677,13 +706,13 @@ const routeIcons: Record<string, ReactNode> = {
 - **`tabIndex={-1}` в slim/invisible** — ссылки навбара получают `tabIndex = -1`
   в свёрнутых состояниях, исключая их из фокуса при навигации Tab.
 
-- **Toggle внутри `<nav>`, overflow: hidden на `.navInner`** — кнопка
-  рендерится внутри навбара с `position: absolute`. На desktop/tablet `.nav` имеет
-  `overflow: hidden` — контент и окно обрезаются, кнопка едет вместе с навбаром.
-  На mobile `.nav` переключается на `overflow: visible`, а `overflow: hidden`
-  переносится на `.navInner`, при этом кнопка компенсируется GSAP (`toggleX`) —
-  она остаётся видимой, даже когда окно навбара полностью уезжает за экран
-  (invisible-режим).
+- **Toggle — fixed-сиблинг на mobile, absolute на tablet** — позиция кнопки
+  задаётся CSS-модификатором сцены, а не GSAP-противофазой. На tablet кнопка
+  внутри `<nav>` (`position: absolute`) и «едет» с его краем; на mobile —
+  `position: fixed`-сиблинг вне трансформированного `.nav` (иначе transform
+  создаёт containing block и ломает fixed). `.nav` имеет `overflow: hidden`
+  на всех bp — контент обрезается окном, а fixed-кнопка остаётся доступной,
+  даже когда навбар ушёл за экран (invisible).
 
 - **Spacer в HomePage, а не в NavigationBar** — невидимый div `100dvh`
   создаётся внутри HomePage, а не в NavigationBar. Это гарантирует,

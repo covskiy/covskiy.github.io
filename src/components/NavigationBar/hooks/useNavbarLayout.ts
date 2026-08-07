@@ -6,6 +6,7 @@ import { useNavbarAnimation } from './useNavbarAnimation';
 import {
   useNavbarScrubTrigger,
   type ScrollProgressListener,
+  type ToggleVisibilityListener,
 } from './useNavbarScrubTrigger';
 import { useNavbarState } from './useNavbarState';
 import { useNavbarToggle } from './useNavbarToggle';
@@ -13,7 +14,6 @@ import { useNavbarToggle } from './useNavbarToggle';
 /** Рефы на корневые DOM-ноды навбара, которыми владеет провайдер. */
 export interface NavbarLayoutRefs {
   navRef: RefObject<HTMLElement | null>;
-  toggleRef: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -47,8 +47,7 @@ export interface NavbarLayout {
  * useNavbarLayout — композер корневой сцены раскладки навбара.
  *
  * Единственная сцена, которая знает о геометрии раскладки навбара
- * (видимая ширина, позиция toggle на mobile). Собирает четыре тематические
- * под-сцены:
+ * (видимая ширина). Собирает четыре тематические под-сцены:
  *
  * - `useNavbarState` — состояние и подписки на дискретные события шины
  *   (`state:change`/`route:change`/`breakpoint:change`);
@@ -71,24 +70,30 @@ export function useNavbarLayout(
   refs: NavbarLayoutRefs,
   options: {
     scrollListenersRef: NavbarLayout['scrollListenersRef'];
+    /**
+     * Set слушателей канала видимости toggle (владеет провайдер).
+     * Пробрасывается в scrub-сцену, которая публикует видимость напрямую.
+     */
+    toggleVisibilityListenersRef: RefObject<Set<ToggleVisibilityListener>>;
     /** IsHome на момент первого рендера (без него layout не знает роута, пока шина не заэмитит route:change). */
     initialIsHome: boolean;
   },
 ): NavbarLayout {
   const bp = useBreakpoint();
-  const { navRef, toggleRef } = refs;
-  const { scrollListenersRef, initialIsHome } = options;
+  const { navRef } = refs;
+  const { scrollListenersRef, toggleVisibilityListenersRef, initialIsHome } =
+    options;
 
   const state = useNavbarState({ bus, bp, initialIsHome });
 
-  useNavbarAnimation({ bus, bp, navRef, toggleRef });
+  useNavbarAnimation({ bus, bp, navRef });
 
   const scrub = useNavbarScrubTrigger({
     bus,
     bp,
     navRef,
-    toggleRef,
     scrollListenersRef,
+    toggleVisibilityListenersRef,
     state,
   });
 

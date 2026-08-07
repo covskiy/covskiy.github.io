@@ -16,14 +16,14 @@ import styles from './NavigationBarProvider.module.css';
  * NavigationBarProvider — диспетчер сцен навбара.
  *
  * Сам не владеет анимациями: создаёт шину событий (`createNavbarEventBus`),
- * держит рефы корневых DOM-нод (`<nav>`, кнопка toggle) и
+ * держит рефы корневых DOM-нод (`<nav>`) и
  * подключает корневую сцену раскладки `useNavbarLayout`, которая
- * единственная знает о геометрии навбара (видимая ширина, позиция toggle
- * на mobile).
+ * единственная знает о геометрии навбара (видимая ширина).
  *
- * Дочерние сцены (NavItem, логотип, будущие расширения) подписываются
- * на шину через `useNavbarEvent` / `useNavbarScrollProgress` и сами
- * анимируют свои DOM-ноды, не уведомляя провайдер.
+ * Дочерние сцены (NavItem, логотип, ToggleButton, будущие расширения)
+ * подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress`
+ * / `useNavbarToggleVisibility` и сами анимируют свои DOM-ноды, не
+ * уведомляя провайдер.
  *
  * Контракт со страницами сохраняется: `registerScrollTrigger(trigger)`
  * (фасад над layout-сценой) — единственная публичная точка для
@@ -39,7 +39,6 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const bp = useBreakpoint();
   const navRef = useRef<HTMLElement>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
 
   /**
    * Set слушателей низкоуровневого канала прогресса скролла. Хранится
@@ -50,6 +49,16 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const scrollListenersRef = useRef<
     Set<(p: { progress: number; direction: 1 | -1 }) => void>
   >(new Set());
+
+  /**
+   * Set слушателей низкоуровневого канала видимости кнопки toggle.
+   * По образцу `scrollListenersRef`: scrub-сцена зовёт listener-ов напрямую
+   * из `ScrollTrigger.onUpdate` (без bus.emit и без React-рендера), а
+   * `ToggleButton` применяет `gsap.set` к своей ноде.
+   */
+  const toggleVisibilityListenersRef = useRef<Set<(visible: boolean) => void>>(
+    new Set(),
+  );
 
   /**
    * Scoped шина событий — переживает ререндеры (useMemo с пустым deps).
@@ -66,8 +75,12 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
    */
   const layout = useNavbarLayout(
     bus,
-    { navRef, toggleRef },
-    { scrollListenersRef, initialIsHome: isHomePath(location.pathname) },
+    { navRef },
+    {
+      scrollListenersRef,
+      toggleVisibilityListenersRef,
+      initialIsHome: isHomePath(location.pathname),
+    },
   );
 
   const { currentState, registerScrollTrigger, getHomeEndState } = layout;
@@ -112,8 +125,10 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
    */
   useEffect(() => {
     const listeners = scrollListenersRef.current;
+    const toggleVisibilityListeners = toggleVisibilityListenersRef.current;
     return () => {
       listeners.clear();
+      toggleVisibilityListeners.clear();
     };
   }, []);
 
@@ -131,6 +146,12 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
         scrollListenersRef.current.add(listener);
         return () => {
           scrollListenersRef.current.delete(listener);
+        };
+      },
+      onToggleVisibility: (listener) => {
+        toggleVisibilityListenersRef.current.add(listener);
+        return () => {
+          toggleVisibilityListenersRef.current.delete(listener);
         };
       },
     }),
@@ -151,12 +172,7 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
         className={styles.app}
         style={{ '--nav-content-offset': contentOffset } as React.CSSProperties}
       >
-        <NavigationBar
-          navRef={navRef}
-          toggleRef={toggleRef}
-          isSlim={isSlim}
-          hasToggle={hasToggle}
-        />
+        <NavigationBar navRef={navRef} isSlim={isSlim} hasToggle={hasToggle} />
         <main className={styles.main}>{children}</main>
       </div>
     </NavbarContext.Provider>

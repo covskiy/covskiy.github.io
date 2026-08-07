@@ -15,7 +15,7 @@ parallax-фон и т. д.) с собственной GSAP-сценой.
    → подписка на `useNavbarScrollProgress(...)`.
 3. Нужна ли анимация и от того, и от другого?
    → оба хука, listener-ы изолированы, переподписка не нужна.
-4. Нужно ли анимировать корневые ноды навбара (видимую ширину, toggle)?
+4. Нужно ли анимировать корневые ноды навбара (видимую ширину)?
    → это зона ответственности `useNavbarLayout`. Не дублируйте —
    подпишитесь на `state:change` и используйте `getNavTransform`.
    (Событийную часть toggle уже берёт на себя сцена `ToggleButton` —
@@ -135,13 +135,15 @@ React-рендеров в flame chart).
   не должны трогать `.nav`, `.navInner`, `<main>`, кнопку toggle.
   Это зона `useNavbarLayout`. Если нужно реагировать на «ширину»,
   подпишитесь на `state:change` и используйте
-  `getNavTransform(state, bp, window.innerWidth)`.
+  `getNavTransform(state, window.innerWidth)`.
 
-  Исключение — кнопка toggle: она уже вынесена в сцену `ToggleButton`,
-  но на текущей фазе её DOM-ноду (`toggleRef`) по-прежнему анимирует
-  layout/scrub (`toggleX`, видимость). Не регистрируйте новые подписки
-  на неё; владение нодой toggle — задел фазы 2 (см.
-  `docs/Components/NavigationBar.md` → «Задел: владение DOM-нодой toggle»).
+  Исключение — кнопка toggle: это полностью самостоятельная сцена
+  `ToggleButton`, которая владеет своей DOM-нодой. На mobile она
+  `position: fixed`-сиблинг навбара (вне трансформированного `.nav`),
+  на tablet — `position: absolute` внутри `<nav>`; видимость на `/home`
+  берёт через `useNavbarToggleVisibility`. **Не регистрируйте новые
+  подписки на её ноду** — владение toggle целиком внутри сцены
+  (см. `docs/Components/NavigationBar.md` → «Позиционирование toggle»).
 
 - **Не публикуйте «свою болтовню» в `bus`** — шина предназначена для
   **системных** событий навбара. Локальные взаимодействия между вашими
@@ -172,8 +174,8 @@ React-рендеров в flame chart).
 
 - [ ] Компонент лежит в `src/components/NavigationBar/<Name>.tsx`
 - [ ] Рефы на DOM-узлы компонента — внутри компонента, не в провайдере
-- [ ] `useNavbarEvent` / `useNavbarScrollProgress` импортированы
-      из `./navbarContext`
+- [ ] `useNavbarEvent` / `useNavbarScrollProgress` / `useNavbarToggleVisibility`
+      импортированы из `./navbarContext`
 - [ ] `gsap.killTweensOf` + `overwrite: 'auto'` для твинов, которые
       могут наложиться
 - [ ] Нет `setState` в `useNavbarScrollProgress`

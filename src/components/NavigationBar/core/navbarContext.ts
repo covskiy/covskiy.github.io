@@ -35,6 +35,11 @@ import type { NavState } from './navbarStates';
  *    scrub-подписчиков. НЕ использует React-re-render, работает
  *    через прямой вызов listener внутри `ScrollTrigger.onUpdate`.
  *    Возвращает unsubscribe-функцию.
+ *
+ * 5. `onToggleVisibility(listener)` — низкоуровневый канал видимости
+ *    кнопки toggle (scrub-производная, см. `useNavbarToggleVisibility`).
+ *    Аналогично `onScrollProgress`: прямой вызов listener без bus.emit
+ *    и без React-рендера. Возвращает unsubscribe-функцию.
  */
 export interface NavbarAPI {
   /**
@@ -65,6 +70,17 @@ export interface NavbarAPI {
   onScrollProgress: (
     listener: (p: { progress: number; direction: 1 | -1 }) => void,
   ) => () => void;
+
+  /**
+   * Подписка на видимость кнопки toggle БЕЗ React-re-render.
+   *
+   * Видимость — scrub-производная: вычисляется в `ScrollTrigger.onUpdate`
+   * `/home` (видна, когда навбар ушёл за экран `progress ≈ 1` или пока
+   * состояние задано вручную) и передаётся подписчикам напрямую, минуя
+   * `events` (см. `useNavbarToggleVisibility`). Listener применяет `gsap.set`
+   * к своей DOM-ноде, React-рендер не используется.
+   */
+  onToggleVisibility: (listener: (visible: boolean) => void) => () => void;
 }
 
 export const NavbarContext = createContext<NavbarAPI | null>(null);
@@ -126,4 +142,18 @@ export function useNavbarScrollProgress(
 ): void {
   const { onScrollProgress } = useNavbar();
   useEffect(() => onScrollProgress(listener), [onScrollProgress, listener]);
+}
+
+/**
+ * React-обёртка над `onToggleVisibility` для подписчиков видимости toggle.
+ *
+ * Listener вызывается из `ScrollTrigger.onUpdate` напрямую, минуя
+ * React-рендер. Не используйте setState внутри — вместо этого применяйте
+ * GSAP к своей DOM-ноде (например `gsap.set(ref.current, { autoAlpha, pointerEvents })`).
+ */
+export function useNavbarToggleVisibility(
+  listener: (visible: boolean) => void,
+): void {
+  const { onToggleVisibility } = useNavbar();
+  useEffect(() => onToggleVisibility(listener), [onToggleVisibility, listener]);
 }

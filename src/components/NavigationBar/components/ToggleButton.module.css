@@ -1,16 +1,19 @@
 /**
  * Кнопка ручного переключения состояний (☰ / ←).
  *
- * Дочерняя сцена навбара: публикует `toggle:request` в шину. Стили
- * вынесены из `NavigationBar.module.css` при сцене-ификации кнопки.
+ * Самостоятельная сцена навбара: владеет своей DOM-нодой, публикует
+ * `toggle:request` в шину. Стили вынесены из `NavigationBar.module.css`
+ * при сцене-ификации кнопки.
  *
  * Видна только на mobile и tablet (`hasToggle` в ToggleButton.tsx).
  * На desktop рендеринг кнопки отключён на уровне JSX.
+ *
+ * Позиционирование задаётся модификаторами (см. ниже): на mobile кнопка —
+ * `position: fixed`-сиблинг навбара (вне трансформированного `.nav`, поэтому
+ * не «едет» с его сдвигом); на tablet — `position: absolute` внутри `.nav`
+ * и едет с его краем.
  */
 .toggleBtn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
   width: 40px;
   height: 40px;
   background: rgb(255 255 255 / 10%);
@@ -34,14 +37,16 @@
   color: var(--color-accent-primary);
 }
 
-/**
- * Mobile: полноэкранный режим навбара — кнопка в левом верхнем углу
- * экрана (компенсируется GSAP через `toggleX`, оставаясь на месте,
- * когда окно навбара уезжает за экран в invisible-режиме).
- */
-@media (width < 768px) {
-  .toggleBtn {
-    right: auto;
-    left: 20px;
-  }
+/** Mobile: fixed-сиблинг навбара в левом верхнем углу экрана. */
+.toggleBtnFixed {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+}
+
+/** Tablet: absolute внутри `.nav` — кнопка в правом верхнем углу панели. */
+.toggleBtnAbsolute {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }

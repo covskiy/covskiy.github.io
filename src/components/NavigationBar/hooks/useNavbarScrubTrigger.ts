@@ -13,14 +13,22 @@ export type ScrollProgressListener = (p: {
   direction: 1 | -1;
 }) => void;
 
+/** Listener низкоуровневого канала видимости toggle (см. `toggleVisibilityListenersRef`). */
+export type ToggleVisibilityListener = (visible: boolean) => void;
+
 /** Опции `useNavbarScrubTrigger` — сцена scrub-анимации навбара на `/home`. */
 export interface NavbarScrubTriggerOptions {
   bus: NavbarEventBus;
   bp: Breakpoint;
   navRef: RefObject<HTMLElement | null>;
-  toggleRef: RefObject<HTMLButtonElement | null>;
   /** Set слушателей низкоуровневого канала прогресса (владеет провайдер). */
   scrollListenersRef: RefObject<Set<ScrollProgressListener>>;
+  /**
+   * Set слушателей низкоуровневого канала видимости toggle (владеет провайдер).
+   * Кнопка — самостоятельная сцена (своя нода), поэтому scrub не трогает
+   * её DOM напрямую, а уведомляет подписчиков.
+   */
+  toggleVisibilityListenersRef: RefObject<Set<ToggleVisibilityListener>>;
   state: Pick<
     NavbarStateApi,
     'applyState' | 'getHomeEndState' | 'stateRef' | 'stateSourceRef'
@@ -48,15 +56,15 @@ export interface NavbarScrubTriggerApi {
  * состояние на границах спейсера и зовёт подписчиков `scrollListenersRef`
  * напрямую (минуя bus.emit, чтобы не давить 60fps событиями в React-шину).
  *
- * Также управляет видимостью кнопки toggle на `/home` (`setToggleVisibility`)
+ * Также управляет видимостью кнопки toggle на `/home` (`notifyToggleVisibility`)
  * и эмитит дискретные события `spacer:enter`/`spacer:leave`.
  */
 export function useNavbarScrubTrigger({
   bus,
   bp,
   navRef,
-  toggleRef,
   scrollListenersRef,
+  toggleVisibilityListenersRef,
   state,
 }: NavbarScrubTriggerOptions): NavbarScrubTriggerApi {
   const { applyState, getHomeEndState, stateRef, stateSourceRef } = state;
@@ -81,22 +89,20 @@ export function useNavbarScrubTrigger({
   const retargetScrubRef = useRef<(() => void) | null>(null);
 
   /**
-   * Управляет видимостью кнопки toggle на `/home`.
+   * Уведомляет подписчиков канала видимости кнопки toggle на `/home`.
    *
    * На `/home` кнопка нужна только когда навбар ушёл за экран (scrub-таймлайн
    * дошёл до конца спейсера) — во время анимации она скрыта, чтобы пользователь
-   * не мог сломать scrub ручным кликом. Управление идёт напрямую через GSAP
-   * (`autoAlpha` + `pointerEvents`), без React-рендера, из `ScrollTrigger.onUpdate`.
+   * не мог сломать scrub ручным кликом. Scrub не владеет нодой кнопки, поэтому
+   * просто зовёт listener-ов (их применяет `ToggleButton` через `gsap.set`),
+   * без React-рендера, из `ScrollTrigger.onUpdate`.
    */
-  const setToggleVisibility = useCallback(
+  const notifyToggleVisibility = useCallback(
     (visible: boolean) => {
-      if (!toggleRef.current) return;
-      gsap.set(toggleRef.current, {
-        autoAlpha: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
-      });
+      const listeners = toggleVisibilityListenersRef.current;
+      listeners.forEach((l) => l(visible));
     },
-    [toggleRef],
+    [toggleVisibilityListenersRef],
   );
 
   /**
@@ -120,19 +126,19 @@ export function useNavbarScrubTrigger({
    * Также управляет видимостью кнопки toggle на `/home`: скрывает её во время
    * scrub-анимации и показывает, когда навбар ушёл за экран (`progress ≈ 1`)
    * или пока состояние задано вручную (ручной fullscreen → ←, ручной
-   * invisible → ☰).
+   * invisible → ☰). Публикация идёт через `toggleVisibilityListenersRef` —
+   * нодой кнопки владеет сама сцена `ToggleButton`.
    *
    * Возвращает cleanup, убивающий триггер и таймлайн.
    */
   const registerScrollTrigger = useCallback(
     (trigger: HTMLElement): (() => void) => {
-      const isMobile = bp === 'mobile';
       // Целевое состояние в конце спейсера (progress ≈ 1) — общая логика
       // с `getHomeEndState`: mobile → invisible, tablet → ручной выбор или
       // standard, desktop → standard. preferredRef меняется ручным toggle
       // в любой момент жизни триггера, поэтому таргет читается на лету.
       const navTransform = () =>
-        getNavTransform(getHomeEndState(), bp, window.innerWidth);
+        getNavTransform(getHomeEndState(), window.innerWidth);
       const t = navTransform();
 
       logger.info('NavbarLayout', 'Регистрация ScrollTrigger', {
@@ -143,7 +149,7 @@ export function useNavbarScrubTrigger({
 
       // Стартуем наверху /home: toggle не нужен, пока навбар в fullscreen.
       // onUpdate при refresh скорректирует, если пользователь загрузился внизу.
-      setToggleVisibility(false);
+      notifyToggleVisibility(false);
 
       // Трекинг видимости спейсера для дискретной эмиссии 'spacer:enter'/
       // 'spacer:leave'. Локальная переменная живёт столько же, сколько
@@ -246,9 +252,7 @@ export function useNavbarScrubTrigger({
               stateRef.current,
             );
 
-            if (toggleRef.current) {
-              setToggleVisibility(self.progress >= 0.9999 || manualState);
-            }
+            notifyToggleVisibility(self.progress >= 0.9999 || manualState);
           },
         },
       });
@@ -295,14 +299,6 @@ export function useNavbarScrubTrigger({
       retargetScrubRef.current = retargetScrub;
       buildNavTween();
 
-      if (isMobile && t.toggleX !== null && toggleRef.current) {
-        tl.to(
-          toggleRef.current,
-          { x: () => navTransform().toggleX ?? 0, ease: 'none' },
-          0,
-        );
-      }
-
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
@@ -310,18 +306,17 @@ export function useNavbarScrubTrigger({
         retargetScrubRef.current = null;
         scrollTriggerRef.current = null;
         // Сброс видимости toggle при уходе с /home (смена роута/breakpoint),
-        // чтобы кнопка не осталось скрытой на других роутах.
-        setToggleVisibility(true);
+        // чтобы кнопка не осталась скрытой на других роутах.
+        notifyToggleVisibility(true);
       };
     },
     [
       bp,
       navRef,
-      toggleRef,
       applyState,
       bus,
       scrollListenersRef,
-      setToggleVisibility,
+      notifyToggleVisibility,
       getHomeEndState,
       stateRef,
       stateSourceRef,

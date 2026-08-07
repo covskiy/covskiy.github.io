@@ -1,7 +1,7 @@
 export { NavigationBarProvider } from './NavigationBarProvider';
 export { NavigationBar } from './NavigationBar';
-export { NavList } from './components/NavList';
-export { navItems } from './components/navItems';
+export { NavList } from './NavList';
+export { navItems } from './NavList';
 export {
   useNavbar,
   useNavbarEvent,
@@ -22,6 +22,6 @@ export {
   type Listener,
 } from './core/navbarEventBus';
 export type { NavbarAPI } from './core/navbarContext';
-export type { NavItemConfig } from './components/navItems';
+export type { NavItemConfig } from './NavList';
 export type { NavState, NavTransform } from './core/navbarStates';
 export type { NavbarLayout } from './hooks/useNavbarLayout';

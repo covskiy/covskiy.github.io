@@ -132,8 +132,8 @@ HomePage (useEffect)
 Дочерние сцены (`NavItem`, будущие) подписываются на шину через
 `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды
 самостоятельно — без участия провайдера.
-Детальнее: `docs/Components/NavigationBar.md`, API шины:
-`docs/Components/navbarEventBus.md`.
+Детальнее: `docs/Components/NavigationBar/`, API шины:
+`docs/Components/NavigationBar/navbarEventBus.md`.
 
 ## Ключевые решения
 

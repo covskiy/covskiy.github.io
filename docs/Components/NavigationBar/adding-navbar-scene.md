@@ -29,7 +29,8 @@ parallax-фон и т. д.) с собственной GSAP-сценой.
 
 ### 1. Создать компонент
 
-`src/components/NavigationBar/<Name>.tsx`. **Не трогать**
+Создать папку `src/components/NavigationBar/<Name>/` и в ней
+`<Name>.tsx` (+ `<Name>.module.css` + `index.ts` по конвенции). **Не трогать**
 `NavigationBarProvider.tsx` и `useNavbarLayout.ts` — они про
 раскладку, не про контент.
 
@@ -143,7 +144,7 @@ React-рендеров в flame chart).
   на tablet — `position: absolute` внутри `<nav>`; видимость на `/home`
   берёт через `useNavbarToggleVisibility`. **Не регистрируйте новые
   подписки на её ноду** — владение toggle целиком внутри сцены
-  (см. `docs/Components/NavigationBar.md` → «Позиционирование toggle»).
+  (см. `docs/Components/NavigationBar/ToggleButton.md`).
 
 - **Не публикуйте «свою болтовню» в `bus`** — шина предназначена для
   **системных** событий навбара. Локальные взаимодействия между вашими
@@ -172,7 +173,7 @@ React-рендеров в flame chart).
 
 ## Чеклист перед коммитом
 
-- [ ] Компонент лежит в `src/components/NavigationBar/<Name>.tsx`
+- [ ] Компонент лежит в `src/components/NavigationBar/<Name>/<Name>.tsx`
 - [ ] Рефы на DOM-узлы компонента — внутри компонента, не в провайдере
 - [ ] `useNavbarEvent` / `useNavbarScrollProgress` / `useNavbarToggleVisibility`
       импортированы из `./navbarContext`
@@ -188,9 +189,9 @@ React-рендеров в flame chart).
 
 ## Связанные документы
 
-- `docs/Components/navbarEventBus.md` — полный API шины
-- `docs/Components/NavigationBar.md` — что знает каждый уровень
-- `src/components/NavigationBar/components/NavItem.tsx` — живой пример
+- `docs/Components/NavigationBar/navbarEventBus.md` — полный API шины
+- `docs/Components/NavigationBar/hooks.md` — сцены: «что знает каждый уровень»
+- `src/components/NavigationBar/NavList/NavItem.tsx` — живой пример
   минимальной сцены (fade-in иконки при входе в slim)
 - `src/components/NavigationBar/hooks/useNavbarPosition.ts` — единственный
   владелец позиции корневой ноды `.nav` (discrete + scrub)

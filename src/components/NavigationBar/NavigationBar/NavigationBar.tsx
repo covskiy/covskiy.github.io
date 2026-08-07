@@ -1,9 +1,9 @@
 import { useRef } from 'react';
-import { useBreakpoint } from '../../utils/breakpoints';
-import { NavList } from './components/NavList';
-import { ToggleButton } from './components/ToggleButton';
+import { useBreakpoint } from '../../../utils/breakpoints';
+import { NavList } from '../NavList';
+import { ToggleButton } from '../ToggleButton';
 import styles from './NavigationBar.module.css';
-import { useNavbarPosition } from './hooks/useNavbarPosition';
+import { useNavbarPosition } from '../hooks/useNavbarPosition';
 
 export interface NavigationBarProps {
   /** Признак свёрнутого навбара (slim/invisible). */

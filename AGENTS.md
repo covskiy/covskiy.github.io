@@ -94,22 +94,27 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл                                     | Назначение                                                                         |
-| ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| `docs/architecture.md`                   | Архитектура, роутинг, GSAP, стили, конфиги                                         |
-| `docs/breakpoints.md`                    | Breakpoints: модель, источник правды, CSS/JS использование                         |
-| `docs/design-tokens.md`                  | Сборка design tokens, маппинг, градиенты                                           |
-| `docs/preloader.md`                      | Preloader — описание работы                                                        |
-| `docs/logging-rules.md`                  | Соглашения по логгеру (теги, уровни)                                               |
-| `docs/utils/logger.md`                   | API логгера                                                                        |
-| `docs/Components/Logo.md`                | Анимация логотипа (наковальня)                                                     |
-| `docs/Components/LogoText.md`            | Анимация текста логотипа (SVG morph)                                               |
-| `docs/Components/NavigationBar.md`       | Архитектура навбара: сценовая композиция, шина, состояния                          |
-| `docs/Components/navbarEventBus.md`      | API шины событий навбара (NavbarEventMap, NavbarSource)                            |
-| `docs/Components/adding-navbar-scene.md` | Рецепт: добавление новой сцены в навбар (useNavbarEvent / useNavbarScrollProgress) |
-| `docs/Components/Tagline.md`             | Анимация слогана (клавиатура)                                                      |
-| `docs/Components/IntroAnimation.md`      | Хореография Intro-анимации                                                         |
-| `docs/Pages/NotFoundPage.md`             | Описание страницы 404                                                              |
+| Файл                                                     | Назначение                                                                         |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `docs/architecture.md`                                   | Архитектура, роутинг, GSAP, стили, конфиги                                         |
+| `docs/breakpoints.md`                                    | Breakpoints: модель, источник правды, CSS/JS использование                         |
+| `docs/design-tokens.md`                                  | Сборка design tokens, маппинг, градиенты                                           |
+| `docs/preloader.md`                                      | Preloader — описание работы                                                        |
+| `docs/logging-rules.md`                                  | Соглашения по логгеру (теги, уровни)                                               |
+| `docs/utils/logger.md`                                   | API логгера                                                                        |
+| `docs/Components/Logo.md`                                | Анимация логотипа (наковальня)                                                     |
+| `docs/Components/LogoText.md`                            | Анимация текста логотипа (SVG morph)                                               |
+| `docs/Components/NavigationBar/NavigationBar.md`         | Презентационная панель `.nav`, стили, «почему transforms»                          |
+| `docs/Components/NavigationBar/NavigationBarProvider.md` | Диспетчер сцен: шина, каналы, context API, поведение по устройствам                |
+| `docs/Components/NavigationBar/NavList.md`               | Список ссылок: NavList + NavItem + navItems (конфиг, slim, иконки)                 |
+| `docs/Components/NavigationBar/ToggleButton.md`          | Сцена ☰ / ←: позиционирование, видимость, fixed-сиблинг                           |
+| `docs/Components/NavigationBar/hooks.md`                 | Сцены-хуки: useNavbarLayout/State/Position/ScrubTrigger/Toggle                     |
+| `docs/Components/NavigationBar/core.md`                  | navbarStates + navbarContext, управление состоянием                                |
+| `docs/Components/NavigationBar/navbarEventBus.md`        | API шины событий навбара (NavbarEventMap, NavbarSource)                            |
+| `docs/Components/NavigationBar/adding-navbar-scene.md`   | Рецепт: добавление новой сцены в навбар (useNavbarEvent / useNavbarScrollProgress) |
+| `docs/Components/Tagline.md`                             | Анимация слогана (клавиатура)                                                      |
+| `docs/Components/IntroAnimation.md`                      | Хореография Intro-анимации                                                         |
+| `docs/Pages/NotFoundPage.md`                             | Описание страницы 404                                                              |
 
 ## Зависимости
 

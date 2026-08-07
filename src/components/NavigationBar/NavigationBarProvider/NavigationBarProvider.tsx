@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useLocation } from 'react-router';
-import { useBreakpoint } from '../../utils/breakpoints';
-import { NavigationBar } from './NavigationBar';
-import { NavbarContext, type NavbarAPI } from './core/navbarContext';
-import { createNavbarEventBus } from './core/navbarEventBus';
-import { useNavbarLayout } from './hooks/useNavbarLayout';
+import { useBreakpoint } from '../../../utils/breakpoints';
+import { NavigationBar } from '../NavigationBar';
+import { NavbarContext, type NavbarAPI } from '../core/navbarContext';
+import { createNavbarEventBus } from '../core/navbarEventBus';
+import { useNavbarLayout } from '../hooks/useNavbarLayout';
 import {
   getContentOffset,
   hasToggleFor,
   isHomePath,
-} from './core/navbarStates';
+} from '../core/navbarStates';
 import styles from './NavigationBarProvider.module.css';
 
 /**

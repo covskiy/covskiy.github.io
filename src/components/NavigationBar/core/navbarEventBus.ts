@@ -16,7 +16,7 @@ import { logger } from '../../../utils/logger';
  * - `intro`      — зарезервировано для будущей интеграции с IntroAnimation,
  *                  когда IntroAnimation будет инициировать «вход» навбара
  *                  после завершения собственной сцены. Контракт API зафиксирован,
- *                  но потребителей пока нет (см. docs/Components/NavigationBar.md).
+ *                  но потребителей пока нет (см. docs/Components/NavigationBar/core.md).
  */
 export type NavbarSource =
   | 'scroll'

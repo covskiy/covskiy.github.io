@@ -56,7 +56,7 @@ covskiy.github.io/
 │   │   ├── LandingSections.md
 │   │   ├── Logo.md
 │   │   ├── LogoText.md
-│   │   ├── NavigationBar.md
+│   │   ├── NavigationBar/
 │   │   ├── navbarEventBus.md
 │   │   ├── adding-navbar-scene.md
 │   │   ├── SkipControls.md
@@ -120,27 +120,36 @@ covskiy.github.io/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
 │   │   ├── NavigationBar/            # Навигация (4 состояния: fullscreen / standard / slim / invisible)
-│   │   │   ├── NavigationBarProvider.tsx  # Диспетчер сцен: шина + рефы nav/toggle
-│   │   │   ├── NavigationBarProvider.module.css
-│   │   │   ├── NavigationBar.tsx     # Презентационный nav
-│   │   │   ├── NavigationBar.module.css
-│   │   │   ├── index.ts
-│   │   │   ├── components/
-│   │   │   │   ├── NavList.tsx           # <ul> пунктов меню
-│   │   │   │   ├── NavItem.tsx           # <li> + <NavLink> + демо-сцена fade-in иконки
-│   │   │   │   ├── navItems.ts           # Конфиг (path/label/icon), деривация от routes
+│   │   │   ├── index.ts             # Barrel
+│   │   │   ├── NavigationBar/            # Презентационный nav + владелец позиции .nav (useNavbarPosition)
+│   │   │   │   ├── NavigationBar.tsx
+│   │   │   │   ├── NavigationBar.module.css
+│   │   │   │   └── index.ts
+│   │   │   ├── NavigationBarProvider/    # Диспетчер сцен: шина + рефы каналов
+│   │   │   │   ├── NavigationBarProvider.tsx
+│   │   │   │   ├── NavigationBarProvider.module.css
+│   │   │   │   └── index.ts
+│   │   │   ├── NavList/                  # <ul> пунктов меню
+│   │   │   │   ├── NavList.tsx
 │   │   │   │   ├── NavList.module.css
-│   │   │   │   └── NavItem.module.css
+│   │   │   │   ├── NavItem.tsx        # <li> + <NavLink> + демо-сцена fade-in иконки
+│   │   │   │   ├── NavItem.module.css
+│   │   │   │   ├── navItems.ts        # Конфиг (path/label/icon), деривация от routes
+│   │   │   │   └── index.ts
+│   │   │   ├── ToggleButton/               # Сцена ☰ / ←
+│   │   │   │   ├── ToggleButton.tsx
+│   │   │   │   ├── ToggleButton.module.css
+│   │   │   │   └── index.ts
 │   │   │   ├── core/
 │   │   │   │   ├── navbarContext.ts    # createContext + useNavbar() + useNavbarEvent + useNavbarScrollProgress
 │   │   │   │   ├── navbarEventBus.ts   # createNavbarEventBus + NavbarEventMap + NavbarSource
 │   │   │   │   └── navbarStates.ts     # NavState / getNavTransform / getDefaultState / getNextState
 │   │   │   └── hooks/
 │   │   │       ├── useNavbarLayout.ts    # Корневая сцена раскладки (animate + ScrollTrigger + applyState)
-│   │   │       ├── useNavbarAnimation.ts
+│   │   │       ├── useNavbarPosition.ts  # Владелец позиции .nav (discrete + scrub)
 │   │   │       ├── useNavbarScrubTrigger.ts
 │   │   │       ├── useNavbarState.ts
-│   │   │       └──  useNavbarToggle.ts
+│   │   │       └── useNavbarToggle.ts
 │   │   └── PageTransition/           # Обёртка анимации смены роута
 │   │       └── PageTransition.tsx
 │   ├── pages/
@@ -224,8 +233,8 @@ covskiy.github.io/
   └─ Никакой intro/splash-логики. Не импортирует
        IntroAnimation, introStorage, useLocation, useState, useEffect.
 
-Подробнее о NavigationBar: `docs/Components/NavigationBar.md`,
-о шине: `docs/Components/navbarEventBus.md`.
+Подробнее о NavigationBar: `docs/Components/NavigationBar/`,
+о шине: `docs/Components/NavigationBar/navbarEventBus.md`.
 
 [HomePage]
   ├─ useState: showIntro
@@ -267,7 +276,7 @@ covskiy.github.io/
 на другие роуты HomePage анмаунтится, cleanup из `registerScrollTrigger`
 убивает ScrollTrigger и таймлайн, и NavigationBar переходит в состояние
 по умолчанию (`invisible` на mobile, `standard` на tablet/desktop).
-Подробнее: `docs/Components/NavigationBar.md`.
+Подробнее: `docs/Components/NavigationBar/`.
 
 ### 2.3 GSAP lifecycle
 
@@ -574,20 +583,20 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Точка входа JS                | `src/main.tsx`                                                                                                           |
 | Корневой компонент            | `src/App.tsx`                                                                                                            |
 | Все роуты                     | `src/routes.tsx`                                                                                                         |
-| NavigationBar (провайдер)     | `src/components/NavigationBar/NavigationBarProvider.tsx`                                                                 |
+| NavigationBar (провайдер)     | `src/components/NavigationBar/NavigationBarProvider/NavigationBarProvider.tsx`                                           |
 | NavigationBar (layout-сцена)  | `src/components/NavigationBar/hooks/useNavbarLayout.ts`                                                                  |
 | NavigationBar (шина)          | `src/components/NavigationBar/core/navbarEventBus.ts`                                                                    |
 | NavigationBar (context)       | `src/components/NavigationBar/core/navbarContext.ts`                                                                     |
 | NavigationBar (геометрия)     | `src/components/NavigationBar/core/navbarStates.ts`                                                                      |
-| NavigationBar (презентация)   | `src/components/NavigationBar/NavigationBar.tsx`                                                                         |
+| NavigationBar (презентация)   | `src/components/NavigationBar/NavigationBar/NavigationBar.tsx`                                                           |
 | HomePage                      | `src/pages/HomePage/HomePage.tsx`                                                                                        |
 | Стили навбара                 | CSS Modules (`NavigationBar.module.css`, `NavigationBarProvider.module.css`, `NavItem.module.css`, `NavList.module.css`) |
 | Breakpoint hook               | `src/utils/breakpoints.ts`                                                                                               |
 | Intro animation               | `src/components/IntroAnimation/IntroAnimation.tsx`                                                                       |
 | Intro storage                 | `src/components/IntroAnimation/utils/introStorage.ts`                                                                    |
 | Skip-логика                   | `src/components/IntroAnimation/hooks/useSplashSkip.ts`                                                                   |
-| NavigationBar (документация)  | `docs/Components/NavigationBar.md`                                                                                       |
-| NavbarEventBus (документация) | `docs/Components/navbarEventBus.md`                                                                                      |
+| NavigationBar (документация)  | `docs/Components/NavigationBar/` (папка доков фичи)                                                                      |
+| NavbarEventBus (документация) | `docs/Components/NavigationBar/navbarEventBus.md`                                                                        |
 | Adding navbar scene (рецепт)  | `docs/Components/adding-navbar-scene.md`                                                                                 |
 | HomePage (документация)       | `docs/Pages/HomePage.md`                                                                                                 |
 | Типы intro                    | `src/types/intro.types.ts`                                                                                               |

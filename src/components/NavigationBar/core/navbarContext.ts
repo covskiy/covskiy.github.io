@@ -81,6 +81,26 @@ export interface NavbarAPI {
    * к своей DOM-ноде, React-рендер не используется.
    */
   onToggleVisibility: (listener: (visible: boolean) => void) => () => void;
+
+  /**
+   * Эффективное конечное состояние навбара на `/home` (после скролла спейсера).
+   *
+   * Читает `preferredRef` на лету через layout/state-сцену: `mobile → invisible`,
+   * `tablet` с ручным выбором → `slim`/`standard`, иначе `standard`. Потребляется
+   * хук-сценой `useNavbarPosition` для построения scrubbed-твина позиции `.nav`.
+   */
+  getHomeEndState: () => NavState;
+
+  /**
+   * Регистрация функции пересоздания scrub-твина позиции навбара.
+   *
+   * Владелец позиции — `useNavbarPosition` (дочерняя сцена, рендерится внутри
+   * провайдера). Она регистрирует здесь свой `buildScrub`; провайдер хранит его
+   * в `retargetScrubRef` и дергает фасадом `retargetScrub` напрямую (пробрасывая
+   * его аргументом в `useNavbarToggle` — см. useNavbarLayout/useNavbarToggle).
+   * Возвращает cleanup, снимающий регистрацию при размонтировании.
+   */
+  registerRetargetScrub: (fn: (() => void) | null) => () => void;
 }
 
 export const NavbarContext = createContext<NavbarAPI | null>(null);

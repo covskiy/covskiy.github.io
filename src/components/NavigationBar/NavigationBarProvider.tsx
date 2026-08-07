@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useLocation } from 'react-router';
 import { useBreakpoint } from '../../utils/breakpoints';
 import { NavigationBar } from './NavigationBar';
@@ -38,7 +38,32 @@ import styles from './NavigationBarProvider.module.css';
 export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const bp = useBreakpoint();
-  const navRef = useRef<HTMLElement>(null);
+
+  /**
+   * Реф на функцию пересоздания scrub-твина позиции `.nav`.
+   *
+   * Саму анимацию позиции владеет хук-сцена `useNavbarPosition` (дочерняя, в
+   * `NavigationBar`); здесь провайдер держит ссылку на её `buildScrub`, чтобы
+   * `useNavbarToggle` мог дёргнуть ретаргет. По образцу `scrollListenersRef`/
+   * `toggleVisibilityListenersRef` — владеем рефом, нодой владеет сцена.
+   */
+  const retargetScrubRef = useRef<(() => void) | null>(null);
+
+  /**
+   * Ретаргет scrub-позиции при смене ручного tablet-выбора. Саму реализацию
+   * `buildScrub` держит не провайдер, а `useNavbarPosition`.
+   */
+  const retargetScrub = useCallback(() => {
+    retargetScrubRef.current?.();
+  }, []);
+
+  /** Регистрация `buildScrub` из `useNavbarPosition` (cleanup — отмена). */
+  const registerRetargetScrub = useCallback((fn: (() => void) | null) => {
+    retargetScrubRef.current = fn;
+    return () => {
+      if (retargetScrubRef.current === fn) retargetScrubRef.current = null;
+    };
+  }, []);
 
   /**
    * Set слушателей низкоуровневого канала прогресса скролла. Хранится
@@ -69,19 +94,16 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
   const bus = useMemo(() => createNavbarEventBus(), []);
 
   /**
-   * Корневая сцена раскладки. Публикует `state:change`, реагирует на
-   * него сама (animateNavbar), регистрирует ScrollTrigger и зовёт
-   * подписчиков `scrollListenersRef` напрямую.
+   * Корневая сцена раскладки. Управляет состоянием навбара, регистрирует
+   * ScrollTrigger и зовёт подписчиков `scrollListenersRef` напрямую.
+   * Позицию `.nav` НЕ твинит — ею владеет `useNavbarPosition` (в `NavigationBar`).
    */
-  const layout = useNavbarLayout(
-    bus,
-    { navRef },
-    {
-      scrollListenersRef,
-      toggleVisibilityListenersRef,
-      initialIsHome: isHomePath(location.pathname),
-    },
-  );
+  const layout = useNavbarLayout(bus, {
+    scrollListenersRef,
+    toggleVisibilityListenersRef,
+    initialIsHome: isHomePath(location.pathname),
+    retargetScrub,
+  });
 
   const { currentState, registerScrollTrigger, getHomeEndState } = layout;
 
@@ -154,8 +176,16 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
           toggleVisibilityListenersRef.current.delete(listener);
         };
       },
+      getHomeEndState,
+      registerRetargetScrub,
     }),
-    [registerScrollTrigger, bus, layout],
+    [
+      registerScrollTrigger,
+      bus,
+      layout,
+      getHomeEndState,
+      registerRetargetScrub,
+    ],
   );
 
   const isSlim = currentState === 'slim' || currentState === 'invisible';
@@ -172,7 +202,7 @@ export function NavigationBarProvider({ children }: { children: ReactNode }) {
         className={styles.app}
         style={{ '--nav-content-offset': contentOffset } as React.CSSProperties}
       >
-        <NavigationBar navRef={navRef} isSlim={isSlim} hasToggle={hasToggle} />
+        <NavigationBar isSlim={isSlim} hasToggle={hasToggle} />
         <main className={styles.main}>{children}</main>
       </div>
     </NavbarContext.Provider>

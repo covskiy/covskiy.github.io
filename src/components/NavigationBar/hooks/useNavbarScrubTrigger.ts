@@ -4,7 +4,7 @@ import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { Breakpoint } from '../../../utils/breakpoints';
 import { logger } from '../../../utils/logger';
 import type { NavbarEventBus } from '../core/navbarEventBus';
-import { getNavTransform, isManualMobileState } from '../core/navbarStates';
+import { isManualMobileState } from '../core/navbarStates';
 import type { NavbarStateApi } from './useNavbarState';
 
 /** Listener низкоуровневого канала прогресса скролла (см. `scrollListenersRef`). */
@@ -16,11 +16,10 @@ export type ScrollProgressListener = (p: {
 /** Listener низкоуровневого канала видимости toggle (см. `toggleVisibilityListenersRef`). */
 export type ToggleVisibilityListener = (visible: boolean) => void;
 
-/** Опции `useNavbarScrubTrigger` — сцена scrub-анимации навбара на `/home`. */
+/** Опции `useNavbarScrubTrigger` — сцена scrub на `/home`. */
 export interface NavbarScrubTriggerOptions {
   bus: NavbarEventBus;
   bp: Breakpoint;
-  navRef: RefObject<HTMLElement | null>;
   /** Set слушателей низкоуровневого канала прогресса (владеет провайдер). */
   scrollListenersRef: RefObject<Set<ScrollProgressListener>>;
   /**
@@ -44,25 +43,23 @@ export interface NavbarScrubTriggerApi {
   registerScrollTrigger: (trigger: HTMLElement) => () => void;
   /** Активный ScrollTrigger страницы (для программной прокрутки скролла). */
   scrollTriggerRef: RefObject<ScrollTrigger | null>;
-  /** Пересборка nav-твина scrub-таймлайна при смене ручного tablet-выбора. */
-  retargetScrub: () => void;
 }
 
 /**
  * useNavbarScrubTrigger — сцена scrub-анимации навбара на `/home`.
  *
- * Регистрирует ScrollTrigger на элементе-триггере страницы (спейсер), создаёт
- * scrubbed-таймлайн, ведущий навбар от `fullscreen` к `homeEndState`, обновляет
+ * Регистрирует ScrollTrigger на элементе-триггере страницы (спейсер), обновляет
  * состояние на границах спейсера и зовёт подписчиков `scrollListenersRef`
  * напрямую (минуя bus.emit, чтобы не давить 60fps событиями в React-шину).
  *
- * Также управляет видимостью кнопки toggle на `/home` (`notifyToggleVisibility`)
- * и эмитит дискретные события `spacer:enter`/`spacer:leave`.
+ * Позицию `.nav` сцена больше НЕ твинит: ею владеет хук-сцена `useNavbarPosition`
+ * (в `NavigationBar`), которая подписана на `onScrollProgress` и сама ведёт
+ * scrubbed-твин. Здесь остаются только ScrollTrigger, дискретные границы
+ * состояния, события `spacer:enter`/`spacer:leave` и публикация видимости toggle.
  */
 export function useNavbarScrubTrigger({
   bus,
   bp,
-  navRef,
   scrollListenersRef,
   toggleVisibilityListenersRef,
   state,
@@ -74,19 +71,6 @@ export function useNavbarScrubTrigger({
    * Используется для программной прокрутки к концу спейсера при ручном скрытии навбара.
    */
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
-
-  /**
-   * Ссылка на nav-твин scrub-таймлайна `/home`.
-   *
-   * GSAP оценивает function-based (и вообще) значения твина один раз при первом
-   * рендере и НЕ пересчитывает их при последующем скролле. Целевое состояние
-   * таймлайна зависит от `preferredRef` (slim/standard), который меняется ручным
-   * toggle в любой момент жизни триггера. Поэтому при смене предпочтения nav-твин
-   * пересоздаётся через `retargetScrubRef` с зафиксированным стартом `x: 0`
-   * (fullscreen) и свежим целевым `x`.
-   */
-  const navScrubTweenRef = useRef<gsap.core.Tween | null>(null);
-  const retargetScrubRef = useRef<(() => void) | null>(null);
 
   /**
    * Уведомляет подписчиков канала видимости кнопки toggle на `/home`.
@@ -133,18 +117,9 @@ export function useNavbarScrubTrigger({
    */
   const registerScrollTrigger = useCallback(
     (trigger: HTMLElement): (() => void) => {
-      // Целевое состояние в конце спейсера (progress ≈ 1) — общая логика
-      // с `getHomeEndState`: mobile → invisible, tablet → ручной выбор или
-      // standard, desktop → standard. preferredRef меняется ручным toggle
-      // в любой момент жизни триггера, поэтому таргет читается на лету.
-      const navTransform = () =>
-        getNavTransform(getHomeEndState(), window.innerWidth);
-      const t = navTransform();
-
       logger.info('NavbarLayout', 'Регистрация ScrollTrigger', {
         bp,
         endState: getHomeEndState(),
-        ...t,
       });
 
       // Стартуем наверху /home: toggle не нужен, пока навбар в fullscreen.
@@ -169,6 +144,10 @@ export function useNavbarScrubTrigger({
         bus.emit('spacer:enter', {});
       };
 
+      // Scrubbed-таймлайн — носитель ScrollTrigger. Позицию навбара он больше
+      // НЕ ведёт (владелец — useNavbarPosition через onScrollProgress);
+      // таймлайн нужен только чтобы ScrollTrigger передавал progress в onUpdate,
+      // а scrub гасил авто-анимации именно этого таймлайна.
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger,
@@ -201,7 +180,8 @@ export function useNavbarScrubTrigger({
             );
 
             // Низкоуровневый канал: прямой вызов scrub-подписчиков
-            // без прохода через bus.emit и без React-рендера.
+            // без прохода через bus.emit и без React-рендера. На него
+            // подписана `useNavbarPosition` (ведёт позицию `.nav`).
             const listeners = scrollListenersRef.current;
             if (listeners.size > 0) {
               const snapshot = {
@@ -259,51 +239,9 @@ export function useNavbarScrubTrigger({
 
       scrollTriggerRef.current = tl.scrollTrigger ?? null;
 
-      // Пересоздание nav-твина scrub-таймлайна. GSAP берёт значение твина один
-      // раз при первом рендере, поэтому при смене `preferredRef` таргет был бы
-      // устаревшим. `fromTo` с фиксированным стартом `x: 0` (fullscreen) и свежим
-      // целевым `x` пересоздаётся каждый раз, когда цель меняется (см.
-      // `retargetScrub` в useNavbarToggle).
-      const buildNavTween = () => {
-        if (!navRef.current) return;
-        // Timeline.fromTo типизирован как возвращающий `this` (Timeline), хотя
-        // в рантайме возвращает добавленный `Tween`; каст через `unknown`.
-        navScrubTweenRef.current?.kill();
-        navScrubTweenRef.current = tl.fromTo(
-          navRef.current,
-          { x: 0 },
-          {
-            x: navTransform().navX,
-            ease: 'none',
-            // `immediateRender: false` — иначе добавление fromTo в живой
-            // scrub-таймлайн мгновенно выставляет навбар в `x: 0` (fullscreen)
-            // в момент toggle, рассогласуя позицию DOM с playhead'ом ScrollTrigger.
-            immediateRender: false,
-          },
-          0,
-        ) as unknown as gsap.core.Tween;
-      };
-
-      /**
-       * Пересборка nav-твина при смене ручного выбора (силами первичной
-       * сборки). kill + re-add меняет `tl.duration()` (например, 0.5 → 0 →
-       * 0.5), что рассогласует scroll-маппинг ScrollTrigger — он перестаёт
-       * корректно вести навбар. Поэтому после пересоздания таймлайн возвращается
-       * в согласованное состояние через `refresh()` (при `invalidateOnRefresh`
-       * заодно перечитываются позиции и текущий playhead).
-       */
-      const retargetScrub = () => {
-        buildNavTween();
-        tl.scrollTrigger?.refresh();
-      };
-      retargetScrubRef.current = retargetScrub;
-      buildNavTween();
-
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
-        navScrubTweenRef.current = null;
-        retargetScrubRef.current = null;
         scrollTriggerRef.current = null;
         // Сброс видимости toggle при уходе с /home (смена роута/breakpoint),
         // чтобы кнопка не осталась скрытой на других роутах.
@@ -312,7 +250,6 @@ export function useNavbarScrubTrigger({
     },
     [
       bp,
-      navRef,
       applyState,
       bus,
       scrollListenersRef,
@@ -323,18 +260,8 @@ export function useNavbarScrubTrigger({
     ],
   );
 
-  /**
-   * Стабильный фасад над `retargetScrubRef`: возвращает актуальную функцию
-   * пересоздания nav-твина (если триггер ещё жив). Используется `useNavbarToggle`
-   * при смене ручного tablet-выбора.
-   */
-  const retargetScrub = useCallback(() => {
-    retargetScrubRef.current?.();
-  }, []);
-
   return {
     registerScrollTrigger,
     scrollTriggerRef,
-    retargetScrub,
   };
 }

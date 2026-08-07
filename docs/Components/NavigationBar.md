@@ -101,13 +101,15 @@ src/components/NavigationBar/
 │                               #   useNavbarScrollProgress, useNavbarToggleVisibility,
 │                               #   NavbarAPI, NavbarEventBus,
 │                               #   NavbarSource, NavbarEventMap, getNavTransform, SLIM_WIDTH,
-│                               #   NavState, NavTransform, NavbarLayout, NavbarLayoutRefs
-├── NavigationBarProvider.tsx   # Диспетчер сцен: шина событий, реф nav,
-│                               #   scrollListenersRef, toggleVisibilityListenersRef,
+│                               #   NavState, NavTransform, NavbarLayout
+├── NavigationBarProvider.tsx   # Диспетчер сцен: шина событий, рефы каналов
+│                               #   scrollListenersRef/toggleVisibilityListenersRef,
+│                               #   retargetScrubRef (ретаргет scrub-позиции),
 │                               #   useNavbarLayout, Context.Provider
 ├── NavigationBarProvider.module.css  # .app, .main (layout-обёртка)
 ├── NavigationBar.tsx           # Презентационный: <nav>, логотип, <ToggleButton>; пропсы
-│                               #   isSlim/hasToggle (+ ref nav). Placement toggle по bp
+│                               #   isSlim/hasToggle. Владеет navRef и вызывает
+│                               #   useNavbarPosition (позиция .nav). Placement toggle по bp
 ├── NavigationBar.module.css    # .nav, .navInner, .logo
 ├── components/                 # Презентационные компоненты и конфиг
 │   ├── ToggleButton.tsx            # Самостоятельная сцена ☰ / ←: своя нода, клик → bus
@@ -121,16 +123,17 @@ src/components/NavigationBar/
 │   ├── NavItem.module.css          # .link, .active, .icon, .label, .slim-стили
 │   └── navItems.ts                 # Конфиг (path, label, icon), деривация от routes
 ├── hooks/                      # Сцены раскладки навбара
-│   ├── useNavbarLayout.ts          # Композер корневой сцены: собирает 4 под-сцены
-│   │                               #   и возвращает публичный API NavbarLayout
+│   ├── useNavbarLayout.ts          # Композер корневой сцены: собирает 3 под-сцены
+│   │                               #   (state/scrubTrigger/toggle) и возвращает API NavbarLayout
 │   ├── useNavbarState.ts           # Сцена состояния: refs (stateRef/stateSourceRef/
 │   │                               #   preferredRef/isHomeRef), applyState, getHomeEndState,
 │   │                               #   recomputeTarget + подписки route/breakpoint/state:change
-│   ├── useNavbarAnimation.ts       # Сцена дискретной анимации: animateNavbar (useGSAP)
-│   │                               #   реакция на state:change (только nav.x)
-│   ├── useNavbarScrubTrigger.ts    # Сцена scrub: registerScrollTrigger (ScrollTrigger +
-│   │                               #   onUpdate), spacer:enter/leave, видимость toggle
-│   │                               #   (notifyToggleVisibility), navScrubTween/retargetScrub
+│   ├── useNavbarPosition.ts        # Сцена-владелец позиции .nav: discrete (gsap.to на
+│   │                               #   state:change) + scrub (onScrollProgress → paused-твин);
+│   │                               #   регистрирует retargetScrub для useNavbarToggle
+│   ├── useNavbarScrubTrigger.ts    # Сцена ScrollTrigger: registerScrollTrigger, границы
+│   │                               #   progress (applyState), spacer:enter/leave, видимость
+│   │                               #   toggle (onScroll канал), НЕ твинит .nav
 │   └── useNavbarToggle.ts          # Сцена ручного переключения: подписчик
 │                                   #   на bus 'toggle:request'
 └── core/                       # Чистая логика без React
@@ -205,20 +208,24 @@ DOM-нодами и GSAP-таймлайнами. Провайдер (`Navigation
 
 ### Слои
 
-| Слой               | Что делает                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Шина**           | `createNavbarEventBus()` — типизированный pub/sub (`NavbarEventMap`)                                                                                                                                                                                                                                                                                                                                                                   |
-| **Диспетчер**      | `NavigationBarProvider` — создаёт шину, держит рефы корневых нод, читает `useLocation`/`useBreakpoint` и публикует `route:change`/`breakpoint:change`, прокидывает API в context                                                                                                                                                                                                                                                       |
-| **Корневая сцена** | `useNavbarLayout` — композер над четырьмя под-сценами (`useNavbarState` — состояние и подписки, `useNavbarAnimation` — дискретная анимация, `useNavbarScrubTrigger` — scrub/ScrollTrigger и видимость toggle, `useNavbarToggle` — ручное переключение). Единственная сцена, знающая о геометрии навбара: animateNavbar, applyState (единая точка записи state), `registerScrollTrigger` (scrub-таймлайн), подписка на `toggle:request` |
-| **Дочерние сцены** | `ToggleButton` (self-нода, клик → `toggle:request`, видимость через `useNavbarToggleVisibility`), NavItem, логотип, будущие расширения — подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды самостоятельно                                                                                                                                                                             |
+| Слой               | Что делает                                                                                                                                                                                                                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Шина**           | `createNavbarEventBus()` — типизированный pub/sub (`NavbarEventMap`)                                                                                                                                                                                                                                                            |
+| **Диспетчер**      | `NavigationBarProvider` — создаёт шину, держит рефы каналов (`scrollListenersRef`/`toggleVisibilityListenersRef`/`retargetScrubRef`), читает `useLocation`/`useBreakpoint` и публикует `route:change`/`breakpoint:change`, прокидывает API в context                                                                            |
+| **Корневая сцена** | `useNavbarLayout` — композер над тремя под-сценами (`useNavbarState` — состояние и подписки, `useNavbarScrubTrigger` — ScrollTrigger и видимость toggle, `useNavbarToggle` — ручное переключение). applyState (единая точка записи state), `registerScrollTrigger`. **Позицию не твинит**                                       |
+| **Дочерние сцены** | `ToggleButton` (self-нода, клик → `toggle:request`, видимость через `useNavbarToggleVisibility`), **`useNavbarPosition`** (в `NavigationBar` владеет позицией `.nav`), NavItem, логотип, будущие расширения — подписываются на шину через `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды самостоятельно |
 
 ### Поток данных
 
 ```
 App.tsx
 └── <NavigationBarProvider />              ← диспетчер
-      │  (создаёт bus, scrollListenersRef, toggleVisibilityListenersRef, регистрирует useNavbarLayout)
-      ├── <NavigationBar navRef isSlim hasToggle/>
+      │  (создаёт bus, scrollListenersRef, toggleVisibilityListenersRef,
+      │   retargetScrubRef, регистрирует useNavbarLayout)
+      ├── <NavigationBar isSlim hasToggle/>
+      │     ├── (владеет navRef) → useNavbarPosition  ← сцена-владелец позиции .nav
+      │     │     ├── useNavbarScrollProgress(update scrub-твина) ← scrub по каналу
+      │     │     └── useNavbarEvent('state:change') → gsap.to(nav, {x}) ← discrete
       │     ├── <ToggleButton isSlim hasToggle/>   ← mobile: fixed-сиблинг вне <nav>;
       │     │     │                                  tablet: внутри <nav>
       │     │     └── onClick → useNavbar().events.emit('toggle:request')
@@ -237,7 +244,10 @@ App.tsx
             ├── getState() → NavState                          (синхронный snapshot)
             ├── events: NavbarEventBus                          (типизированная шина)
             ├── onScrollProgress(listener) → () => void         (60fps низкоуровневый канал)
-            └── onToggleVisibility(listener) → () => void       (канал видимости toggle)
+            ├── onToggleVisibility(listener) → () => void       (канал видимости toggle)
+            ├── getHomeEndState() → NavState                     (для построения scrub-твина)
+            ├── retargetScrub() → void                          (фасад, дёргает ретаргет)
+            └── registerRetargetScrub(fn) → () => void          (регистрация из useNavbarPosition)
 
 useNavbarLayout (композер корневой сцены; логика распределена по под-сценам):
   applyState(next, source):                       ← useNavbarState
@@ -250,32 +260,48 @@ useNavbarLayout (композер корневой сцены; логика ра
     recomputeTarget()
   bus.on('toggle:request'):                       ← useNavbarToggle
     getNextState(stateRef.current, bp) → applyState(next, 'toggle')
-    (tablet) preferredRef.current = next + retargetScrub()
+    (tablet) preferredRef.current = next + retargetScrub()  ← из контекста (владелец — useNavbarPosition)
     (mobile /home) scrollTo конца спейсера при сворачивании в invisible
-  bus.on('state:change'):                        ← useNavbarAnimation (animateNavbar)
-    setCurrentState(state)                   ← useNavbarState (React-мост для isSlim/contentOffset)
-    animateNavbar: gsap.to(nav / toggle) с overwrite: 'auto'
   (инициализация: recomputeTarget() один раз на монтировании)
-  registerScrollTrigger(trigger):                ← useNavbarScrubTrigger
-    gsap.timeline({ scrollTrigger: { ..., onUpdate } })
-      onUpdate:
-        listeners.forEach(l => l({ progress, direction }))   ← низкоуровневый канал
-        isMobilePin = isMobile && source === 'toggle'
-                      && state ∈ {fullscreen, invisible}    ← ручное состояние
-        if progress === 0  → applyState('fullscreen', 'scroll')   (снимает пин)
-        if progress === 1  → applyState(endState, 'scroll')  (пропускается при isMobilePin)
-        if isMobilePin     → tl.progress(fullscreen ? 0 : 1) ← «пин» ручного состояния
-        notifyToggleVisibility(progress === 1 || isMobilePin) ← через toggleVisibilityListenersRef;
-                                                                применяет ToggleButton (gsap.set)
+
+useNavbarPosition (сцена-владелец позиции .nav, вызывается в NavigationBar):
+  useNavbarScrollProgress(({ progress }) => scrubTween.progress(progress))  ← paused-твин
+  useNavbarEvent('state:change'):
+    if source === 'scroll' → return          (позицию ведёт scrub-твин)
+    else gsap.to(nav, { x: getNavTransform(state).navX, overwrite: 'auto' })
+  registerRetargetScrub(buildScrub)          (пересоздание таргета при смене preferredRef)
+
+useNavbarState.sync (React-мост для isSlim/contentOffset):
+  bus.on('state:change') → setCurrentState(state)
+
+registerScrollTrigger(trigger):                ← useNavbarScrubTrigger (НЕ твинит позицию)
+  gsap.timeline({ scrollTrigger: { ..., onUpdate } })
+    onUpdate:
+      listeners.forEach(l => l({ progress, direction }))   ← низкоуровневый канал onScrollProgress
+      isMobilePin = isMobile && source === 'toggle'
+                    && state ∈ {fullscreen, invisible}    ← ручное состояние
+      if progress === 0  → applyState('fullscreen', 'scroll')   (снимает пин)
+      if progress === 1  → applyState(endState, 'scroll')  (пропускается при isMobilePin)
+      if isMobilePin     → tl.progress(fullscreen ? 0 : 1) ← «пин» ручного состояния
+      notifyToggleVisibility(progress === 1 || isMobilePin) ← через toggleVisibilityListenersRef;
+                                                              применяет ToggleButton (gsap.set)
 ```
 
 ### Что знает каждый уровень
 
-| Уровень                                        | Знает                                                                                                                       | НЕ знает                        |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `NavigationBarProvider`                        | Роут, breakpoint, рефы корневых нод (`nav`), шина, layout-сцена, каналы `scrollListenersRef`/`toggleVisibilityListenersRef` | DOM NavItem, иконки, логотип    |
-| `useNavbarLayout`                              | Геометрия раскладки (`getNavTransform`), ScrollTrigger, scrub                                                               | Содержимое пунктов меню, иконки |
-| Дочерняя сцена (ToggleButton, NavItem и т. д.) | Своя DOM-нода (у toggle — собственная), `prev → next` state через шину                                                      | DOM соседей, общую анимацию     |
+| Уровень                                        | Знает                                                                                                                       | НЕ знает                                     |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `NavigationBarProvider`                        | Роут, breakpoint, рефы каналов (`scrollListenersRef`/`toggleVisibilityListenersRef`/`retargetScrubRef`), шина, layout-сцена | DOM NavItem, иконки, логотип, позиция `.nav` |
+| `useNavbarLayout`                              | Геометрия раскладки (`getContentOffset`), ScrollTrigger/applyState на границах спейсера                                     | Позицию `.nav` (владеет useNavbarPosition)   |
+| `useNavbarPosition` (дочерняя в NavigationBar) | Позиция `.nav` (`navRef`), discrete+scrub через шину и канал `onScrollProgress`                                             | Содержимое пунктов меню, геометрию `<main>`  |
+| Дочерняя сцена (ToggleButton, NavItem и т. д.) | Своя DOM-нода (у toggle — собственная), `prev → next` state через шину                                                      | DOM соседей, общую анимацию                  |
+
+> **Владение `.nav`**: позицию корневой ноды теперь держит хук-сцена
+> `useNavbarPosition` (вызывается в `NavigationBar`). Она объединяет discrete
+> (`gsap.to` на `state:change`) и scrub (paused-твин через `onScrollProgress`),
+> поэтому `overwrite:'auto'` дискретной анимации больше не убивает scrub-твин —
+> устранён корень бага «навбар не автораскрывается на `/home` после ручного
+> tablet-toggle».
 
 ### Контракты
 
@@ -370,8 +396,9 @@ useNavbarLayout (композер корневой сцены; логика ра
 не срабатывал — поэтому раньше кнопка компенсировалась GSAP-противофазой
 (`toggleX = -navX`). Теперь противофазы нет вовсе:
 
-- дискретный `toggleX` — удалён из `useNavbarAnimation` (твиним только `nav.x`);
-- scrub `toggleX` — удалён из scrub-таймлайна `useNavbarScrubTrigger`;
+- дискретный `toggleX` — удалён из `useNavbarPosition` (твиним только `nav.x`);
+- scrub `toggleX` — удалён из scrub-твина `useNavbarPosition` (`useNavbarScrubTrigger`
+  позицию не ведёт вовсе);
 - поле `toggleX` — удалено из `NavTransform`, `getNavTransform(state, viewport)`
   возвращает только `navX`;
 - `toggleRef` исчез из провайдера/layout/animation/scrub — нодой владеет сам
@@ -509,7 +536,7 @@ slim ↔ standard, смена роута/breakpoint) — разовый reflow, 
 // NavigationBarProvider.tsx
 const isSlim = currentState === 'slim' || currentState === 'invisible';
 
-<NavigationBar navRef={navRef} isSlim={isSlim} hasToggle={hasToggle} />;
+<NavigationBar isSlim={isSlim} hasToggle={hasToggle} />;
 ```
 
 `isSlim` прокидывается пропсом в `NavigationBar` (не через контекст) и дальше —
@@ -630,10 +657,12 @@ const routeIcons: Record<string, ReactNode> = {
   Плавность tablet-тоггла slim ↔ standard — через CSS-transition на
   `margin-left`/`width` (разовый reflow, не 60fps-scrub).
 
-- **`overwrite: 'auto'` только в `animateNavbar`** — прямые `gsap.to()` прерывают
-  конфликтующие твины (включая твины от ScrollTrigger). Твины scrub-таймлайна
-  в `registerScrollTrigger` пишутся без `overwrite` — они привязаны к своему
-  timeline и не конкурируют с внешними твинами.
+- **`overwrite: 'auto'` только в дискретной анимации `useNavbarPosition`** —
+  прямые `gsap.to()` прерывают конфликтующие активные твины (в т. ч. от других
+  дискретных переходов). Scrub-позицию ведёт paused-твин `useNavbarPosition`:
+  он не «активен» для GSAP, поэтому `overwrite` его не задевает (и нет
+  кросс-сценовой гонки, как раньше между `useNavbarAnimation` и scrub-таймлайном).
+  Один владелец `.nav` — `<scrub>`/discrete управляются из одного места.
 
 - **Toggle скрыт во время scrub на `/home`** — видимость вычисляется в
   `registerScrollTrigger.onUpdate` (`progress ≈ 1 || manualState`) и публикуется

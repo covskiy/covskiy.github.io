@@ -63,7 +63,7 @@ export interface NavbarStateApi {
  * на `state:change` (которую публикует `applyState`) — единый конвейер
  * «publish → react» для всех источников (toggle/route/breakpoint/scroll).
  *
- * Анимацией навбара сцена НЕ занимается — это `useNavbarAnimation`.
+ * Анимацией навбара сцена НЕ занимается — это `useNavbarPosition`.
  */
 export function useNavbarState({
   bus,
@@ -182,7 +182,7 @@ export function useNavbarState({
    *
    * Начальный `recomputeTarget()` вызывается здесь же (провайдер не эмитит
    * route:change/breakpoint:change на первом рендере). Важно: этот пассивный
-   * эффект выполняется ПОСЛЕ layout-эффекта `useGSAP` в `useNavbarAnimation`,
+   * эффект выполняется ПОСЛЕ layout-эффекта `useGSAP` в `useNavbarPosition`,
    * поэтому подписка на `state:change` (animateNavbar) уже зарегистрирована,
    * когда сцена публикует первое состояние.
    */

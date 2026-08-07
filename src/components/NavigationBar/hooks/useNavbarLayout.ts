@@ -2,7 +2,6 @@ import type { RefObject } from 'react';
 import { useBreakpoint } from '../../../utils/breakpoints';
 import type { NavbarEventBus, NavbarSource } from '../core/navbarEventBus';
 import type { NavState } from '../core/navbarStates';
-import { useNavbarAnimation } from './useNavbarAnimation';
 import {
   useNavbarScrubTrigger,
   type ScrollProgressListener,
@@ -10,11 +9,6 @@ import {
 } from './useNavbarScrubTrigger';
 import { useNavbarState } from './useNavbarState';
 import { useNavbarToggle } from './useNavbarToggle';
-
-/** Рефы на корневые DOM-ноды навбара, которыми владеет провайдер. */
-export interface NavbarLayoutRefs {
-  navRef: RefObject<HTMLElement | null>;
-}
 
 /**
  * Публичный API layout-сцены — возвращается из `useNavbarLayout`.
@@ -47,27 +41,28 @@ export interface NavbarLayout {
  * useNavbarLayout — композер корневой сцены раскладки навбара.
  *
  * Единственная сцена, которая знает о геометрии раскладки навбара
- * (видимая ширина). Собирает четыре тематические под-сцены:
+ * (видимая ширина). Собирает три тематические под-сцены:
  *
  * - `useNavbarState` — состояние и подписки на дискретные события шины
  *   (`state:change`/`route:change`/`breakpoint:change`);
- * - `useNavbarAnimation` — дискретная GSAP-анимация корневых нод
- *   (реакция на `state:change` через layout-эффект `useGSAP`);
  * - `useNavbarScrubTrigger` — scrub-таймлайн `/home` (`registerScrollTrigger`);
  * - `useNavbarToggle` — подписчик на `toggle:request` (клик по кнопке toggle).
+ *
+ * Позицию `.nav` владеет НЕ эта сцена, а дочерняя хук-сцена `useNavbarPosition`
+ * (вызывается в `NavigationBar`): она подписана на `state:change` (дискретная
+ * анимация) и на низкоуровневый канал `onScrollProgress` (scrub).
  *
  * Дочерние сцены (NavItem, логотип и т. д.) НЕ подписаны на layout —
  * они реагируют только на дискретные `state:change` (или `scroll:progress`,
  * если им нужна scrub-привязка через `useNavbarScrollProgress`).
  *
- * Порядок эффектов важен: layout-эффект `useGSAP` в `useNavbarAnimation`
+ * Порядок эффектов важен: layout-эффект `useGSAP` в `useNavbarPosition`
  * выполняется раньше passive-эффекта в `useNavbarState`, поэтому подписка
- * `animateNavbar` регистрируется до того, как state-сцена вызовет начальный
+ * дискретной анимации регистрируется до того, как state-сцена вызовет начальный
  * `recomputeTarget()` и опубликует первое состояние.
  */
 export function useNavbarLayout(
   bus: NavbarEventBus,
-  refs: NavbarLayoutRefs,
   options: {
     scrollListenersRef: NavbarLayout['scrollListenersRef'];
     /**
@@ -77,21 +72,23 @@ export function useNavbarLayout(
     toggleVisibilityListenersRef: RefObject<Set<ToggleVisibilityListener>>;
     /** IsHome на момент первого рендера (без него layout не знает роута, пока шина не заэмитит route:change). */
     initialIsHome: boolean;
+    /** Фасад провайдера — пересоздание scrub-твина позиции `.nav` (см. useNavbarToggle). */
+    retargetScrub: () => void;
   },
 ): NavbarLayout {
   const bp = useBreakpoint();
-  const { navRef } = refs;
-  const { scrollListenersRef, toggleVisibilityListenersRef, initialIsHome } =
-    options;
+  const {
+    scrollListenersRef,
+    toggleVisibilityListenersRef,
+    initialIsHome,
+    retargetScrub,
+  } = options;
 
   const state = useNavbarState({ bus, bp, initialIsHome });
-
-  useNavbarAnimation({ bus, bp, navRef });
 
   const scrub = useNavbarScrubTrigger({
     bus,
     bp,
-    navRef,
     scrollListenersRef,
     toggleVisibilityListenersRef,
     state,
@@ -103,7 +100,7 @@ export function useNavbarLayout(
     bp,
     state,
     scrollTriggerRef: scrub.scrollTriggerRef,
-    retargetScrub: scrub.retargetScrub,
+    retargetScrub,
   });
 
   return {

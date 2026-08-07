@@ -15,8 +15,8 @@ parallax-фон и т. д.) с собственной GSAP-сценой.
    → подписка на `useNavbarScrollProgress(...)`.
 3. Нужна ли анимация и от того, и от другого?
    → оба хука, listener-ы изолированы, переподписка не нужна.
-4. Нужно ли анимировать корневые ноды навбара (видимую ширину)?
-   → это зона ответственности `useNavbarLayout`. Не дублируйте —
+4. Нужно ли анимировать корневую позицию навбара (видимую ширину)?
+   → это зона ответственности `useNavbarPosition` (владелец `.nav`). Не дублируйте —
    подпишитесь на `state:change` и используйте `getNavTransform`.
    (Событийную часть toggle уже берёт на себя сцена `ToggleButton` —
    см. «Чего НЕ делать».)
@@ -133,7 +133,7 @@ React-рендеров в flame chart).
 
 - **Не подписывайтесь на DOM-узлы корневого навбара** — ваши сцены
   не должны трогать `.nav`, `.navInner`, `<main>`, кнопку toggle.
-  Это зона `useNavbarLayout`. Если нужно реагировать на «ширину»,
+  Это зона `useNavbarPosition`. Если нужно реагировать на «ширину»,
   подпишитесь на `state:change` и используйте
   `getNavTransform(state, window.innerWidth)`.
 
@@ -192,5 +192,5 @@ React-рендеров в flame chart).
 - `docs/Components/NavigationBar.md` — что знает каждый уровень
 - `src/components/NavigationBar/components/NavItem.tsx` — живой пример
   минимальной сцены (fade-in иконки при входе в slim)
-- `src/components/NavigationBar/hooks/useNavbarLayout.ts` — единственная
-  сцена, которой разрешено трогать корневые ноды
+- `src/components/NavigationBar/hooks/useNavbarPosition.ts` — единственный
+  владелец позиции корневой ноды `.nav` (discrete + scrub)

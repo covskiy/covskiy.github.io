@@ -24,4 +24,4 @@ export {
 export type { NavbarAPI } from './core/navbarContext';
 export type { NavItemConfig } from './components/navItems';
 export type { NavState, NavTransform } from './core/navbarStates';
-export type { NavbarLayout, NavbarLayoutRefs } from './hooks/useNavbarLayout';
+export type { NavbarLayout } from './hooks/useNavbarLayout';

@@ -3,32 +3,52 @@
 `src/components/layout/scenes/` — сцены по одной ответственности. Импортируют
 `machine` + контекст, **не** импортируют панели `nav/`.
 
-## `useLayoutState.ts` — состояние раскладки
+## `useLayoutMachine.ts` — executor машины
 
-Единственный источник состояния (`mode` в `useState`) и единая точка записи
-`applyState(next, source)`. Владеет рефами `modeRef`, `sourceRef`,
-`preferredRef`, `isHomeRef`, а также `getHomeEndState` и пересчётом целевого
-состояния `recomputeTarget` (триггер — смена роута/breakpoint/инициализация).
+Заменяет прежние `useLayoutState` + `useLayoutToggle`. Владеет `mode` в
+**`useState`**, стабильным `dispatch` (useCallback) и прогоняет результат
+чистой `transition()` из `machine/transition.ts`:
 
-`applyState` пишет рефы, вызывает `setMode` напрямую и уведомляет
-низкоуровневый канал `onNavState` (владелец позиции `.nav`). React-bridge на
-шину убран.
+1. собирает `MachineContext` из актуальных refs (`bpRef`, `isHomeRef`,
+   `preferredRef`, `lastSourceRef`, `EVENT_TO_SOURCE[event.type]`);
+2. применяет `preferredAfter` к `preferredRef` (единственное место
+   установки/сброса ручного tablet-выбора);
+3. применяет actions (executor): `NOTIFY_NAV_STATE` → `navStateListenersRef`,
+   `SCROLL_TO_END` → `scrollToRef.current?.()`, `RETARGET_SCRUB` →
+   `retargetScrubRef.current?.()`, `NOOP` — игнор;
+4. обновляет `lastSourceRef` ВСЕГДА (даже на no-op — иначе повторный
+   `REACH_TOP` не снимет mobile-«пин»);
+5. логирует `logger.info` на реальной смене state, `logger.debug` на no-op.
 
-## `useLayoutToggle.ts` — ручной toggle
+Триггеры-эффекты разделены: `[bp]` → `BREAKPOINT_CHANGED`, `[isHome]` →
+`ROUTE_CHANGED` — смена breakpoint НЕ диспатчит лишний `ROUTE_CHANGED` и
+наоборот (исправление двойного dispatch). `setMode` вызывается только на
+реальной смене state — без лишних re-render.
 
-Возвращает обычный колбэк `toggle()` (без подписки на события):
-`getNextState` → `applyState(next, 'toggle')`, сохраняет ручной tablet-выбор
-в `preferredRef` и зовёт `retargetScrub` (пересоздание scrub-твина позиции
-`.nav`). На mobile `/home` при сворачивании прокручивает страницу к концу
-спейсера через `scrollTriggerRef`.
+Опции: `bp`, `isHome`, `navStateListenersRef`, `scrollToRef`,
+`retargetScrubRef`. Рефы `scrollToRef`/`retargetScrubRef` — стабильные;
+`dispatch` не меняется между рендерами.
 
-## `useScrollScrub.ts` — scrub на `/home`
+API: `mode`, `modeRef`, `dispatch`, `getHomeEndState`, `preferredRef`,
+`lastSourceRef`.
 
-`registerScrollTrigger(trigger)` — ScrollTrigger на спейсере страницы, границы
-состояния (`progress ≈ 0` → fullscreen, `progress ≈ 1` → `getHomeEndState`),
-60fps-каналы `onScrollProgress`/`onToggleVisibility` (прямой вызов listener-ов
-без React-рендера), mobile-«пин» ручного состояния. Поле `scrollTriggerRef`
-для автоскролла. Позицию `.nav` НЕ твинит.
+## `useScrollScrub.ts` — сенсор scrub на `/home` (изменён)
+
+Убраны прямые вызовы `applyState` — теперь это сенсор:
+
+- `registerScrollTrigger(trigger)` — ScrollTrigger на спейсере страницы,
+  60fps-канал `onScrollProgress` (прямой вызов без React-рендера). На границах
+  диспатчит события **при пересечении** границы (`lastBoundaryRef`), не на
+  каждый кадр: `progress ≤ 0.0001` → `REACH_TOP`, `≥ 0.9999` → `REACH_BOTTOM`.
+- Mobile-«пин»: `isManualMobileState(bp, lastSourceRef.current, modeRef.current)`
+  → scrub-таймлайн запинен к крайнему положению.
+- Видимость toggle (`onToggleVisibility`) **остаётся здесь** (производный сигнал
+  геометрии скролла, не переход машины): `progress ≥ 0.9999 || manualState`.
+- `scrollTo` — колбэк владельца ScrollTrigger, выполняющий action
+  `SCROLL_TO_END` (guard `window.scrollY < st.end`). Провайдер пишет его в
+  `scrollToRef` машины эффектом.
+- Cleanup при уходе с `/home` — `notifyToggleVisibility(true)` (жизненный
+  цикл ScrollTrigger, не машина).
 
 ## `useNavPosition.ts` — единственный владелец позиции `.nav`
 
@@ -40,4 +60,5 @@
    со стандартным `overwrite: 'auto'`.
 
 Регистрирует в провайдере `buildScrub` через `registerRetargetScrub` для
-ретаргета при смене ручного tablet-выбора.
+ретаргета при смене ручного tablet-выбора; executor дёргает его по action
+`RETARGET_SCRUB`.

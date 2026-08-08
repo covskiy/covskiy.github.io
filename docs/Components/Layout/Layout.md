@@ -11,8 +11,8 @@ LayoutProvider (useState<LayoutMode>; триггер-эффекты; низко�
    │    ├─ NavPosition: единственный владелец .nav (scrub + discrete)
    │    │    └─ один низкоуровневый канал onNavState(prev,next,source) для .nav
    │    ├─ NavList/NavItem: useLayout() → собственный useGSAP(deps:[mode])
-   │    └─ ToggleButton: клик → layout.toggle()
-   ├─ <main>: offset = deriveMainOffset(mode)   (--nav-content-offset)
+   │    └─ ToggleButton: клик → layout.toggle() → dispatch({ type: 'TOGGLE' })
+   ├─ <main>: offset = selectContentOffset(mode)   (--nav-content-offset)
    └─ onScrollProgress / onToggleVisibility — низкоуровневые каналы
 ```
 
@@ -22,18 +22,21 @@ LayoutProvider (useState<LayoutMode>; триггер-эффекты; низко�
 src/components/layout/
 ├── index.ts                          # публичный API модуля
 ├── LayoutProvider/
-│   ├── LayoutProvider.tsx            # машина: state-мост, триггер-эффекты, каналы, разметка nav+main
+│   ├── LayoutProvider.tsx            # композер: useLayoutMachine + useScrollScrub,
+│   │                                 #   каналы, scrollToRef, разметка nav+main
 │   ├── LayoutProvider.module.css     # .app, .main (--nav-content-offset)
 │   └── LayoutContext.ts              # LayoutContextValue + useLayout()
 ├── machine/                          # ЧИСТАЯ логика — без React и GSAP
-│   ├── layoutMode.ts                 # LayoutMode, LayoutChangeSource
+│   ├── layoutMode.ts                 # LayoutMode, LayoutChangeSource, LayoutEvent,
+│   │                                 #   LayoutAction, MachineContext
+│   ├── transition.ts                 # transition(state,event,ctx) → { state, actions, preferredAfter }
+│   ├── selectors.ts                  # selectIsSlim/HasToggle/IsHome/NavX/HomeEndState/ContentOffset
 │   ├── geometry.ts                   # SLIM_WIDTH, getNavTransform, deriveMainOffset
 │   └── derive.ts                     # getDefaultState, getNextState, homeEndStateFor,
 │                                     #   isPreferredStateValid, hasToggleFor, isManualMobileState, isHomePath
 ├── scenes/                           # React-хуки-сцены (по одной ответственности)
-│   ├── useLayoutState.ts             # состояние + applyState + preferredRef + getHomeEndState
-│   ├── useLayoutToggle.ts            # ручной toggle
-│   ├── useScrollScrub.ts             # ScrollTrigger, границы спейсера, 60fps-каналы, видимость toggle
+│   ├── useLayoutMachine.ts           # executor: useState + стабильный dispatch + actions (v2)
+│   ├── useScrollScrub.ts             # сенсор /home: ScrollTrigger, REACH_*, видимость toggle, scrollTo
 │   └── useNavPosition.ts             # единственный владелец позиции .nav (scrub + discrete)
 └── nav/                              # презентационная часть (панель = часть layout)
     ├── NavigationBar.tsx             # <nav> + компоновка (лого, NavList, ToggleButton)
@@ -52,32 +55,41 @@ src/components/layout/
 Однонаправленные зависимости: `nav → context → scenes → machine`; провайдер —
 наверху.
 
-- **`machine/`** — pure, без React и GSAP. Только типы и хелперы.
+- **`machine/`** — pure, без React и GSAP. `transition.ts` — единственный
+  решатель переходов; `selectors.ts` — единые производные.
 - **`scenes/`** — импортируют `machine` + контекст; **не** импортируют панели
-  `nav/`. Каждая сцена владеет своей областью (state / toggle / scroll /
-  позиция `.nav`).
+  `nav/`. Каждая сцена владеет своей областью (machine / scrub / позиция `.nav`).
 - **`nav/`** — читают из контекста `mode`/`isSlim` (или получают пропом),
   строят свои `useGSAP`; не импортируют `scenes/` и провайдер.
 - **`LayoutProvider`** — единственный, кто знает обе стороны: собирает сцены,
-  держит низкоуровневые каналы, рендерит `nav` + `<main>`.
+  держит низкоуровневые каналы, рефы `scrollToRef`/`retargetScrubRef`,
+  рендерит `nav` + `<main>`.
+
+## Модель «редюсер + executor» (v2)
+
+- **редucer-функция** — чистая `machine/transition.ts` (`transition(state,event,ctx)`
+  → `{ state, actions, preferredAfter }`), без React/GSAP/DOM.
+- **executor** — `scenes/useLayoutMachine`: `useState`, стабильный `dispatch`,
+  собирает `MachineContext`, применяет `preferredAfter` и actions к refs-каналам,
+  обновляет `lastSource` и логирует переходы.
+- **сенсор** — `useScrollScrub`: только input — диспатчит `REACH_TOP`/
+  `REACH_BOTTOM` на границах; видимость toggle и `scrollTo` остаются здесь.
 
 ## Что удалено в ходе рефакторинга
 
 | Что                                                                             | Причина            |
 | ------------------------------------------------------------------------------- | ------------------ |
 | `navbarEventBus.ts`, `NavbarEventMap`, `createNavbarEventBus`, `useNavbarEvent` | слой pub/sub убран |
+| `scenes/useLayoutState.ts`, `scenes/useLayoutToggle.ts`                          | заменены `useLayoutMachine` |
+| `NOTIFY_TOGGLE_VISIBILITY` action в машине                                    | видимость — производная скролла, живёт в scrub |
 | `spacer:enter` / `spacer:leave`                                                 | нет потребителей   |
-| `'intro'` в источнике изменения                                                 | мёртвый reserved   |
-| `events`/`bus` в публичном API                                                  | механика шины      |
+| `'intro'` в источнике изменения                                                  | мёртвый reserved   |
 
 ### Как вернуть (для будущих сессий)
 
-- **`spacer:enter/leave`**: одна дискретная подписка на «спейсер снова
-  вьюпорт / ушёл за экран». Если понадобится — добавить низкоуровневый
-  Set-канал (по образцу `onScrollProgress`), emitter в `useScrollSpace.onUpdate`.
-- **`'intro'`/интеграция с IntroAnimation**: `LayoutChangeSource` расширить на
-  `'intro'`, при завершении intro вызвать `applyState(..., 'intro')` — контракт
-  «один источник + per-component» сохраняется.
+- **интеграция с IntroAnimation**: `INTRO_COMPLETE` уже в `LayoutEvent`,
+  `transition` возвращает NOOP; подключить — диспатчить из `HomePage`.
+- **`NOTIFY_TOGGLE_VISIBILITY` в машину** — не планируется (решение +2).
 
 ## Публичный API (`index.ts`)
 
@@ -86,4 +98,5 @@ src/components/layout/
 - хелперы геометрии: `getNavTransform`, `SLIM_WIDTH`
 - типы: `LayoutMode`, `LayoutChangeSource`, `NavTransform`
 
-Экспортов шины событий больше нет.
+Экспортов шины событий больше нет. Внутренние типы (`LayoutEvent`,
+`LayoutAction`, `MachineContext`, `TransitionResult`) — приватны.

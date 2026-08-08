@@ -29,8 +29,8 @@ export interface NavPositionOptions {
  * структурно — нодой владеет одна сцена.
  *
  * Также регистрирует в провайдере функцию пересоздания scrub-твина при смене
- * ручного tablet-выбора (`preferredRef` → `getHomeEndState`), вызываемую из
- * `useLayoutToggle` через `retargetScrub`.
+ * ручного tablet-выбора (`preferredRef` → `getHomeEndState`). Executor машины
+ * дёргает её по action `RETARGET_SCRUB`.
  */
 export function useNavPosition({ navRef }: NavPositionOptions): void {
   const {
@@ -69,7 +69,7 @@ export function useNavPosition({ navRef }: NavPositionOptions): void {
         );
       });
 
-      // Первичная сборка + регистрация ретаргета для `useLayoutToggle`.
+      // Первичная сборка + регистрация ретаргета (action RETARGET_SCRUB).
       buildScrub();
       const unregisterRetarget = registerRetargetScrub(buildScrub);
 

@@ -14,16 +14,31 @@ React Context. Каждый компонент (`nav/*`) сам строит с�
 
 Сцены (см. `docs/Components/Layout/scenes.md`):
 
-- `useLayoutState` — состояние `mode` (`useState`), единая точка записи
-  `applyState`, `preferredRef`, `getHomeEndState`, пересчёт при смене
-  роута/breakpoint.
-- `useScrollScrub` — ScrollTrigger страницы (`registerScrollTrigger`), границы
-  спейсера, 60fps-каналы `onScrollProgress`/`onToggleVisibility`.
-- `useLayoutToggle` — колбэк `toggle()` для кнопки ☰ / ←.
+- `useLayoutMachine` — executor машины (v2): `mode` в `useState`, стабильный
+  `dispatch`, чистая `transition()` решает переход, executor применяет actions
+  и `preferredAfter`. Заменяет прежние `useLayoutState` + `useLayoutToggle`.
+- `useScrollScrub` — сенсор `/home` (`registerScrollTrigger`), диспатчит
+  `REACH_TOP`/`REACH_BOTTOM` на границах, публикует видимость toggle и
+  экспортирует `scrollTo` (action `SCROLL_TO_END`).
+
+## Композиция машины и scrub (разрешение цикла)
+
+Машина и scrub взаимозависимы (`machine.dispatch` → scrub; `scrollToRef` ←
+scrub). Цикл в объявлении хуков исключён через refs:
+
+1. `useLayoutMachine` объявляется первой и получает пустые рефы
+   `scrollToRef`/`retargetScrubRef`.
+2. `useScrollScrub` получает `dispatch`, `modeRef`, `lastSourceRef`,
+   `getHomeEndState` из машины.
+3. Эффект провайдера после обоих хуков пишет `scrollToRef.current =
+   scrub.scrollTo` (паттерн `registerRetargetScrub`).
+4. Executor по action `SCROLL_TO_END` вызывает `scrollToRef.current?.()` —
+   синхронно после смены state (состояние уже `'invisible'`, scrub читает
+   свежий `scrollTriggerRef`).
 
 ## Низкоуровневые каналы
 
-Провайдер держит three Set-а подписчиков в ref (без ререндера провайдера):
+Провайдер держит три Set-а подписчиков в ref (без ререндера провайдера):
 
 - `scrollListenersRef` — прогресс скролла (60fps, scrub `/home`);
 - `toggleVisibilityListenersRef` — видимость кнопки toggle (scrub-производная);
@@ -42,7 +57,7 @@ React Context. Каждый компонент (`nav/*`) сам строит с�
 ## Разметка
 
 `<nav>` + `<main className={styles.main}>` внутри корневого `div.app`.
-Отступ контента — CSS-переменная `--nav-content-offset`, вычисляется из
-`deriveMainOffset(mode, bp, isHome, getHomeEndState())`. На mobile offset
+Отступ контента — CSS-переменная `--nav-content-offset`, вычисляется через
+`selectContentOffset(mode, bp, isHome, getHomeEndState())`. На mobile offset
 всегда `0`; на `/home` tablet/desktop «fullscreen» маппится на
 `homeEndState`, чтобы контент сразу ориентировался на конечную ширину.

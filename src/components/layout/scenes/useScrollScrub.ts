@@ -8,9 +8,13 @@ import type {
   ToggleVisibilityListener,
 } from '../LayoutProvider/LayoutContext';
 import { isManualMobileState } from '../machine/derive';
-import type { LayoutStateApi } from './useLayoutState';
+import type {
+  LayoutChangeSource,
+  LayoutEvent,
+  LayoutMode,
+} from '../machine/layoutMode';
 
-/** Опции `useScrollScrub` — сцена scrub на `/home`. */
+/** Опции `useScrollScrub` — сенсор scrub на `/home`. */
 export interface ScrollScrubOptions {
   bp: Breakpoint;
   /** Set слушателей низкоуровневого канала прогресса (владеет провайдер). */
@@ -21,13 +25,17 @@ export interface ScrollScrubOptions {
    * напрямую, а уведомляет подписчиков.
    */
   toggleVisibilityListenersRef: RefObject<Set<ToggleVisibilityListener>>;
-  state: Pick<
-    LayoutStateApi,
-    'applyState' | 'getHomeEndState' | 'modeRef' | 'sourceRef'
-  >;
+  /** Диспатч событий в машину (из `useLayoutMachine`). */
+  dispatch: (event: LayoutEvent) => void;
+  /** Актуальное состояние машины (для `isManualMobileState`). */
+  modeRef: RefObject<LayoutMode>;
+  /** Последний источник события (для `isManualMobileState`). */
+  lastSourceRef: RefObject<LayoutChangeSource>;
+  /** Чтение эффективного конечного состояния `/home`. */
+  getHomeEndState: () => LayoutMode;
 }
 
-/** Публичный API scrub-сцены — потребляется `useLayoutToggle` и провайдером. */
+/** Публичный API scrub-сцены — потребляется провайдером. */
 export interface ScrollScrubApi {
   /**
    * Регистрирует ScrollTrigger на элементе-триггере страницы.
@@ -36,36 +44,44 @@ export interface ScrollScrubApi {
   registerScrollTrigger: (trigger: HTMLElement) => () => void;
   /** Активный ScrollTrigger страницы (для программной прокрутки на `/home`). */
   scrollTriggerRef: RefObject<ScrollTrigger | null>;
+  /** Программная прокрутка к концу спейсера (автоскролл при ручном скрытии). */
+  scrollTo: () => void;
 }
 
 /**
- * useScrollScrub — сцена scrub-анимации навбара на `/home`.
+ * useScrollScrub — сенсор scrub-анимации навбара на `/home`.
  *
- * Регистрирует ScrollTrigger на спейсере страницы, обновляет состояние на
- * границах спейсера и зовёт подписчиков низкоуровневых каналов
- * (`scrollListenersRef`, `toggleVisibilityListenersRef`) напрямую — без
- * pub/sub и без прохода через React-рендер.
+ * Регистрирует ScrollTrigger на спейсере страницы, на границах диспатчит
+ * события `REACH_TOP` / `REACH_BOTTOM` в машину (не каждый кадр, а только
+ * при пересечении границы) и зовёт подписчиков низкоуровневых каналов
+ * (`scrollListenersRef` — 60fps, `toggleVisibilityListenersRef`) напрямую —
+ * без pub/sub и без прохода через React-рендер.
+ *
+ * Машина владеет только сменой `mode`. Видимость кнопки toggle — производный
+ * сигнал геометрии скролла (зависит от *любой* точки прогресса, а не только
+ * от переходов), поэтому остаётся здесь. `scrollTo` — колбэк владельца
+ * ScrollTrigger, выполняющий action `SCROLL_TO_END` машины через `scrollToRef`.
  *
  * Позицию `.nav` сцена НЕ твинит: ею владеет `scenes/useNavPosition`, которая
- * подписана на `onScrollProgress`. Здесь остаются только ScrollTrigger,
- * дискретные границы состояния и публикация видимости toggle.
- *
- * В отличие от прежнего диспетчера не эмитит `spacer:enter`/`spacer:leave` —
- * событий с единственным владельцем позиции нет, а потребителей у них не было.
+ * подписана на `onScrollProgress`.
  */
 export function useScrollScrub({
   bp,
   scrollListenersRef,
   toggleVisibilityListenersRef,
-  state,
+  dispatch,
+  modeRef,
+  lastSourceRef,
+  getHomeEndState,
 }: ScrollScrubOptions): ScrollScrubApi {
-  const { applyState, getHomeEndState, modeRef, sourceRef } = state;
-
   /**
    * Ссылка на активный ScrollTrigger страницы. Используется для программной
    * прокрутки к концу спейсера при ручном скрытии навбара (mobile `/home`).
    */
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+
+  /** Последняя пересечённая граница спейсера (чтобы не диспатчить на кадр). */
+  const lastBoundaryRef = useRef<'top' | 'mid' | 'bottom'>('mid');
 
   /**
    * Уведомляет подписчиков канала видимости кнопки toggle на `/home`.
@@ -82,16 +98,29 @@ export function useScrollScrub({
   );
 
   /**
+   * Программная прокрутка к концу спейсера (action `SCROLL_TO_END` машины).
+   * Guard `window.scrollY < st.end` живёт здесь — колбэк владеет
+   * `scrollTriggerRef`. Перенесено из удалённой `useLayoutToggle`.
+   */
+  const scrollTo = useCallback(() => {
+    const st = scrollTriggerRef.current;
+    if (!st) return;
+    if (window.scrollY < st.end) {
+      gsap.to(window, {
+        scrollTo: { y: st.end, autoKill: false },
+        duration: 0.6,
+        ease: 'power2.inOut',
+        overwrite: 'auto',
+      });
+    }
+  }, []);
+
+  /**
    * Регистрирует ScrollTrigger на триггере страницы.
    *
-   * Создаёт scrub-таймлайн (носитель ScrollTrigger), обновляет состояние на
-   * границах спейсера и зовёт подписчиков низкоуровневых каналов напрямую:
-   *
-   * - `progress ≈ 0` → fullscreen (приоритет автоскролла над ручным toggle);
-   * - `progress ≈ 1` → endState (`getHomeEndState`: invisible на mobile /
-   *   standard на tablet/desktop).
-   *
-   * На mobile, пока состояние задано вручную (toggle), scrub-таймлайн
+   * Создаёт scrub-таймлайн (носитель ScrollTrigger), на границах спейсера
+   * диспатчит события в машину и зовёт подписчиков низкоуровневых каналов
+   * напрямую. На mobile, пока состояние задано вручную (toggle), scrub-таймлайн
    * «запинен» к своему (fullscreen → progress 0, invisible → progress 1).
    *
    * Возвращает cleanup, убивающий триггер и таймлайн.
@@ -106,6 +135,7 @@ export function useScrollScrub({
       // Стартуем наверху /home: toggle не нужен, пока навбар в fullscreen.
       // onUpdate при refresh скорректирует, если пользователь загрузился внизу.
       notifyToggleVisibility(false);
+      lastBoundaryRef.current = 'mid';
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -136,22 +166,32 @@ export function useScrollScrub({
             // схлопывать навбар и вести его через scrub.
             const isMobilePin = isManualMobileState(
               bp,
-              sourceRef.current,
+              lastSourceRef.current,
               modeRef.current,
             );
 
+            // Границы спейсера → события машины. Диспатч только при
+            // пересечении границы (не на каждый кадр).
             if (self.progress <= 0.0001) {
-              logger.info(
-                'Layout',
-                'Скролл к началу — принудительный fullscreen',
-              );
-              applyState('fullscreen', 'scroll');
-            } else if (self.progress >= 0.9999 && !isMobilePin) {
-              logger.debug(
-                'Layout',
-                `Скролл к концу спейсера → ${getHomeEndState()}`,
-              );
-              applyState(getHomeEndState(), 'scroll');
+              if (lastBoundaryRef.current !== 'top') {
+                lastBoundaryRef.current = 'top';
+                logger.info(
+                  'Layout',
+                  'Скролл к началу — принудительный fullscreen',
+                );
+                dispatch({ type: 'REACH_TOP' });
+              }
+            } else if (self.progress >= 0.9999) {
+              if (lastBoundaryRef.current !== 'bottom') {
+                lastBoundaryRef.current = 'bottom';
+                logger.debug(
+                  'Layout',
+                  `Скролл к концу спейсера → ${getHomeEndState()}`,
+                );
+                dispatch({ type: 'REACH_BOTTOM' });
+              }
+            } else {
+              lastBoundaryRef.current = 'mid';
             }
 
             if (isMobilePin) {
@@ -166,7 +206,7 @@ export function useScrollScrub({
             // вручную (ручной fullscreen → 0, ручной invisible → 1).
             const manualState = isManualMobileState(
               bp,
-              sourceRef.current,
+              lastSourceRef.current,
               modeRef.current,
             );
 
@@ -188,17 +228,18 @@ export function useScrollScrub({
     },
     [
       bp,
-      applyState,
+      dispatch,
       scrollListenersRef,
       notifyToggleVisibility,
       getHomeEndState,
       modeRef,
-      sourceRef,
+      lastSourceRef,
     ],
   );
 
   return {
     registerScrollTrigger,
     scrollTriggerRef,
+    scrollTo,
   };
 }

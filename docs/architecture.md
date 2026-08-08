@@ -130,13 +130,14 @@ covskiy.github.io/
 │   │   │   │   ├── LayoutProvider.module.css
 │   │   │   │   └── LayoutContext.ts # createContext + LayoutContextValue + useLayout()
 │   │   │   ├── machine/            # ЧИСТАЯ логика (без React/GSAP)
-│   │   │   │   ├── layoutMode.ts   # LayoutMode + LayoutChangeSource
+│   │   │   │   ├── layoutMode.ts   # LayoutMode + LayoutChangeSource + LayoutEvent + LayoutAction
+│   │   │   │   ├── transition.ts   # transition(state,event,ctx) — единственный решатель переходов
+│   │   │   │   ├── selectors.ts    # selectIsSlim/HasToggle/IsHome/NavX/HomeEndState/ContentOffset
 │   │   │   │   ├── geometry.ts     # SLIM_WIDTH + getNavTransform + deriveMainOffset
 │   │   │   │   └── derive.ts       # getDefaultState / getNextState / homeEndStateFor / ...
 │   │   │   ├── scenes/             # React-хуки-сцены (по одной ответственности)
-│   │   │   │   ├── useLayoutState.ts
-│   │   │   │   ├── useLayoutToggle.ts
-│   │   │   │   ├── useScrollScrub.ts
+│   │   │   │   ├── useLayoutMachine.ts # executor: useState + стабильный dispatch + actions (v2)
+│   │   │   │   ├── useScrollScrub.ts   # сенсор /home: REACH_*, видимость toggle, scrollTo
 │   │   │   │   └── useNavPosition.ts # Единственный владелец позиции .nav (discrete + scrub)
 │   │   │   └── nav/                # Презентационная панель (часть layout)
 │   │   │       ├── NavigationBar.tsx
@@ -219,7 +220,7 @@ covskiy.github.io/
   │    └─ <LayoutProvider />          ← всегда в DOM, машина + per-component animator
   │         ├─ Единственный источник состояния: mode (React Context)
   │         ├─ Держит низкоуровневые каналы (onScrollProgress/onToggleVisibility/onNavState)
-  │         ├─ Композер сцен: useLayoutState + useScrollScrub + useLayoutToggle
+  │         ├─ Композер сцен: useLayoutMachine (executor) + useScrollScrub (сенсор)
   │         ├─ <NavigationBar/>          ← nav (fixed), позицию .nav ведёт useNavPosition
   │         └─ <main>                  ← статичная колонка, отступ через
   │                                      --nav-content-offset (не твинится).
@@ -248,9 +249,11 @@ covskiy.github.io/
        ├─ main.x НЕ твинится — отступ через --nav-content-offset
        ├─ ScrollTrigger.onUpdate:
        │    ├─ зовёт scrollListenersRef (низкоуровневый канал для scrub-сцен)
-       │    ├─ progress 0 → applyState('fullscreen', 'scroll')
-       │    ├─ progress ≥ 1 → applyState(endState, 'scroll')
-       │    └─ notifyToggleVisibility(progress ≥ 0.9999) — toggle скрыт наверху и в scrub
+       │    ├─ progress 0 → dispatch(REACH_TOP)   (пересечение границы)
+       │    ├─ progress ≥ 1 → dispatch(REACH_BOTTOM)
+       │    └─ notifyToggleVisibility(progress ≥ 0.9999 || manualState)
+       ├─ useLayoutMachine (executor): transition() решает переход,
+       │    применяет actions (NOTIFY_NAV_STATE/SCROLL_TO_END/RETARGET_SCRUB)
        ├─ useNavPosition (владелец .nav): paused scrub-твин по onScrollProgress
        │    + дискретная анимация по onNavState (source !== 'scroll')
        └─ cleanup из registerScrollTrigger → kill() при размонтировании
@@ -584,7 +587,7 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Layout (машина/композер)     | `src/components/layout/LayoutProvider/LayoutProvider.tsx`                                                         |
 | Layout (context)             | `src/components/layout/LayoutProvider/LayoutContext.ts`                                                           |
 | Layout (чистая логика)       | `src/components/layout/machine/` (layoutMode / geometry / derive)                                                 |
-| Layout (сцены-хуки)          | `src/components/layout/scenes/` (useLayoutState/Toggle/ScrollScrub/NavPosition)                                   |
+| Layout (сцены-хуки)          | `src/components/layout/scenes/` (useLayoutMachine/ScrollScrub/NavPosition)                                                                  |
 | Layout (панель)              | `src/components/layout/nav/` (NavigationBar, NavList/NavItem, ToggleButton, navItems)                             |
 | HomePage                     | `src/pages/HomePage/HomePage.tsx`                                                                                 |
 | Стили раскладки              | CSS Modules (`LayoutProvider.module.css`, `NavigationBar.module.css`, `NavItem.module.css`, `NavList.module.css`) |

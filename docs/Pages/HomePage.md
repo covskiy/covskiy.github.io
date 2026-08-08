@@ -94,18 +94,19 @@ useEffect(() => {
 
 ### Границы спейсера
 
-При достижении границ спейсера ScrollTrigger обновляет состояние раскладки
-внутри `useScrollScrub`:
+При достижении границ спейсера ScrollTrigger диспатчит события в машину
+(`useScrollScrub` → `dispatch`):
 
-- `progress === 0` → `fullscreen` — скролл к началу, принудительный разворот
-- `progress >= 1` → `invisible` | `standard` — конец спейсера
+- `progress === 0` → `REACH_TOP` → `fullscreen` — скролл к началу,
+  принудительный разворот
+- `progress >= 1` → `REACH_BOTTOM` → `invisible` | `standard` — конец спейсера
 
 ### Приоритет: автоскролл > ручное переключение
 
 При скролле к началу страницы ScrollTrigger принудительно разворачивает
 навбар в `fullscreen`, переопределяя предыдущее ручное `slim` или `invisible`
-состояние. Это реализовано через `onUpdate` внутри `useScrollScrub`, который
-обрабатывает границы безусловно — без custom event'ов.
+состояние. Это реализовано в `machine/transition.ts`: `REACH_TOP` всегда ведёт
+в `fullscreen` (guard `isManualMobileState` — только для `REACH_BOTTOM`).
 
 ## Связь с layout
 
@@ -115,9 +116,8 @@ HomePage (useEffect)
         │
         LayoutProvider (машина + композер)
           ├── mode — единственный источник состояния (React Context)
-          ├── useScrollScrub   (регистрирует ScrollTrigger)
-          ├── useLayoutState   (applyState / preferredRef / getHomeEndState)
-          ├── useLayoutToggle  (колбэк toggle для кнопки ☰ / ←)
+          ├── useScrollScrub   (сенсор: регистрирует ScrollTrigger, REACH_*)
+          ├── useLayoutMachine (executor: transition() решает переход + actions)
           └── useNavPosition   (единственный владелец .nav: scrub + discrete)
                 ├── onScrollProgress → paused scrub-твин nav.x
                 ├── onNavState (source !== 'scroll') → gsap.to(nav, {x})

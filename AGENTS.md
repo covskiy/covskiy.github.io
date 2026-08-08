@@ -56,10 +56,11 @@ covskiy.github.io/
 - **LayoutProvider** (машина состояния + per-component animator) — один
   источник состояния (`mode` в React Context), раскладка всей страницы:
   навбар `fixed` + `<main>` с `--nav-content-offset`. Нет pub/sub/шины:
-  `useLayoutState` держит `mode`, `useScrollScrub` регистрирует ScrollTrigger,
-  `useLayoutToggle` возвращает `toggle()`, `useNavPosition` — единственный
-  владелец позиции `.nav` (scrub via onScrollProgress + discrete via
-  onNavState). Страницы регистрируют ScrollTrigger через
+  `useLayoutMachine` (executor: `useState` + стабильный `dispatch` + чистая
+  `transition()` из `machine/`) держит `mode`, `useScrollScrub` (сенсор)
+  регистрирует ScrollTrigger и диспатчит `REACH_*`, `useNavPosition` —
+  единственный владелец позиции `.nav` (scrub via onScrollProgress + discrete
+  via onNavState). Страницы регистрируют ScrollTrigger через
   `useLayout().registerScrollTrigger(trigger)` (cleanup возвращается странице
   для `kill()`). Панель `nav/*` читает `mode`/`isSlim` из контекста и сама
   строит свои `useGSAP`. Приоритет: автоскролл > ручной toggle.
@@ -109,7 +110,7 @@ covskiy.github.io/
 | `docs/Components/Layout/LayoutProvider.md` | Машина/композер: сцены, низкоуровневые каналы, registerScrollTrigger, разметка  |
 | `docs/Components/Layout/LayoutContext.md`  | API контекста: LayoutContextValue, useLayout()                                  |
 | `docs/Components/Layout/machine.md`        | Чистая логика: layoutMode, geometry, derive                                     |
-| `docs/Components/Layout/scenes.md`         | Сцены-хуки: useLayoutState/Toggle/ScrollScrub/NavPosition                       |
+| `docs/Components/Layout/scenes.md`         | Сцены-хуки: useLayoutMachine/ScrollScrub/NavPosition                         |
 | `docs/Components/Layout/nav.md`            | Презентационная панель `.nav`: NavigationBar + NavList + NavItem + ToggleButton |
 | `docs/Components/Tagline.md`               | Анимация слогана (клавиатура)                                                   |
 | `docs/Components/IntroAnimation.md`        | Хореография Intro-анимации                                                      |

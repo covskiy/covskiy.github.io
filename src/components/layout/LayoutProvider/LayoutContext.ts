@@ -56,7 +56,8 @@ export interface LayoutContextValue {
   /**
    * Низкоуровневый канал смены состояния раскладки для владельца позиции
    * `.nav` (единственный подписчик — `scenes/useNavPosition`). Срабатывает
-   * в `applyState` на реальных переходах. Возвращает unsubscribe.
+   * из action `NOTIFY_NAV_STATE` executor-а (`useLayoutMachine`) на реальных
+   * переходах. Возвращает unsubscribe.
    */
   onNavState: (listener: NavStateListener) => () => void;
   /**

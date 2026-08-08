@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router';
-import { NavigationBarProvider } from './components/NavigationBar';
+import { LayoutProvider } from './components/layout';
 import PageTransition from './components/PageTransition/PageTransition';
 import { routes } from './routes';
 import { initGsap } from './utils/initGsap';
@@ -9,15 +9,15 @@ initGsap();
 /**
  * Корневой layout приложения.
  *
- * - `NavigationBarProvider` всегда в DOM (не зависит от роута). Владеет
- *   навбаром и контентной областью `<main>`: навбар всегда присутствует,
- *   контентная область сдвигается GSAP (margin-left на tablet/desktop)
- *   при изменении состояния навбара.
+ * - `LayoutProvider` всегда в DOM (не зависит от роута). Владеет раскладкой
+ *   страницы: навбар всегда присутствует, контентная область `<main>`
+ *   сдвигается (margin-left на tablet/desktop) при изменении состояния
+ *   раскладки. Один источник состояния (`mode`) + per-component animator.
  * - `PageTransition` оборачивает каждый роут для анимации перехода.
  */
 function App() {
   return (
-    <NavigationBarProvider>
+    <LayoutProvider>
       <Routes>
         {routes.map(({ path, element }) => (
           <Route
@@ -27,7 +27,7 @@ function App() {
           />
         ))}
       </Routes>
-    </NavigationBarProvider>
+    </LayoutProvider>
   );
 }
 

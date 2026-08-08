@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IntroAnimation, introStorage } from '../../components/IntroAnimation';
 import { LandingSections } from '../../components';
-import { useNavbar } from '../../components/NavigationBar';
+import { useLayout } from '../../components/layout';
 import { useBreakpoint } from '../../utils/breakpoints';
 import { logger } from '../../utils/logger';
 import styles from './HomePage.module.css';
@@ -12,7 +12,7 @@ import styles from './HomePage.module.css';
  *
  * ## Что делает
  * - Создаёт невидимый спейсер (100dvh) для обеспечения длины скролла
- * - Регистрирует ScrollTrigger через `useNavbar().registerScrollTrigger` —
+ * - Регистрирует ScrollTrigger через `useLayout().registerScrollTrigger` —
  *   сам NavigationBar создаёт таймлайн и обновляет своё состояние на границах
  * - При скролле к началу страницы NavigationBar принудительно разворачивается
  *   в fullscreen (приоритет автоскролла над ручным toggle)
@@ -28,7 +28,7 @@ function HomePage() {
   );
   const spacerRef = useRef<HTMLDivElement>(null);
   const bp = useBreakpoint();
-  const { registerScrollTrigger } = useNavbar();
+  const { registerScrollTrigger } = useLayout();
 
   /**
    * Блокирует скролл body во время показа IntroAnimation.

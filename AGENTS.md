@@ -29,12 +29,12 @@ covskiy.github.io/
 ├── src/
 │   ├── assets/           # Изображения, SVG-исходники Intro
 │   ├── components/       # Logo, LogoText, Tagline, SkipControls,
-│   │                     #   NavigationBar, PageTransition, IntroAnimation
+│   │                     #   layout, PageTransition, IntroAnimation
 │   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # Чистый layout (NavigationBarProvider + Routes)
+│   ├── App.tsx           # Чистый layout (LayoutProvider + Routes)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -49,22 +49,23 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — чистый layout-компонент: `NavigationBarProvider` + `<Routes>`,
+- **App.tsx** — чистый layout-компонент: `LayoutProvider` + `<Routes>`,
   обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
   `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
   `/` всегда рендерит HomePage.
-- **NavigationBarProvider** (диспетчер сцен) — создаёт шину событий
-  (`createNavbarEventBus`, scoped на провайдер), держит рефы корневых
-  DOM-нод навбара (`<nav>`, `<main>`, кнопка toggle) и подключает
-  корневую сцену раскладки `useNavbarLayout`. Страницы регистрируют
-  ScrollTrigger через `useNavbar().registerScrollTrigger(trigger)`
-  (cleanup возвращается странице для `kill()`). Дочерние сцены
-  (NavItem, логотип, будущие расширения) подписываются на шину через
-  `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои
-  DOM-ноды самостоятельно. Приоритет: автоскролл > ручной toggle.
+- **LayoutProvider** (машина состояния + per-component animator) — один
+  источник состояния (`mode` в React Context), раскладка всей страницы:
+  навбар `fixed` + `<main>` с `--nav-content-offset`. Нет pub/sub/шины:
+  `useLayoutState` держит `mode`, `useScrollScrub` регистрирует ScrollTrigger,
+  `useLayoutToggle` возвращает `toggle()`, `useNavPosition` — единственный
+  владелец позиции `.nav` (scrub via onScrollProgress + discrete via
+  onNavState). Страницы регистрируют ScrollTrigger через
+  `useLayout().registerScrollTrigger(trigger)` (cleanup возвращается странице
+  для `kill()`). Панель `nav/*` читает `mode`/`isSlim` из контекста и сама
+  строит свои `useGSAP`. Приоритет: автоскролл > ручной toggle.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
-  поверх собственного контента и регистрирует ScrollTrigger навбара
+  поверх собственного контента и регистрирует ScrollTrigger раскладки
   через `registerScrollTrigger(spacerRef.current)`.
 - **routes.tsx** — `RouteConfig[]` с `label`, `HomePage` eager,
   `About/Services/Contact` — `React.lazy` + `withSuspense`.
@@ -94,27 +95,25 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл                                                     | Назначение                                                                         |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `docs/architecture.md`                                   | Архитектура, роутинг, GSAP, стили, конфиги                                         |
-| `docs/breakpoints.md`                                    | Breakpoints: модель, источник правды, CSS/JS использование                         |
-| `docs/design-tokens.md`                                  | Сборка design tokens, маппинг, градиенты                                           |
-| `docs/preloader.md`                                      | Preloader — описание работы                                                        |
-| `docs/logging-rules.md`                                  | Соглашения по логгеру (теги, уровни)                                               |
-| `docs/utils/logger.md`                                   | API логгера                                                                        |
-| `docs/Components/Logo.md`                                | Анимация логотипа (наковальня)                                                     |
-| `docs/Components/LogoText.md`                            | Анимация текста логотипа (SVG morph)                                               |
-| `docs/Components/NavigationBar/NavigationBar.md`         | Презентационная панель `.nav`, стили, «почему transforms»                          |
-| `docs/Components/NavigationBar/NavigationBarProvider.md` | Диспетчер сцен: шина, каналы, context API, поведение по устройствам                |
-| `docs/Components/NavigationBar/NavList.md`               | Список ссылок: NavList + NavItem + navItems (конфиг, slim, иконки)                 |
-| `docs/Components/NavigationBar/ToggleButton.md`          | Сцена ☰ / ←: позиционирование, видимость, fixed-сиблинг                           |
-| `docs/Components/NavigationBar/hooks.md`                 | Сцены-хуки: useNavbarLayout/State/Position/ScrubTrigger/Toggle                     |
-| `docs/Components/NavigationBar/core.md`                  | navbarStates + navbarContext, управление состоянием                                |
-| `docs/Components/NavigationBar/navbarEventBus.md`        | API шины событий навбара (NavbarEventMap, NavbarSource)                            |
-| `docs/Components/NavigationBar/adding-navbar-scene.md`   | Рецепт: добавление новой сцены в навбар (useNavbarEvent / useNavbarScrollProgress) |
-| `docs/Components/Tagline.md`                             | Анимация слогана (клавиатура)                                                      |
-| `docs/Components/IntroAnimation.md`                      | Хореография Intro-анимации                                                         |
-| `docs/Pages/NotFoundPage.md`                             | Описание страницы 404                                                              |
+| Файл                                       | Назначение                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------------- |
+| `docs/architecture.md`                     | Архитектура, роутинг, GSAP, стили, конфиги                                      |
+| `docs/breakpoints.md`                      | Breakpoints: модель, источник правды, CSS/JS использование                      |
+| `docs/design-tokens.md`                    | Сборка design tokens, маппинг, градиенты                                        |
+| `docs/preloader.md`                        | Preloader — описание работы                                                     |
+| `docs/logging-rules.md`                    | Соглашения по логгеру (теги, уровни)                                            |
+| `docs/utils/logger.md`                     | API логгера                                                                     |
+| `docs/Components/Logo.md`                  | Анимация логотипа (наковальня)                                                  |
+| `docs/Components/LogoText.md`              | Анимация текста логотипа (SVG morph)                                            |
+| `docs/Components/Layout/Layout.md`         | Модель «машина + per-component animator», структура, правила развязки           |
+| `docs/Components/Layout/LayoutProvider.md` | Машина/композер: сцены, низкоуровневые каналы, registerScrollTrigger, разметка  |
+| `docs/Components/Layout/LayoutContext.md`  | API контекста: LayoutContextValue, useLayout()                                  |
+| `docs/Components/Layout/machine.md`        | Чистая логика: layoutMode, geometry, derive                                     |
+| `docs/Components/Layout/scenes.md`         | Сцены-хуки: useLayoutState/Toggle/ScrollScrub/NavPosition                       |
+| `docs/Components/Layout/nav.md`            | Презентационная панель `.nav`: NavigationBar + NavList + NavItem + ToggleButton |
+| `docs/Components/Tagline.md`               | Анимация слогана (клавиатура)                                                   |
+| `docs/Components/IntroAnimation.md`        | Хореография Intro-анимации                                                      |
+| `docs/Pages/NotFoundPage.md`               | Описание страницы 404                                                           |
 
 ## Зависимости
 

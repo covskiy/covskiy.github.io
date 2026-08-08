@@ -24,7 +24,7 @@ pages/HomePage/
 
 - `IntroAnimation`, `introStorage` — `components/IntroAnimation/`
 - `LandingSections` — `components/LandingSections/`
-- `useNavbar` — `components/NavigationBar/` (`registerScrollTrigger`)
+- `useLayout` — `components/layout/` (`registerScrollTrigger`)
 - `useBreakpoint` — `utils/breakpoints.ts`
 
 ## IntroAnimation
@@ -47,8 +47,8 @@ const [showIntro, setShowIntro] = useState(
 
 ## ScrollTrigger
 
-ScrollTrigger создаёт **useNavbarLayout** (корневая сцена раскладки навбара)
-через `registerScrollTrigger`, который HomePage вызывает в `useEffect`.
+ScrollTrigger создаёт **useScrollScrub** (сцена layout-модуля) через
+`registerScrollTrigger`, который HomePage вызывает в `useEffect`.
 Пересоздаётся только при смене breakpoint (`dependencies: [registerScrollTrigger, bp]`).
 
 ### Спейсер
@@ -71,7 +71,7 @@ ScrollTrigger создаёт **useNavbarLayout** (корневая сцена р
 ### Регистрация триггера
 
 ```tsx
-const { registerScrollTrigger } = useNavbar();
+const { registerScrollTrigger } = useLayout();
 
 useEffect(() => {
   if (!spacerRef.current) return;
@@ -79,8 +79,8 @@ useEffect(() => {
 }, [registerScrollTrigger, bp]);
 ```
 
-Сам таймлайн (scrub) и обновление состояния навбара на границах спейсера
-живут в провайдере — HomePage отдаёт только элемент-триггер. Cleanup,
+Сам таймлайн (scrub) и обновление состояния раскладки на границах спейсера
+живут в layout-модуле — HomePage отдаёт только элемент-триггер. Cleanup,
 возвращённый из `registerScrollTrigger`, убивает ScrollTrigger и таймлайн
 при размонтировании страницы или смене breakpoint.
 
@@ -94,8 +94,8 @@ useEffect(() => {
 
 ### Границы спейсера
 
-При достижении границ спейсера ScrollTrigger обновляет состояние навбара
-внутри провайдера:
+При достижении границ спейсера ScrollTrigger обновляет состояние раскладки
+внутри `useScrollScrub`:
 
 - `progress === 0` → `fullscreen` — скролл к началу, принудительный разворот
 - `progress >= 1` → `invisible` | `standard` — конец спейсера
@@ -104,55 +104,46 @@ useEffect(() => {
 
 При скролле к началу страницы ScrollTrigger принудительно разворачивает
 навбар в `fullscreen`, переопределяя предыдущее ручное `slim` или `invisible`
-состояние. Это реализовано через `onUpdate` внутри провайдера, который
+состояние. Это реализовано через `onUpdate` внутри `useScrollScrub`, который
 обрабатывает границы безусловно — без custom event'ов.
 
-## Связь с NavigationBar
+## Связь с layout
 
 ```text
 HomePage (useEffect)
-  └── useNavbar().registerScrollTrigger(spacerRef.current)
+  └── useLayout().registerScrollTrigger(spacerRef.current)
         │
-        NavigationBarProvider
-          ├── bus: NavbarEventBus (createNavbarEventBus, scoped)
-          │     └── шина для типизированных сцен
-          └── useNavbarLayout (корневая сцена раскладки)
-                ├── GSAP: nav.x (transform, scrub — ширина окна навбара)
+        LayoutProvider (машина + композер)
+          ├── mode — единственный источник состояния (React Context)
+          ├── useScrollScrub   (регистрирует ScrollTrigger)
+          ├── useLayoutState   (applyState / preferredRef / getHomeEndState)
+          ├── useLayoutToggle  (колбэк toggle для кнопки ☰ / ←)
+          └── useNavPosition   (единственный владелец .nav: scrub + discrete)
+                ├── onScrollProgress → paused scrub-твин nav.x
+                ├── onNavState (source !== 'scroll') → gsap.to(nav, {x})
                 ├── main.x НЕ твинится — статичная колонка (--nav-content-offset)
-                ├── applyState(next, source) → bus.emit('state:change')
-                ├── bus.on('state:change') → animateNavbar
-                ├── ScrollTrigger.onUpdate:
-                │     ├── scrollListenersRef (низкоуровневый канал для scrub)
-                │     ├── progress 0  → applyState('fullscreen', 'scroll')
-                │     ├── progress ≥ 1 → applyState(endState, 'scroll')
-                │     └── setToggleVisibility(progress ≥ 0.9999) — toggle скрыт в scrub
                 └── cleanup → kill() ScrollTrigger + timeline
 ```
 
-Дочерние сцены (`NavItem`, будущие) подписываются на шину через
-`useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои DOM-ноды
-самостоятельно — без участия провайдера.
-Детальнее: `docs/Components/NavigationBar/`, API шины:
-`docs/Components/NavigationBar/navbarEventBus.md`.
+Каналы (`onScrollProgress`, `onToggleVisibility`, `onNavState`) работают без
+React-рендера; каждый компонент панели `nav/*` строит свои `useGSAP` из
+`mode`/`isSlim`. Детальнее: `docs/Components/Layout/`.
 
 ## Ключевые решения
 
 - **ScrollTrigger НЕ использует React State** — прогресс скролла передаётся
-  GSAP напрямую в DOM. Состояние навбара обновляется только в дискретных
+  GSAP напрямую в DOM. Состояние раскладки обновляется только в дискретных
   точках на границах спейсера.
 - **Страница не знает о DOM навбара** — никаких селекторов `.nav` / `<main>`
   и целевых ширин; страница отдаёт только элемент-триггер.
 - **Жизненный цикл триггера — на странице** — создание в `useEffect`,
   уничтожение через cleanup из `registerScrollTrigger` при размонтировании
   или смене breakpoint.
-- **`overwrite: 'auto'`** только в прямых твинах `animateNavbar` —
-  гарантирует, что ручной toggle не сломает ScrollTrigger при повторном
-  скролле. Твины внутри scrub-таймлайна `registerScrollTrigger` идут без
-  `overwrite` (им это не нужно — они живут в собственном timeline).
-  `animateNavbar` теперь живёт в `useNavbarLayout` (корневая сцена
-  раскладки) и подписана на `bus.on('state:change')` — единый путь
-  публикации → реакции для всех источников (toggle/route/breakpoint/scroll).
-- **Spacer общий для всех bp** — единый механизм анимации навбара,
+- **`overwrite: 'auto'`** только в прямых твинах `useNavPosition` (дискретные
+  переходы из `onNavState` с `source !== 'scroll'`) — гарантирует, что ручной
+  toggle не сломает scrub-твин при повторном скролле. Paused scrub-твин
+  (`onScrollProgress`) не активен для GSAP, поэтому его не уничтожает.
+- **Spacer общий для всех bp** — единый механизм анимации раскладки,
   независимо от устройства, с разными целевыми значениями.
 - **IntroAnimation — overlay, не замена контента** — `LandingSections` всегда
   в DOM под intro-оверлеем, поисковики и соцсети видят контент с первого рендера.

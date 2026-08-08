@@ -1,1 +1,0 @@
-export { NavigationBarProvider } from './NavigationBarProvider';

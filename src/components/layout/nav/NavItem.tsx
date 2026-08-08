@@ -1,0 +1,72 @@
+import { useEffect, useRef } from 'react';
+import { NavLink } from 'react-router';
+import gsap from 'gsap';
+import type { NavItemConfig } from './navItems';
+import { useGSAP } from '@gsap/react';
+import styles from './NavItem.module.css';
+
+export interface NavItemProps {
+  /** Конфиг пункта: path, label, icon. */
+  item: NavItemConfig;
+  /** Признак slim-режима: иконка вместо текста, tabIndex={-1}. */
+  isSlim: boolean;
+}
+
+/**
+ * Один пункт навигационного меню.
+ *
+ * В slim-режиме (isSlim === true):
+ * - Текстовая метка не рендерится
+ * - Иконка центрируется (класс styles.slim)
+ * - Ссылка получает tabIndex={-1} (исключение из Tab-навигации)
+ *
+ * Per-component animator: читает `isSlim` пропом (производная от `mode`
+ * из контекста layout) и сам анимирует свою иконку. При первом переходе
+ * в slim делает fade-in иконки с лёгким подскоком.
+ */
+export function NavItem({ item, isSlim }: NavItemProps) {
+  const containerRef = useRef<HTMLLIElement>(null);
+  const prevSlimRef = useRef(isSlim);
+  const cssSelector = `.${styles.icon}`;
+
+  const { contextSafe } = useGSAP({ scope: containerRef });
+
+  const animateIcon = contextSafe(() => {
+    gsap.killTweensOf(cssSelector);
+    gsap.fromTo(
+      cssSelector,
+      { scale: 0.5, opacity: 0 },
+      {
+        scale: 1,
+        opacity: 1,
+        duration: 3,
+        ease: 'back.out(1.7)',
+        overwrite: 'auto',
+      },
+    );
+  });
+
+  useEffect(() => {
+    const prev = prevSlimRef.current;
+    prevSlimRef.current = isSlim;
+    const enteredSlim = isSlim && !prev;
+    if (enteredSlim) {
+      animateIcon();
+    }
+  }, [isSlim, animateIcon]);
+
+  return (
+    <li className={styles.item} ref={containerRef}>
+      <NavLink
+        to={item.path}
+        className={({ isActive }) =>
+          `${styles.link}${isSlim ? ` ${styles.slim}` : ''}${isActive ? ` ${styles.active}` : ''}`
+        }
+        tabIndex={isSlim ? -1 : 0}
+      >
+        <span className={styles.icon}>{item.icon}</span>
+        {!isSlim && <span className={styles.label}>{item.label}</span>}
+      </NavLink>
+    </li>
+  );
+}

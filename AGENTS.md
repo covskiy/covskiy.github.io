@@ -29,12 +29,12 @@ covskiy.github.io/
 ├── src/
 │   ├── assets/           # Изображения, SVG-исходники Intro
 │   ├── components/       # Logo, LogoText, Tagline, SkipControls,
-│   │                     #   layout, PageTransition, IntroAnimation
+│   │                     #   NewLayout, PageTransition, IntroAnimation
 │   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # Чистый layout (LayoutProvider + Routes)
+│   ├── App.tsx           # Подключает <NewAppRoot /> (новый layout-движок)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -49,25 +49,24 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — чистый layout-компонент: `LayoutProvider` + `<Routes>`,
-  обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
-  `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
-  `/` всегда рендерит HomePage.
-- **LayoutProvider** (машина состояния + per-component animator) — один
-  источник состояния (`mode` в React Context), раскладка всей страницы:
-  навбар `fixed` + `<main>` с `--nav-content-offset`. Нет pub/sub/шины:
-  `useLayoutMachine` (executor: `useState` + стабильный `dispatch` + чистая
-  `transition()` из `machine/`) держит `mode`, `useScrollScrub` (сенсор)
-  регистрирует ScrollTrigger и диспатчит `REACH_*`, `useNavPosition` —
-  единственный владелец позиции `.nav` (scrub via onScrollProgress + discrete
-  via onNavState). Страницы регистрируют ScrollTrigger через
-  `useLayout().registerScrollTrigger(trigger)` (cleanup возвращается странице
-  для `kill()`). Панель `nav/*` читает `mode`/`isSlim` из контекста и сама
-  строит свои `useGSAP`. Приоритет: автоскролл > ручной toggle.
+- **App.tsx** — рендерит `<NewAppRoot />` (`src/components/NewLayout/`).
+  Никакой intro/splash-логики, не импортирует `IntroAnimation`,
+  `introStorage`, `useState`, `useEffect`. `/` всегда рендерит HomePage.
+- **NewLayout** (машина состояния + per-component animator + GSAP-шина) —
+  новый layout-движок, построен с нуля в задаче `task/11.FullLayoutRefactoring.md`.
+  Структура: `machine/` (чистый TS: `transition` reducer + `resolveLayout`),
+  `engine.ts` (внешний движок с `send/subscribe/getSnapshot`),
+  `gsap/` (60fps-шина + `GsapProvider` + `GsapLayoutBridge`),
+  `context/` (React-обёртка, реакция на bp/route/resize),
+  `slots/` (`LayoutRoot` с CSS-vars + `useLayoutApplier` через `gsap.to`),
+  `nav/` (презентационная `VerticalNavigationBar` + `ToggleButton`).
+  `machine/` + `engine.ts` — без React/GSAP/DOM. Состояние (`mode`)
+  держится в движке, не в React. Страницы регистрируют ScrollTrigger
+  через `useRegisterHomeSpacer(triggerEl)` (`src/components/NewLayout/gsap/GsapLayoutBridge.tsx`).
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
   поверх собственного контента и регистрирует ScrollTrigger раскладки
-  через `registerScrollTrigger(spacerRef.current)`.
+  через `useRegisterHomeSpacer(spacerRef.current)`.
 - **routes.tsx** — `RouteConfig[]` с `label`, `HomePage` eager,
   `About/Services/Contact` — `React.lazy` + `withSuspense`.
   Роут `/` — HomePage, роут `*` — NotFoundPage.
@@ -106,12 +105,7 @@ covskiy.github.io/
 | `docs/utils/logger.md`                     | API логгера                                                                     |
 | `docs/Components/Logo.md`                  | Анимация логотипа (наковальня)                                                  |
 | `docs/Components/LogoText.md`              | Анимация текста логотипа (SVG morph)                                            |
-| `docs/Components/Layout/Layout.md`         | Модель «машина + per-component animator», структура, правила развязки           |
-| `docs/Components/Layout/LayoutProvider.md` | Машина/композер: сцены, низкоуровневые каналы, registerScrollTrigger, разметка  |
-| `docs/Components/Layout/LayoutContext.md`  | API контекста: LayoutContextValue, useLayout()                                  |
-| `docs/Components/Layout/machine.md`        | Чистая логика: layoutMode, geometry, derive                                     |
-| `docs/Components/Layout/scenes.md`         | Сцены-хуки: useLayoutMachine/ScrollScrub/NavPosition                         |
-| `docs/Components/Layout/nav.md`            | Презентационная панель `.nav`: NavigationBar + NavList + NavItem + ToggleButton |
+| `docs/Components/NewLayout/README.md`     | Новый layout-движок: machine/engine/snapshot/CSS-vars/GsapProvider/Bridge       |
 | `docs/Components/Tagline.md`               | Анимация слогана (клавиатура)                                                   |
 | `docs/Components/IntroAnimation.md`        | Хореография Intro-анимации                                                      |
 | `docs/Pages/NotFoundPage.md`               | Описание страницы 404                                                           |

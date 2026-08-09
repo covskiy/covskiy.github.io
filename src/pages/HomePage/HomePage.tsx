@@ -2,38 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IntroAnimation, introStorage } from '../../components/IntroAnimation';
 import { LandingSections } from '../../components';
-import { useLayout } from '../../components/layout';
-import { useBreakpoint } from '../../utils/breakpoints';
+import { useRegisterHomeSpacer } from '../../components/NewLayout/gsap/GsapLayoutBridge';
 import { logger } from '../../utils/logger';
 import styles from './HomePage.module.css';
 
 /**
  * HomePage — лендинг с ScrollTrigger-анимацией навбара.
  *
- * ## Что делает
- * - Создаёт невидимый спейсер (100dvh) для обеспечения длины скролла
- * - Регистрирует ScrollTrigger через `useLayout().registerScrollTrigger` —
- *   сам NavigationBar создаёт таймлайн и обновляет своё состояние на границах
- * - При скролле к началу страницы NavigationBar принудительно разворачивается
- *   в fullscreen (приоритет автоскролла над ручным toggle)
- *
- * ## Почему не через React State
- * Прогресс скролла НЕ передаётся в React State — GSAP управляет DOM напрямую
- * через timeline + scrub. Состояние навбара синхронизируется только
- * в дискретных точках (progress 0 и 1) внутри NavigationBar.
+ * Использует `useRegisterHomeSpacer` из нового движка: хук сам создаёт
+ * ScrollTrigger на spacer-элементе и шлёт `REACH_TOP`/`REACH_BOTTOM`
+ * в движок на границах прогресса.
  */
 function HomePage() {
   const [showIntro, setShowIntro] = useState(
     () => !introStorage.getNeverShow() && !introStorage.getSessionSkip(),
   );
   const spacerRef = useRef<HTMLDivElement>(null);
-  const bp = useBreakpoint();
-  const { registerScrollTrigger } = useLayout();
 
-  /**
-   * Блокирует скролл body во время показа IntroAnimation.
-   * При скрытии интро или размонтировании компонента восстанавливает скролл.
-   */
+  useRegisterHomeSpacer(spacerRef.current);
+
   useEffect(() => {
     if (showIntro) {
       document.body.style.overflow = 'hidden';
@@ -48,20 +35,11 @@ function HomePage() {
     };
   }, [showIntro]);
 
-  /**
-   * Регистрирует ScrollTrigger на спейсере для любого breakpoint.
-   *
-   * Провайдер создаёт таймлайн (ширина навбара + margin-left контента
-   * на tablet/desktop) и сам убивает его в cleanup при размонтировании
-   * страницы или смене breakpoint.
-   */
   useEffect(() => {
     if (!spacerRef.current) {
       logger.debug('HomePage', 'spacerRef.current отсутствует');
-      return;
     }
-    return registerScrollTrigger(spacerRef.current);
-  }, [registerScrollTrigger, bp]);
+  }, []);
 
   return (
     <>

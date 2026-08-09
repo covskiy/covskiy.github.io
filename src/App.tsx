@@ -1,34 +1,16 @@
-import { Routes, Route } from 'react-router';
-import { LayoutProvider } from './components/layout';
-import PageTransition from './components/PageTransition/PageTransition';
-import { routes } from './routes';
+import { NewAppRoot } from './components/NewLayout/NewAppRoot';
 import { initGsap } from './utils/initGsap';
 
 initGsap();
 
 /**
- * Корневой layout приложения.
+ * Корневой layout приложения (см. план §2.6, фаза P7-P8).
  *
- * - `LayoutProvider` всегда в DOM (не зависит от роута). Владеет раскладкой
- *   страницы: навбар всегда присутствует, контентная область `<main>`
- *   сдвигается (margin-left на tablet/desktop) при изменении состояния
- *   раскладки. Один источник состояния (`mode`) + per-component animator.
- * - `PageTransition` оборачивает каждый роут для анимации перехода.
+ * Подключён новый `NewAppRoot` (`src/components/NewLayout/`). Старый
+ * layout-движок (`src/components/layout/`) удалён.
  */
 function App() {
-  return (
-    <LayoutProvider>
-      <Routes>
-        {routes.map(({ path, element }) => (
-          <Route
-            key={path}
-            path={path}
-            element={<PageTransition>{element}</PageTransition>}
-          />
-        ))}
-      </Routes>
-    </LayoutProvider>
-  );
+  return <NewAppRoot />;
 }
 
 export default App;

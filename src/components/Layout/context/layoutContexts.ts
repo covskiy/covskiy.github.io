@@ -8,19 +8,19 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { NewLayoutEngine } from '../engine';
+import type { LayoutEngine } from '../engine';
 import type { LayoutSnapshot } from '../machine/layoutSnapshot';
 import type { LayoutEvent } from '../machine/layoutMode';
 
-const LayoutEngineContext = createContext<NewLayoutEngine | null>(null);
+const LayoutEngineContext = createContext<LayoutEngine | null>(null);
 const LayoutSnapshotContext = createContext<LayoutSnapshot | null>(null);
 
 export { LayoutEngineContext, LayoutSnapshotContext };
 
-export function useLayoutEngine(): NewLayoutEngine {
+export function useLayoutEngine(): LayoutEngine {
   const engine = useContext(LayoutEngineContext);
   if (!engine) {
-    throw new Error('useLayoutEngine must be used inside <NewLayoutProvider>');
+    throw new Error('useLayoutEngine must be used inside <LayoutProvider>');
   }
   return engine;
 }
@@ -28,9 +28,7 @@ export function useLayoutEngine(): NewLayoutEngine {
 export function useLayoutSnapshot(): LayoutSnapshot {
   const snapshot = useContext(LayoutSnapshotContext);
   if (!snapshot) {
-    throw new Error(
-      'useLayoutSnapshot must be used inside <NewLayoutProvider>',
-    );
+    throw new Error('useLayoutSnapshot must be used inside <LayoutProvider>');
   }
   return snapshot;
 }

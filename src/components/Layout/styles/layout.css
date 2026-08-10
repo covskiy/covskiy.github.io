@@ -14,6 +14,7 @@
 
 .layout-root {
   min-height: 100dvh;
+
   --nav-x: 0;
   --nav-pointer-events: auto;
   --nav-content-offset: 0px;

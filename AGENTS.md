@@ -29,12 +29,12 @@ covskiy.github.io/
 ├── src/
 │   ├── assets/           # Изображения, SVG-исходники Intro
 │   ├── components/       # Logo, LogoText, Tagline, SkipControls,
-│   │                     #   NewLayout, PageTransition, IntroAnimation
+│   │                     #   Layout, PageTransition, IntroAnimation
 │   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # Подключает <NewAppRoot /> (новый layout-движок)
+│   ├── App.tsx           # Подключает <LayoutProvider /> (layout-движок)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -49,10 +49,10 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — рендерит `<NewAppRoot />` (`src/components/NewLayout/`).
+- **App.tsx** — рендерит `<LayoutProvider />` (`src/components/Layout/`).
   Никакой intro/splash-логики, не импортирует `IntroAnimation`,
   `introStorage`, `useState`, `useEffect`. `/` всегда рендерит HomePage.
-- **NewLayout** (машина состояния + per-component animator + GSAP-шина) —
+- **Layout** (машина состояния + per-component animator + GSAP-шина) —
   новый layout-движок, построен с нуля в задаче `task/11.FullLayoutRefactoring.md`.
   Структура: `machine/` (чистый TS: `transition` reducer + `resolveLayout`),
   `engine.ts` (внешний движок с `send/subscribe/getSnapshot`),
@@ -62,11 +62,11 @@ covskiy.github.io/
   `nav/` (презентационная `VerticalNavigationBar` + `ToggleButton`).
   `machine/` + `engine.ts` — без React/GSAP/DOM. Состояние (`mode`)
   держится в движке, не в React. Страницы регистрируют ScrollTrigger
-  через `useRegisterHomeSpacer(triggerEl)` (`src/components/NewLayout/gsap/GsapLayoutBridge.tsx`).
+  через `useRegisterHomeSpacer(triggerRef)` (`src/components/Layout/gsap/GsapLayoutBridge.tsx`).
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
   поверх собственного контента и регистрирует ScrollTrigger раскладки
-  через `useRegisterHomeSpacer(spacerRef.current)`.
+  через `useRegisterHomeSpacer(spacerRef)`.
 - **routes.tsx** — `RouteConfig[]` с `label`, `HomePage` eager,
   `About/Services/Contact` — `React.lazy` + `withSuspense`.
   Роут `/` — HomePage, роут `*` — NotFoundPage.
@@ -95,20 +95,20 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл                                       | Назначение                                                                      |
-| ------------------------------------------ | ------------------------------------------------------------------------------- |
-| `docs/architecture.md`                     | Архитектура, роутинг, GSAP, стили, конфиги                                      |
-| `docs/breakpoints.md`                      | Breakpoints: модель, источник правды, CSS/JS использование                      |
-| `docs/design-tokens.md`                    | Сборка design tokens, маппинг, градиенты                                        |
-| `docs/preloader.md`                        | Preloader — описание работы                                                     |
-| `docs/logging-rules.md`                    | Соглашения по логгеру (теги, уровни)                                            |
-| `docs/utils/logger.md`                     | API логгера                                                                     |
-| `docs/Components/Logo.md`                  | Анимация логотипа (наковальня)                                                  |
-| `docs/Components/LogoText.md`              | Анимация текста логотипа (SVG morph)                                            |
-| `docs/Components/NewLayout/README.md`     | Новый layout-движок: machine/engine/snapshot/CSS-vars/GsapProvider/Bridge       |
-| `docs/Components/Tagline.md`               | Анимация слогана (клавиатура)                                                   |
-| `docs/Components/IntroAnimation.md`        | Хореография Intro-анимации                                                      |
-| `docs/Pages/NotFoundPage.md`               | Описание страницы 404                                                           |
+| Файл                                | Назначение                                                          |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги                          |
+| `docs/breakpoints.md`               | Breakpoints: модель, источник правды, CSS/JS использование          |
+| `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты                            |
+| `docs/preloader.md`                 | Preloader — описание работы                                         |
+| `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)                                |
+| `docs/utils/logger.md`              | API логгера                                                         |
+| `docs/Components/Logo.md`           | Анимация логотипа (наковальня)                                      |
+| `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)                                |
+| `docs/Components/Layout/README.md`  | Layout-движок: machine/engine/snapshot/CSS-vars/GsapProvider/Bridge |
+| `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)                                       |
+| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                                          |
+| `docs/Pages/NotFoundPage.md`        | Описание страницы 404                                               |
 
 ## Зависимости
 

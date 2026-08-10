@@ -1,5 +1,5 @@
 /**
- * NewLayoutEngine — внешний (не-React) layout-движок.
+ * LayoutEngine — внешний (не-React) layout-движок.
  *
  * Контракт (см. план §I.2):
  * - `send(event)` — отправка дискретного события; маппит `event.type → source`,
@@ -25,7 +25,7 @@ import {
 import { homeEndStateFor } from './machine/derive';
 import { transition, type TransitionResult } from './machine/transition';
 
-export interface NewLayoutEngine {
+export interface LayoutEngine {
   send: (event: LayoutEvent) => void;
   subscribe: (fn: (snapshot: LayoutSnapshot) => void) => () => void;
   getSnapshot: () => LayoutSnapshot;
@@ -51,15 +51,17 @@ const DEFAULT_TRANSITION = {
 
 const INITIAL_TRANSITION = { duration: 0, ease: 'none' } as const;
 
-export function createNewLayoutEngine(
+export function createLayoutEngine(
   options: CreateEngineOptions = {},
-): NewLayoutEngine {
+): LayoutEngine {
   const listeners = new Set<(snapshot: LayoutSnapshot) => void>();
-  const transitionDuration = options.transitionDuration ?? DEFAULT_TRANSITION.duration;
+  const transitionDuration =
+    options.transitionDuration ?? DEFAULT_TRANSITION.duration;
   const transitionEase = options.transitionEase ?? DEFAULT_TRANSITION.ease;
 
   let viewport = options.viewport ?? 1024;
-  let mode: LayoutMode = options.initialMode ?? deriveInitialMode(options.initialContext);
+  let mode: LayoutMode =
+    options.initialMode ?? deriveInitialMode(options.initialContext);
 
   const initialBp = options.initialContext?.bp ?? 'desktop';
   const initialPreferred = options.initialContext?.preferred ?? null;
@@ -84,7 +86,10 @@ export function createNewLayoutEngine(
     for (const listener of listeners) listener(snapshot);
   }
 
-  function rebuildSnapshot(transitionOptions: { duration: number; ease: string }) {
+  function rebuildSnapshot(transitionOptions: {
+    duration: number;
+    ease: string;
+  }) {
     snapshot = resolveLayout(mode, context, {
       viewport,
       transition: transitionOptions,
@@ -93,8 +98,7 @@ export function createNewLayoutEngine(
 
   function send(event: LayoutEvent) {
     const source = EVENT_TO_SOURCE[event.type];
-    const nextBp =
-      event.type === 'BREAKPOINT_CHANGED' ? event.bp : context.bp;
+    const nextBp = event.type === 'BREAKPOINT_CHANGED' ? event.bp : context.bp;
     const fullCtx: MachineContext = {
       ...context,
       bp: nextBp,
@@ -180,7 +184,9 @@ export function createNewLayoutEngine(
   };
 }
 
-function deriveInitialMode(ctx: Partial<MachineContext> | undefined): LayoutMode {
+function deriveInitialMode(
+  ctx: Partial<MachineContext> | undefined,
+): LayoutMode {
   if (ctx?.isHome) return 'fullscreen';
   const bp = ctx?.bp ?? 'desktop';
   if (bp === 'mobile') return 'invisible';

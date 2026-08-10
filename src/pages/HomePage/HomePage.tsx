@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IntroAnimation, introStorage } from '../../components/IntroAnimation';
 import { LandingSections } from '../../components';
-import { useRegisterHomeSpacer } from '../../components/NewLayout/gsap/GsapLayoutBridge';
+import { useRegisterHomeSpacer } from '../../components/Layout/gsap/useRegisterHomeSpacer';
 import { logger } from '../../utils/logger';
 import styles from './HomePage.module.css';
 
@@ -19,7 +19,7 @@ function HomePage() {
   );
   const spacerRef = useRef<HTMLDivElement>(null);
 
-  useRegisterHomeSpacer(spacerRef.current);
+  useRegisterHomeSpacer(spacerRef);
 
   useEffect(() => {
     if (showIntro) {

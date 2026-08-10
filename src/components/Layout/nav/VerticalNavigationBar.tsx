@@ -33,10 +33,7 @@ export function VerticalNavigationBar({
 
   return (
     <>
-      <nav
-        className={styles.nav}
-        data-layout-state={snapshot.value}
-      >
+      <nav className={styles.nav} data-layout-state={snapshot.value}>
         <div className={styles.navInner}>
           <div className={styles.logo}>✦ Portfolio</div>
           <NavList isSlim={isSlim} />

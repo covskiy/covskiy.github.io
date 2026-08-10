@@ -2,7 +2,7 @@
  * LayoutRoot — корневая нода, на которой живут CSS-переменные layout-а.
  *
  * Использование:
- *   <NewLayoutProvider>
+ *   <LayoutProvider>
  *     <GsapProvider>
  *       <GsapLayoutBridge />
  *       <LayoutRoot>
@@ -10,7 +10,7 @@
  *         <LayoutSlot id="content">...</LayoutSlot>
  *       </LayoutRoot>
  *     </GsapProvider>
- *   </NewLayoutProvider>
+ *   </LayoutProvider>
  */
 
 import { useRef, type PropsWithChildren } from 'react';

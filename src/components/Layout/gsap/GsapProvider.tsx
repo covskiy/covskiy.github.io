@@ -11,22 +11,14 @@
  * Layout-логика строится в `GsapLayoutBridge` (Часть II).
  */
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  type PropsWithChildren,
-} from 'react';
+import { useEffect, useRef, type PropsWithChildren } from 'react';
 import { createGsapBus, type GsapBus } from './gsapBus';
-
-const GsapContext = createContext<GsapBus | null>(null);
+import { GsapContext } from './gsapContext';
+import { GsapLayoutBridge } from './GsapLayoutBridge';
 
 export function GsapProvider({ children }: PropsWithChildren) {
   const busRef = useRef<GsapBus | null>(null);
-  if (busRef.current === null) {
-    busRef.current = createGsapBus();
-  }
+  busRef.current ??= createGsapBus();
 
   useEffect(() => {
     const bus = busRef.current;
@@ -38,15 +30,8 @@ export function GsapProvider({ children }: PropsWithChildren) {
 
   return (
     <GsapContext.Provider value={busRef.current}>
+      <GsapLayoutBridge />
       {children}
     </GsapContext.Provider>
   );
-}
-
-export function useGsapBus(): GsapBus {
-  const bus = useContext(GsapContext);
-  if (!bus) {
-    throw new Error('useGsapBus must be used inside <GsapProvider>');
-  }
-  return bus;
 }

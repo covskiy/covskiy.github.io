@@ -1,16 +1,46 @@
-import { NewAppRoot } from './components/NewLayout/NewAppRoot';
+import { Routes, Route } from 'react-router';
+import { LayoutProvider } from './components/Layout/context/LayoutProvider';
+import { GsapProvider } from './components/Layout/gsap/GsapProvider';
+import { LayoutRoot } from './components/Layout/slots/LayoutRoot';
+import { VerticalNavigationBar } from './components/Layout/nav/VerticalNavigationBar';
+import { useLayoutSnapshot } from './components/Layout/context/layoutContexts';
+import PageTransition from './components/PageTransition/PageTransition';
+import { routes } from './routes';
+import { hasToggleFor } from './components/Layout/machine/derive';
+
 import { initGsap } from './utils/initGsap';
 
 initGsap();
 
-/**
- * Корневой layout приложения (см. план §2.6, фаза P7-P8).
- *
- * Подключён новый `NewAppRoot` (`src/components/NewLayout/`). Старый
- * layout-движок (`src/components/layout/`) удалён.
- */
 function App() {
-  return <NewAppRoot />;
+  return (
+    <LayoutProvider>
+      <GsapProvider>
+        <LayoutRoot>
+          <NavbarSlot />
+          <main className="layout-content">
+            <Routes>
+              {routes.map(({ path, element }) => (
+                <Route
+                  key={path}
+                  path={path}
+                  element={<PageTransition>{element}</PageTransition>}
+                />
+              ))}
+            </Routes>
+          </main>
+        </LayoutRoot>
+      </GsapProvider>
+    </LayoutProvider>
+  );
+}
+
+function NavbarSlot() {
+  const snapshot = useLayoutSnapshot();
+  const isSlim = snapshot.value === 'slim' || snapshot.value === 'invisible';
+  const hasToggle = hasToggleFor(snapshot.bp);
+
+  return <VerticalNavigationBar isSlim={isSlim} hasToggle={hasToggle} />;
 }
 
 export default App;

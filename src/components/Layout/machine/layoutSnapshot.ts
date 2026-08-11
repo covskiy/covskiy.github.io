@@ -1,5 +1,5 @@
 import type { Breakpoint } from '../../../utils/breakpoints';
-import { deriveMainOffset, getNavTransform } from './geometry';
+import { deriveMainOffset } from './geometry';
 import type { LayoutMode, MachineContext } from './layoutMode';
 
 /**
@@ -44,7 +44,6 @@ export interface LayoutSnapshot {
 }
 
 export const ROOT_VAR_NAMES = {
-  navX: '--nav-x',
   navPointerEvents: '--nav-pointer-events',
   navContentOffset: '--nav-content-offset',
   layoutState: '--layout-state',
@@ -72,13 +71,11 @@ export function resolveLayout(
   options: LayoutResolveOptions,
 ): LayoutSnapshot {
   const { bp, isHome, homeEndState } = context;
-  const { viewport, transition } = options;
+  const { transition } = options;
 
-  const transform = getNavTransform(value, viewport);
   const offset = deriveMainOffset(value, bp, isHome, homeEndState);
 
   const vars: LayoutVars = {
-    [ROOT_VAR_NAMES.navX]: transform.navX,
     [ROOT_VAR_NAMES.navPointerEvents]: pointerEventsFor(value),
     [ROOT_VAR_NAMES.navContentOffset]: offset,
     [ROOT_VAR_NAMES.layoutState]: value,

@@ -2,24 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IntroAnimation, introStorage } from '../../components/IntroAnimation';
 import { LandingSections } from '../../components';
-import { useRegisterHomeSpacer } from '../../components/Layout/gsap/useRegisterHomeSpacer';
-import { logger } from '../../utils/logger';
+import { useRegisterScrollTrigger } from '../../components/Layout/gsap/useRegisterScrollTrigger';
 import styles from './HomePage.module.css';
 
-/**
- * HomePage — лендинг с ScrollTrigger-анимацией навбара.
- *
- * Использует `useRegisterHomeSpacer` из нового движка: хук сам создаёт
- * ScrollTrigger на spacer-элементе и шлёт `REACH_TOP`/`REACH_BOTTOM`
- * в движок на границах прогресса.
- */
 function HomePage() {
   const [showIntro, setShowIntro] = useState(
     () => !introStorage.getNeverShow() && !introStorage.getSessionSkip(),
   );
   const spacerRef = useRef<HTMLDivElement>(null);
+  const registerScrollTrigger = useRegisterScrollTrigger();
 
-  useRegisterHomeSpacer(spacerRef);
+  useEffect(() => {
+    if (spacerRef.current) {
+      return registerScrollTrigger(spacerRef.current);
+    }
+  }, [registerScrollTrigger]);
 
   useEffect(() => {
     if (showIntro) {
@@ -34,12 +31,6 @@ function HomePage() {
       document.documentElement.style.overflow = '';
     };
   }, [showIntro]);
-
-  useEffect(() => {
-    if (!spacerRef.current) {
-      logger.debug('HomePage', 'spacerRef.current отсутствует');
-    }
-  }, []);
 
   return (
     <>

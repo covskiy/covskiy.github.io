@@ -8,7 +8,7 @@
 
 import { gsap } from 'gsap';
 
-export type GsapChannel = 'scroll:frame' | 'frame';
+export type GsapChannel = 'scroll:frame' | 'frame' | 'scroll:progress';
 
 export interface ScrollFrame {
   y: number;
@@ -17,9 +17,15 @@ export interface ScrollFrame {
   direction: 1 | -1 | 0;
 }
 
+export interface ScrollProgress {
+  progress: number;
+  direction: 1 | -1;
+}
+
 interface ChannelPayloads {
   'scroll:frame': ScrollFrame;
   frame: ScrollFrame;
+  'scroll:progress': ScrollProgress;
 }
 
 type Listener<P> = (payload: P) => void;

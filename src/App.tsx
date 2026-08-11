@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router';
 import { LayoutProvider } from './components/Layout/context/LayoutProvider';
 import { GsapProvider } from './components/Layout/gsap/GsapProvider';
 import { LayoutRoot } from './components/Layout/slots/LayoutRoot';
-import { VerticalNavigationBar } from './components/Layout/nav/VerticalNavigationBar';
+import { NavigationBar } from './components/Layout/nav/NavigationBar/NavigationBar';
 import { useLayoutSnapshot } from './components/Layout/context/layoutContexts';
 import PageTransition from './components/PageTransition/PageTransition';
 import { routes } from './routes';
@@ -40,7 +40,7 @@ function NavbarSlot() {
   const isSlim = snapshot.value === 'slim' || snapshot.value === 'invisible';
   const hasToggle = hasToggleFor(snapshot.bp);
 
-  return <VerticalNavigationBar isSlim={isSlim} hasToggle={hasToggle} />;
+  return <NavigationBar isSlim={isSlim} hasToggle={hasToggle} />;
 }
 
 export default App;

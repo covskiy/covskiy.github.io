@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { routes } from '../../../routes';
+import { routes } from '../../../../routes';
 
 export interface NavItemConfig {
   path: string;

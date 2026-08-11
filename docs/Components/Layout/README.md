@@ -1,89 +1,260 @@
 # Layout — layout-движок
 
-Замена старого `src/components/layout/` на `src/components/Layout/`,
-построенный с нуля. Направление — **state machine → LayoutSnapshot →
-GSAP анимирует CSS-переменные на root → CSS задаёт размеры/позиции
-слотов**.
+Layout управляет раскладкой страницы: 4 состояния навбара
+(`fullscreen | standard | slim | invisible`), реакция на скролл на `/home`,
+анимации через GSAP. Направление — **state machine → LayoutSnapshot →
+CSS-переменные на root → CSS задаёт геометрию слотов**.
 
-## Файлы
+---
+
+## 1. Архитектурный контекст
+
+Layout опирается на три внешние системы:
+
+| Система     | Файл                                    | Что даёт Layout                                                                                                                    |
+| ----------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Breakpoints | `src/utils/breakpoints.ts`              | 3-тирная модель (`mobile` / `tablet: 768` / `desktop: 1024`), хук `useBreakpoint()`                                                |
+| GSAP        | `src/utils/initGsap.ts`                 | Регистрация плагинов: `useGSAP`, `ScrollTrigger`, `SplitText`, `MorphSVGPlugin`, `DrawSVGPlugin`, `MotionPathPlugin`, `CustomEase` |
+| gsapBus     | `src/components/Layout/gsap/gsapBus.ts` | 60fps-шина на `gsap.ticker` с каналами `scroll:frame`, `frame`, `scroll:progress`                                                  |
+
+`breakpoints.ts` и `initGsap.ts` — общие утилиты проекта. Layout — единственный
+потребитель `gsapBus`.
+
+---
+
+## 2. Принцип работы
+
+### Машина → CSS
+
+```
+machine/transition(state, event, ctx)
+  ↓
+resolveLayout(mode, ctx, opts) → LayoutSnapshot { value, vars, transition }
+  ↓
+useLayoutApplier → gsap.to(root, vars)
+  ↓
+layout.css → геометрия слотов
+```
+
+### Скролл на /home
+
+```
+Spacer (HTMLElement)
+  │  регистрируется через registerScrollTrigger(el)
+  ↓
+ScrollTrigger.create({ trigger: el, scrub: true })
+  ├─ onUpdate → bus.emit('scroll:progress', { progress, direction })
+  │              └─ useNavPosition → scrubTween.progress(p)
+  └─ boundary → engine.send(REACH_TOP / REACH_BOTTOM)
+```
+
+---
+
+## 3. Файлы
 
 ```
 src/components/Layout/
 ├── machine/
-│   ├── layoutMode.ts        # типы: LayoutMode, LayoutEvent, MachineContext,
-│   │                        #   LayoutAction, EVENT_TO_SOURCE
+│   ├── layoutMode.ts        # LayoutMode, LayoutEvent, MachineContext, EVENT_TO_SOURCE
 │   ├── transition.ts        # чистый reducer (transition(state, event, ctx))
 │   ├── derive.ts            # getDefaultState, homeEndStateFor, isManualMobileState,
 │   │                        #   isPreferredStateValid, isHomePath, hasToggleFor
 │   ├── geometry.ts          # SLIM_WIDTH, getNavTransform(state, viewport),
 │   │                        #   deriveMainOffset
-│   └── layoutSnapshot.ts    # LayoutSnapshot, LayoutVars, LayoutTransition,
-│                            #   ROOT_VAR_NAMES, resolveLayout (ctx → snapshot)
-├── engine.ts                # createLayoutEngine (внешний движок)
+│   └── layoutSnapshot.ts    # LayoutSnapshot, LayoutVars, resolveLayout (ctx → snapshot)
+├── engine.ts                # createLayoutEngine (send/subscribe/getSnapshot/setViewport/setIsHome/registerSlot)
 ├── gsap/
-│   ├── gsapBus.ts           # 60fps-шина на gsap.ticker (каналы: scroll:frame, frame)
-│   ├── gsapContext.ts       # контекст шины + useGsapBus
-│   ├── GsapProvider.tsx     # инфраструктура (bus, ticker, cleanup)
-│   ├── GsapLayoutBridge.tsx # адаптер: edge-detection на /home,
-│   │                        #   хук useRegisterHomeSpacer для страниц
-│   └── useRegisterHomeSpacer.ts # регистрация spacer-элемента /home
+│   ├── gsapBus.ts           # 60fps-шина (каналы: scroll:frame, frame, scroll:progress)
+│   ├── gsapContext.ts       # GsapContext + useGsapBus
+│   ├── GsapProvider.tsx     # инфраструктура (bus, ticker, cleanup) + registerScrollTrigger
+│   └── useRegisterScrollTrigger.ts # хук для регистрации ScrollTrigger страницами
 ├── context/
-│   ├── layoutContexts.ts    # LayoutEngineContext + LayoutSnapshotContext,
-│   │                        #   useLayoutEngine/Snapshot/Send
+│   ├── layoutContexts.ts    # useLayoutEngine / useLayoutSnapshot / useLayoutSend
 │   └── LayoutProvider.tsx   # реакция на bp/route/resize, владеет движком
 ├── slots/
 │   ├── LayoutRoot.tsx       # корневая нода с CSS-переменными
-│   ├── LayoutSlot.tsx       # navbar/content слот (через engine.registerSlot)
+│   ├── LayoutSlot.tsx       # navbar/content слот
 │   └── useLayoutApplier.ts  # snapshot → gsap.to(root, vars)
 ├── nav/
-│   ├── VerticalNavigationBar.tsx
-│   ├── ToggleButton.tsx
-│   ├── NavList.tsx
-│   ├── NavItem.tsx
-│   ├── navItems.ts
-│   └── *.module.css
+│   ├── NavigationBar/
+│   │   ├── NavigationBar.tsx
+│   │   ├── NavigationBar.module.css
+│   │   └── useNavPosition.ts # GSAP-анимация позиции .nav (scrub + discrete)
+│   ├── ToggleButton/
+│   │   ├── ToggleButton.tsx
+│   │   └── ToggleButton.module.css
+│   └── NavList/
+│       ├── NavList.tsx
+│       ├── NavList.module.css
+│       ├── NavItem.tsx
+│       ├── NavItem.module.css
+│       └── navItems.ts
 └── styles/
-    └── layout.css           # vars → геометрия слотов (без data-*)
+    └── layout.css           # vars → геометрия слотов
 ```
 
-## Зафиксированные решения
+---
 
-| #   | Решение                                                                                                                                                                   |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Чистый с нуля. `src/components/Layout/` строится пустым; существующий `LayoutState.ts` удаляется. Переноса кода из старого движка нет.                                    |
-| D2  | Старый движок `src/components/layout/` удалён полностью.                                                                                                                  |
-| D3  | State machine — чистая TS-функция (`transition(state, event, ctx)`), без XState/внешних библиотек.                                                                        |
-| D4  | Новый контракт API контекста (см. `context/layoutContexts.ts`): `useLayoutEngine` / `useLayoutSnapshot` / `useLayoutSend`. Старый `useLayout()` заменён на их комбинацию. |
-| D5  | Navbar остаётся вертикальным (окно `100vw` + `translateX`, отступ контента через `margin-left` у `<main>`).                                                               |
-| D5a | States: `fullscreen \| standard \| slim \| invisible`; `SLIM_WIDTH = 80`.                                                                                                 |
-| D6  | `bp` в snapshot: через событие `{ type: 'BREAKPOINT_CHANGED'; bp: Breakpoint }`.                                                                                          |
-| D7  | Вместо `data-*` атрибутов — только CSS-переменные (вариант A). Поведенческие сигналы через vars (`--nav-pointer-events`, `--layout-state`).                               |
-| D8  | GSAP-слой в `Layout/gsap/`: `gsapBus.ts` (60fps-шина), `GsapProvider.tsx` (инфраструктура), `GsapLayoutBridge.tsx` (адаптер 60fps → дискретные события).                  |
-| D10 | Реализация в 8 фазах (P1–P8).                                                                                                                                             |
+## 4. Машина состояний
 
-## Поток данных
+4 состояния навбара:
 
-```text
-GSAP 60fps events (scroll:frame, frame)
-  → GsapLayoutBridge (edge-detection, throttle)
-  → LayoutEngine (state machine + LayoutSnapshot)
-  → useLayoutApplier (gsap.to на CSS-переменных root)
-  → layout.css (vars → размеры/позиции слотов)
+| Mode         | Навбар                 | Контент           |
+| ------------ | ---------------------- | ----------------- |
+| `fullscreen` | Полноэкранный, x=0     | Без отступа       |
+| `standard`   | Уезжает на 75% влево   | margin-left: 25vw |
+| `slim`       | Уезжает, оставляя 80px | margin-left: 80px |
+| `invisible`  | Полностью за экраном   | Без отступа       |
+
+### События
+
+| Event                | Когда                          | Source       |
+| -------------------- | ------------------------------ | ------------ |
+| `TOGGLE`             | Клик по кнопке                 | `toggle`     |
+| `ROUTE_CHANGED`      | Смена pathname                 | `route`      |
+| `BREAKPOINT_CHANGED` | Смена ширины вьюпорта          | `breakpoint` |
+| `REACH_TOP`          | Скролл наверх спейсера (/home) | `scroll`     |
+| `REACH_BOTTOM`       | Скролл вниз спейсера (/home)   | `scroll`     |
+| `INTRO_COMPLETE`     | Завершение intro-анимации      | `scroll`     |
+
+---
+
+## 5. transition()
+
+`src/components/Layout/machine/transition.ts`
+
+Чистая функция-описатель (Elm Architecture подход):
+
+```ts
+function transition(
+  state: LayoutMode,
+  event: LayoutEvent,
+  ctx: MachineContext,
+): TransitionResult;
 ```
 
-## Роли
+Возвращает:
 
-| Сущность           | Ответственность                                                                             |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `machine/`         | Чистый TS-слой. Никаких React/GSAP/DOM.                                                     |
-| `engine.ts`        | Внешний (не-React) движок. `send/subscribe/getSnapshot/setViewport/setIsHome/registerSlot`. |
-| `GsapProvider`     | GSAP-инфраструктура: bus + ticker + cleanup. Не знает про layout.                           |
-| `GsapLayoutBridge` | Адаптер: слушает 60fps-шину, edge-detection, шлёт редкие события в engine.                  |
-| `LayoutProvider`   | React-обёртка движка; реакция на `useBreakpoint`/`useLocation`/resize.                      |
-| `useLayoutApplier` | snapshot → `gsap.to(root, vars)` + scrollLock + `ScrollTrigger.refresh` после дискретных.   |
-| `layout.css`       | Превращает `--vars` в геометрию слотов.                                                     |
+```ts
+interface TransitionResult {
+  state: LayoutMode; // новое состояние
+  actions: LayoutAction[]; // сайд-эффекты (NOTIFY_NAV_STATE, SCROLL_TO_END, RETARGET_SCRUB)
+  preferredAfter?: LayoutMode | null; // обновление ручного tablet-выбора
+}
+```
 
-## Публичный API (контракт страниц)
+`transition` ничего не выполняет сам — только описывает. Применяет результат
+`engine.send()` (см. §6). Это позволяет тестировать переходы без DOM/GSAP.
+
+---
+
+## 6. LayoutEngine
+
+`src/components/Layout/engine.ts`
+
+Импурный оркестратор — единственный владелец состояния (`mode`, `context`,
+`snapshot`). React-компоненты только читают через `subscribe`.
+
+### Хранение состояния
+
+| Переменная | Назначение                                                               |
+| ---------- | ------------------------------------------------------------------------ |
+| `mode`     | Текущее состояние (`LayoutMode`)                                         |
+| `viewport` | Ширина вьюпорта (для пересчёта геометрии)                                |
+| `context`  | `MachineContext` (`bp`, `isHome`, `preferred`, `source`, `homeEndState`) |
+| `snapshot` | Текущий публикуемый `LayoutSnapshot`                                     |
+
+### Приём событий (`send`)
+
+1. Маппит `event.type → source` через `EVENT_TO_SOURCE`
+2. Вызывает `transition(mode, event, fullCtx)` → получает `TransitionResult`
+3. Проверяет `changed` — реально ли что-то изменилось
+4. Если да — мутирует `mode` + `context`, пересоздаёт snapshot, notify-ит listeners
+
+### Публикация (pub/sub)
+
+```ts
+engine.subscribe(listener) → unsubscribe
+engine.getSnapshot() → LayoutSnapshot
+```
+
+### Внешние изменения (без машины)
+
+| Метод             | Что делает                                          | Кто вызывает                     |
+| ----------------- | --------------------------------------------------- | -------------------------------- |
+| `setViewport(px)` | Пересчитывает `--nav-content-offset` без смены mode | `LayoutProvider` при resize      |
+| `setIsHome(bool)` | Обновляет `context.isHome` и `homeEndState`         | `LayoutProvider` при смене роута |
+
+### Регистрация слотов
+
+```ts
+engine.registerSlot(id: 'navbar' | 'content', el: HTMLElement | null)
+```
+
+`LayoutSlot` регистрирует DOM-элемент при mount. Engine хранит их в `Map`.
+Пока нигде не потребляется — задел для будущего.
+
+---
+
+## 7. Подсистемы
+
+### gsapBus — 60fps-шина
+
+`src/components/Layout/gsap/gsapBus.ts`
+
+Типизированная event-шина на `gsap.ticker` (единый `requestAnimationFrame`
+для всех GSAP-анимаций):
+
+| Канал             | Payload                         | Назначение                             |
+| ----------------- | ------------------------------- | -------------------------------------- |
+| `scroll:frame`    | `{ y, delta, time, direction }` | Raw scroll-позиция из `window.scrollY` |
+| `frame`           | `{ y, delta, time, direction }` | Алиас `scroll:frame`                   |
+| `scroll:progress` | `{ progress, direction }`       | Прогресс скролла 0..1 от ScrollTrigger |
+
+`gsap.ticker` автоматически ставится на паузу при неактивной вкладке.
+
+### GsapProvider + useRegisterScrollTrigger
+
+`src/components/Layout/gsap/GsapProvider.tsx`
+`src/components/Layout/gsap/useRegisterScrollTrigger.ts`
+
+`GsapProvider` создаёт `gsapBus`, прокидывает через `GsapContext`, предоставляет
+`registerScrollTrigger(el)` через `RegisterScrollTriggerContext`. Также
+вызывает `ScrollTrigger.refresh()` при уходе с `/home`.
+
+`useRegisterScrollTrigger()` — хук для страниц. Возвращает функцию
+`registerScrollTrigger(el)`, которая создаёт `ScrollTrigger` на спейсере:
+
+- `onUpdate` → `bus.emit('scroll:progress')` для scrub-анимаций
+- Boundary detection → `engine.send(REACH_TOP / REACH_BOTTOM)`
+
+### useNavPosition
+
+`src/components/Layout/nav/NavigationBar/useNavPosition.ts`
+
+Владелец `x`-позиции `.nav`. Два режима:
+
+| Режим        | Когда                               | Механизм                                                                                                   |
+| ------------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Scrub**    | На `/home`                          | Paused-твин `fromTo(nav, {x:0} → {x: homeEnd})`, ведомый `bus.on('scroll:progress')` → `tween.progress(p)` |
+| **Discrete** | Вне `/home` или при toggle/route/bp | `gsap.to(nav, { x: navX, duration, ease })` при смене mode через `engine.subscribe`                        |
+
+Paused-твин не конфликтует с дискретной анимацией — GSAP `overwrite: 'auto'`
+не убивает paused-твины.
+
+### useLayoutApplier
+
+`src/components/Layout/slots/useLayoutApplier.ts`
+
+Подписан на `engine.subscribe`. При каждом новом snapshot:
+
+- `gsap.to(root, snapshot.vars)` — анимирует CSS-переменные
+- Управляет `document.documentElement.style.overflow` (scroll-lock)
+- Вызывает `ScrollTrigger.refresh()` в `onComplete`
+
+---
+
+## 8. Публичный API
 
 ```ts
 import {
@@ -91,35 +262,61 @@ import {
   useLayoutSnapshot,
   useLayoutSend,
 } from 'src/components/Layout/context/layoutContexts';
-import { useRegisterHomeSpacer } from 'src/components/Layout/gsap/GsapLayoutBridge';
-
-// Для HomePage:
-useRegisterHomeSpacer(spacerRef);
-
-// Для произвольной кнопки toggle:
-const send = useLayoutSend();
-const snapshot = useLayoutSnapshot();
-<button onClick={() => send({ type: 'TOGGLE' })}>{snapshot.value}</button>;
+import { useRegisterScrollTrigger } from 'src/components/Layout/gsap/useRegisterScrollTrigger';
+import { useGsapBus } from 'src/components/Layout/gsap/gsapContext';
+import { hasToggleFor, isHomePath } from 'src/components/Layout/machine/derive';
 ```
 
-## LayoutVars (root)
+### Регистрация ScrollTrigger на /home
 
-| Var                      | Назначение                                                   |
-| ------------------------ | ------------------------------------------------------------ |
-| `--nav-x`                | px-сдвиг окна `.nav` (`getNavTransform`).                    |
-| `--nav-pointer-events`   | `none` (invisible) / `auto` — чтобы клики не проваливались.  |
-| `--nav-content-offset`   | `margin-left` `<main>` (vw/px).                              |
-| `--layout-state`         | `fullscreen \| standard \| slim \| invisible` (для отладки). |
-| `--layout-scroll-locked` | `1 \| 0` (резерв для modal/immersive).                       |
+```tsx
+function HomePage() {
+  const spacerRef = useRef<HTMLElement>(null);
+  const registerScrollTrigger = useRegisterScrollTrigger();
 
-## Acceptance criteria
+  useEffect(() => {
+    if (spacerRef.current) {
+      return registerScrollTrigger(spacerRef.current);
+    }
+  }, [registerScrollTrigger]);
 
-- [x] Нет `data-* state` атрибутов в layout — только CSS-переменные (D7).
-- [x] `machine/` + `engine.ts` — чистые (без React/GSAP), `import type` для типов.
-- [x] `GsapProvider` не знает про navbar; мост отдельный (D8).
-- [x] `bp` присутствует в snapshot и учитывается (D6).
-- [x] Старый `src/components/layout/` удалён, импортов нет (D2).
-- [x] Контракт страниц: `useRegisterHomeSpacer` для `/home`.
-- [x] `npm run build` зелёный.
-- [ ] `npm run lint`, `npm run stylelint`, `npm run format` — будут проверены вручную.
-- [ ] Документация `docs/architecture.md` — обновление осталось.
+  return <div ref={spacerRef} />;
+}
+```
+
+### Отправка событий в машину
+
+```tsx
+const send = useLayoutSend();
+<button onClick={() => send({ type: 'TOGGLE' })}>Toggle</button>;
+```
+
+---
+
+## 9. Подписка на изменения
+
+| Хук                                          | Когда использовать                              | Re-render |
+| -------------------------------------------- | ----------------------------------------------- | --------- |
+| `useLayoutSnapshot()`                        | Нужен re-render UI на основе mode/state         | Да        |
+| `useLayoutEngine()` + `engine.subscribe(cb)` | Imperative side-effect без re-render            | Нет       |
+| `useGsapBus()`                               | Нужен raw 60fps (scroll:frame, scroll:progress) | Нет       |
+| `useLayoutSend()`                            | Отправка событий в машину                       | Нет       |
+
+`useLayoutEngine()` возвращает **стабильную ссылку** (никогда не меняется),
+поэтому `engine.subscribe()` внутри `useEffect` не перезапускает эффект.
+
+---
+
+## 10. CSS-переменные layout-а
+
+Публикуются `useLayoutApplier`-ом на `.layout-root`:
+
+| Var                      | Назначение                                                       |
+| ------------------------ | ---------------------------------------------------------------- |
+| `--nav-pointer-events`   | `none` на invisible, `auto` иначе — чтобы клики не проваливались |
+| `--nav-content-offset`   | `margin-left` для content-слота                                  |
+| `--layout-state`         | Строка состояния (для отладки / DevTools)                        |
+| `--layout-scroll-locked` | `1` / `0` — резерв для modal/immersive                           |
+
+Позиция навбара (`translateX`) управляется напрямую через GSAP в
+`useNavPosition`, не через CSS-переменную.

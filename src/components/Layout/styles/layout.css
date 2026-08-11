@@ -3,19 +3,20 @@
  * слотов. Никаких `data-*` атрибутов (D7): только переменные.
  *
  * Корневой контейнер (`LayoutRoot`) держит:
- *   --nav-x                 сдвиг окна `.nav` (px)
  *   --nav-pointer-events    none | auto
  *   --nav-content-offset    margin-left <main> (px / vw)
  *   --layout-state          fullscreen | standard | slim | invisible (для отладки)
  *   --layout-scroll-locked  1 | 0 (резерв, для modal/immersive)
  *
  * Значения публикуются `useLayoutApplier`-ом через `gsap.to(root, vars)`.
+ *
+ * Позиция `.nav` (translateX) управляется напрямую через GSAP в
+ * `useNavPosition`, а не через CSS-переменную.
  */
 
 .layout-root {
   min-height: 100dvh;
 
-  --nav-x: 0;
   --nav-pointer-events: auto;
   --nav-content-offset: 0px;
   --layout-state: fullscreen;
@@ -23,7 +24,7 @@
 }
 
 /**
- * Слот навбара: позиционируется и сдвигается через CSS-переменные.
+ * Слот навбара: позиция управляется GSAP напрямую (useNavPosition).
  * Pointer-events отключаются на invisible, чтобы клики не проваливались
  * в невидимой области.
  */
@@ -32,7 +33,6 @@
   inset-block: 0;
   left: 0;
   z-index: 50;
-  transform: translateX(var(--nav-x, 0));
   pointer-events: var(--nav-pointer-events, auto);
 }
 

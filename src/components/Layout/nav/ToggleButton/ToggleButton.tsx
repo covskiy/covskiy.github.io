@@ -11,8 +11,8 @@
  * окна); на tablet — внутри навбара, едет с его краем.
  */
 
-import { useBreakpoint } from '../../../utils/breakpoints';
-import { useLayoutSend, useLayoutSnapshot } from '../context/layoutContexts';
+import { useBreakpoint } from '../../../../utils/breakpoints';
+import { useLayoutSend, useLayoutSnapshot } from '../../context/layoutContexts';
 import styles from './ToggleButton.module.css';
 
 export interface ToggleButtonProps {

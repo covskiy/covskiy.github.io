@@ -50,7 +50,6 @@ export const ROOT_VAR_NAMES = {
   navPointerEvents: '--nav-pointer-events',
   navContentOffset: '--nav-content-offset',
   layoutState: '--layout-state',
-  scrollLocked: '--layout-scroll-locked',
 } as const;
 
 /**

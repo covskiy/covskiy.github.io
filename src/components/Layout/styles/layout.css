@@ -6,12 +6,12 @@
  *   --nav-pointer-events    none | auto
  *   --nav-content-offset    margin-left <main> (px / vw)
  *   --layout-state          fullscreen | standard | slim | invisible (для отладки)
- *   --layout-scroll-locked  1 | 0 (резерв, для modal/immersive)
  *
  * Значения публикуются `useLayoutApplier`-ом через `gsap.to(root, vars)`.
  *
  * Позиция `.nav` (translateX) управляется напрямую через GSAP в
  * `useNavPosition`, а не через CSS-переменную.
+ * Scroll-lock — на `document.documentElement.style.overflow` (см. useLayoutApplier).
  */
 
 .layout-root {
@@ -20,7 +20,6 @@
   --nav-pointer-events: auto;
   --nav-content-offset: 0px;
   --layout-state: fullscreen;
-  --layout-scroll-locked: 0;
 }
 
 /**
@@ -39,9 +38,4 @@
 .layout-content {
   margin-left: var(--nav-content-offset, 0);
   width: calc(100% - var(--nav-content-offset, 0));
-}
-
-/** Lock скролла для modal/immersive (резерв). */
-.layout-root[data-scroll-locked='true'] {
-  overflow: hidden;
 }

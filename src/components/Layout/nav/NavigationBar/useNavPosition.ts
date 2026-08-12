@@ -2,12 +2,10 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import type { RefObject } from 'react';
-import {
-  useLayoutEngine,
-  useLayoutSnapshot,
-} from '../../context/layoutContexts';
+import { useLayoutEngine } from '../../context/layoutContexts';
 import { useGsapBus } from '../../gsap/gsapContext';
 import { getNavTransform } from '../../machine/geometry';
+import type { LayoutSnapshot } from '../../machine/layoutSnapshot';
 
 const NAV_ANIM_DURATION = 0.6;
 const NAV_ANIM_EASE = 'power2.inOut';
@@ -21,10 +19,15 @@ const NAV_ANIM_EASE = 'power2.inOut';
  *    с дискретной анимацией через `overwrite: 'auto'`.
  * 2. **Дискретная анимация** (toggle/route/breakpoint) — `gsap.to(nav, {x})`
  *    при смене mode через engine.subscribe.
+ *
+ * Снимок машины передаётся параметром из `NavigationBar` (единственный
+ * читатель `useLayoutSnapshot()` в навбаре) — huk сам контекст не читает.
  */
-export function useNavPosition(navRef: RefObject<HTMLElement | null>) {
+export function useNavPosition(
+  navRef: RefObject<HTMLElement | null>,
+  snapshot: LayoutSnapshot,
+) {
   const engine = useLayoutEngine();
-  const snapshot = useLayoutSnapshot();
   const bus = useGsapBus();
   const scrubTweenRef = useRef<gsap.core.Tween | null>(null);
 

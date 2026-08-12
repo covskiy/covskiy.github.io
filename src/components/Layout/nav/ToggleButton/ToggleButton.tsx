@@ -2,9 +2,9 @@
  * ToggleButton — кнопка toggle (☰ / ←) для вертикального навбара.
  *
  * Декомпозиция (см. план §II.5):
- * - читает `useLayoutSnapshot()` для глифа/aria;
  * - `onClick` → `useLayoutSend()({ type: 'TOGGLE' })`;
- * - mobile-toggle видимость управляется через CSS (data-атрибут / class),
+ * - глиф и aria зависят от `isSlim` из пропсов;
+ * - mobile-toggle видимость управляется через CSS-класс позиционирования,
  *   либо явный GSAP-set, если потребуется 60fps.
  *
  * Placement: на mobile — fixed-сиблинг навбара (вне трансформированного
@@ -12,7 +12,7 @@
  */
 
 import { useBreakpoint } from '../../../../utils/breakpoints';
-import { useLayoutSend, useLayoutSnapshot } from '../../context/layoutContexts';
+import { useLayoutSend } from '../../context/layoutContexts';
 import styles from './ToggleButton.module.css';
 
 export interface ToggleButtonProps {
@@ -21,7 +21,6 @@ export interface ToggleButtonProps {
 }
 
 export function ToggleButton({ isSlim, hasToggle }: ToggleButtonProps) {
-  const snapshot = useLayoutSnapshot();
   const send = useLayoutSend();
   const bp = useBreakpoint();
 
@@ -40,7 +39,6 @@ export function ToggleButton({ isSlim, hasToggle }: ToggleButtonProps) {
       onClick={handleClick}
       aria-label={isSlim ? 'Open navigation' : 'Close navigation'}
       type="button"
-      data-layout-state={snapshot.value}
     >
       {isSlim ? '☰' : '←'}
     </button>

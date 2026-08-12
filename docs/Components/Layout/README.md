@@ -256,6 +256,10 @@ React-потребители не пересчитывали их локальн
 | **Scrub**    | На `/home`                          | Paused-твин `fromTo(nav, {x:0} → {x: homeEnd})`, ведомый `bus.on('scroll:progress')` → `tween.progress(p)` |
 | **Discrete** | Вне `/home` или при toggle/route/bp | `gsap.to(nav, { x: navX, duration, ease })` при смене mode через `engine.subscribe`                        |
 
+Снимок машины передаётся параметром из `NavigationBar`
+(`useNavPosition(navRef, snapshot)`) — единственный читатель
+`useLayoutSnapshot()` в навбаре, сам хук контекст не читает.
+
 Paused-твин не конфликтует с дискретной анимацией — GSAP `overwrite: 'auto'`
 не убивает paused-твины.
 
@@ -333,12 +337,11 @@ const send = useLayoutSend();
 
 Публикуются `useLayoutApplier`-ом на `.layout-root`:
 
-| Var                      | Назначение                                                       |
-| ------------------------ | ---------------------------------------------------------------- |
-| `--nav-pointer-events`   | `none` на invisible, `auto` иначе — чтобы клики не проваливались |
-| `--nav-content-offset`   | `margin-left` для content-слота                                  |
-| `--layout-state`         | Строка состояния (для отладки / DevTools)                        |
-| `--layout-scroll-locked` | `1` / `0` — резерв для modal/immersive                           |
+| Var                    | Назначение                                                       |
+| ---------------------- | ---------------------------------------------------------------- |
+| `--nav-pointer-events` | `none` на invisible, `auto` иначе — чтобы клики не проваливались |
+| `--nav-content-offset` | `margin-left` для content-слота                                  |
+| `--layout-state`       | Строка состояния (для отладки / DevTools)                        |
 
 Позиция навбара (`translateX`) управляется напрямую через GSAP в
 `useNavPosition`, не через CSS-переменную.

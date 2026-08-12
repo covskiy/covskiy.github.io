@@ -57,12 +57,8 @@ covskiy.github.io/
 │   │   ├── Logo.md
 │   │   ├── LogoText.md
 │   │   ├── Layout/
-│   │   │   ├── Layout.md
-│   │   │   ├── LayoutContext.md
-│   │   │   ├── LayoutProvider.md
-│   │   │   ├── machine.md
-│   │   │   ├── nav.md
-│   │   │   └── scenes.md
+│   │   │   ├── README.md
+│   │   │   └── testing.md
 │   │   ├── SkipControls.md
 │   │   ├── SlimProgressBar.md
 │   │   └── Tagline.md
@@ -123,32 +119,31 @@ covskiy.github.io/
 │   │   │   └── utils/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
-│   │   ├── layout/                 # Layout страницы (4 состояния: fullscreen / standard / slim / invisible)
-│   │   │   ├── index.ts            # Публичный API модуля
-│   │   │   ├── LayoutProvider/     # Машина + композер: единственный источник mode, каналы, nav+main
-│   │   │   │   ├── LayoutProvider.tsx
-│   │   │   │   ├── LayoutProvider.module.css
-│   │   │   │   └── LayoutContext.ts # createContext + LayoutContextValue + useLayout()
-│   │   │   ├── machine/            # ЧИСТАЯ логика (без React/GSAP)
-│   │   │   │   ├── layoutMode.ts   # LayoutMode + LayoutChangeSource + LayoutEvent + LayoutAction
-│   │   │   │   ├── transition.ts   # transition(state,event,ctx) — единственный решатель переходов
-│   │   │   │   ├── selectors.ts    # selectIsSlim/HasToggle/IsHome/NavX/HomeEndState/ContentOffset
-│   │   │   │   ├── geometry.ts     # SLIM_WIDTH + getNavTransform + deriveMainOffset
-│   │   │   │   └── derive.ts       # getDefaultState / getNextState / homeEndStateFor / ...
-│   │   │   ├── scenes/             # React-хуки-сцены (по одной ответственности)
-│   │   │   │   ├── useLayoutMachine.ts # executor: useState + стабильный dispatch + actions (v2)
-│   │   │   │   ├── useScrollScrub.ts   # сенсор /home: REACH_*, видимость toggle, scrollTo
-│   │   │   │   └── useNavPosition.ts # Единственный владелец позиции .nav (discrete + scrub)
-│   │   │   └── nav/                # Презентационная панель (часть layout)
-│   │   │       ├── NavigationBar.tsx
-│   │   │       ├── NavigationBar.module.css
-│   │   │       ├── NavList.tsx
-│   │   │       ├── NavList.module.css
-│   │   │       ├── NavItem.tsx
-│   │   │       ├── NavItem.module.css
-│   │   │       ├── navItems.ts     # Конфиг (path/label/icon), деривация от routes
-│   │   │       ├── ToggleButton.tsx
-│   │   │       └── ToggleButton.module.css
+│   │   ├── Layout/                  # Layout (машина + движок + GSAP-шина), см. docs/Components/Layout/README.md
+│   │   │   ├── engine.ts            # Внешний движок: createLayoutEngine (send/subscribe/getSnapshot/registerSlot)
+│   │   │   ├── machine/             # ЧИСТАЯ логика (без React/GSAP/DOM)
+│   │   │   │   ├── layoutMode.ts    # LayoutMode + LayoutEvent + MachineContext
+│   │   │   │   ├── transition.ts    # transition(state,event,ctx) — единственный решатель переходов
+│   │   │   │   ├── derive.ts        # isHomePath / hasToggleFor / isSlimFor / homeEndStateFor / ...
+│   │   │   │   ├── geometry.ts      # SLIM_WIDTH + getNavTransform + deriveMainOffset
+│   │   │   │   ├── layoutSnapshot.ts # resolveLayout: context → snapshot (value, vars, isSlim, hasToggle)
+│   │   │   │   └── *.test.ts        # co-located юнит-тесты (vitest)
+│   │   │   ├── context/             # React-обёртка движка
+│   │   │   │   ├── LayoutProvider.tsx # Реакции на bp/route/resize → engine
+│   │   │   │   └── layoutContexts.ts  # LayoutEngineContext + LayoutSnapshotContext + хуки
+│   │   │   ├── gsap/                # 60fps-шина + ScrollTrigger-фабрика
+│   │   │   │   ├── gsapBus.ts
+│   │   │   │   ├── GsapProvider.tsx # gsapBus + registerScrollTrigger (scroll:progress / REACH_*)
+│   │   │   │   └── useRegisterScrollTrigger.ts
+│   │   │   ├── slots/               # DOM-обвязка: root + слоты + applier
+│   │   │   │   ├── LayoutRoot.tsx   # корневая нода; CSS-переменные лейаута
+│   │   │   │   ├── LayoutSlot.tsx   # регистрация слота в движке
+│   │   │   │   └── useLayoutApplier.ts # gsap.to(root, snapshot.vars) + scroll-lock
+│   │   │   ├── styles/layout.css    # CSS-переменные лейаута на root
+│   │   │   └── nav/                 # Презентационная панель (часть layout)
+│   │   │       ├── NavigationBar/   # читает useLayoutSnapshot; useNavPosition(navRef, snapshot)
+│   │   │       ├── NavList/         # NavList + NavItem + navItems (конфиг роутов)
+│   │   │       └── ToggleButton/    # toggle (☰ / ←) по breakpoint
 │   │   └── PageTransition/           # Обёртка анимации смены роута
 │   │       └── PageTransition.tsx
 │   ├── pages/
@@ -217,18 +212,20 @@ covskiy.github.io/
 [App.tsx]
   ├─ initGsap()                              ← на модульном уровне (top-level)
   ├─ Чистый layout-компонент:
-  │    └─ <LayoutProvider />          ← всегда в DOM, машина + per-component animator
-  │         ├─ Единственный источник состояния: mode (React Context)
-  │         ├─ Держит низкоуровневые каналы (onScrollProgress/onToggleVisibility/onNavState)
-  │         ├─ Композер сцен: useLayoutMachine (executor) + useScrollScrub (сенсор)
-  │         ├─ <NavigationBar/>          ← nav (fixed), позицию .nav ведёт useNavPosition
-  │         └─ <main>                  ← статичная колонка, отступ через
-  │                                      --nav-content-offset (не твинится).
-  │                                      Единственный <main> в документе:
-  │                                      страницы НЕ рендерят свой <main>,
-  │                                      их корневой контейнер — <div>
-  │              └─ <Routes>
-  │                   └─ каждая route обёрнута в <PageTransition>
+  │    └─ <LayoutProvider />          ← всегда в DOM: контексты машин + реакции
+  │         │                             на bp/route/resize → engine
+  │         └─ <GsapProvider />       ← 60fps-шина (gsapBus) + registerScrollTrigger
+  │              └─ <LayoutRoot />    ← корневая нода; useLayoutApplier
+  │                   │                  gsap.to(root, snapshot.vars) + scroll-lock
+  │                   ├─ <NavigationBar/> ← nav (fixed), читает useLayoutSnapshot сам,
+  │                   │                     позицию .nav ведёт useNavPosition(navRef, snapshot)
+  │                   └─ <main>       ← статичная колонка, отступ через
+  │                       │              --nav-content-offset (не твинится).
+  │                       │              Единственный <main> в документе:
+  │                       │              страницы НЕ рендерят свой <main>,
+  │                       │              их корневой контейнер — <div>
+  │                       └─ <Routes>
+  │                            └─ каждая route обёрнута в <PageTransition>
   └─ Никакой intro/splash-логики. Не импортирует
        IntroAnimation, introStorage, useLocation, useState, useEffect.
 
@@ -243,19 +240,15 @@ covskiy.github.io/
   ├─ showIntro === true →
   │    createPortal(<IntroAnimation />, document.body) — overlay поверх контента
   │    onComplete → setShowIntro(false)
-  └─ useEffect → useLayout().registerScrollTrigger(spacerRef.current)
-       ├─ useScrollScrub создаёт ScrollTrigger + таймлайн (scrub)
-       ├─ scrub: nav.x (transform, 100vw → видимая ширина)
-       ├─ main.x НЕ твинится — отступ через --nav-content-offset
-       ├─ ScrollTrigger.onUpdate:
-       │    ├─ зовёт scrollListenersRef (низкоуровневый канал для scrub-сцен)
-       │    ├─ progress 0 → dispatch(REACH_TOP)   (пересечение границы)
-       │    ├─ progress ≥ 1 → dispatch(REACH_BOTTOM)
-       │    └─ notifyToggleVisibility(progress ≥ 0.9999 || manualState)
-       ├─ useLayoutMachine (executor): transition() решает переход,
-       │    применяет actions (NOTIFY_NAV_STATE/SCROLL_TO_END/RETARGET_SCRUB)
-       ├─ useNavPosition (владелец .nav): paused scrub-твин по onScrollProgress
-       │    + дискретная анимация по onNavState (source !== 'scroll')
+  └─ useEffect → registerScrollTrigger(spacerRef.current)
+       ├─ ScrollTrigger создаётся в GsapProvider (scrub: true)
+       ├─ onUpdate:
+       │    ├─ bus.emit('scroll:progress')   ← scrub-шина для навбара
+       │    └─ границы: engine.send(REACH_TOP / REACH_BOTTOM)
+       ├─ Смена mode решается машиной (transition), исполняется движком:
+       │    ├─ useLayoutApplier → gsap.to(root, vars) + scroll-lock
+       │    └─ useNavPosition → paused scrub-твин по bus + дискретная
+       │                        анимация из engine.subscribe
        └─ cleanup из registerScrollTrigger → kill() при размонтировании
 
 Подробнее: `docs/Pages/HomePage.md`.
@@ -364,16 +357,16 @@ BrowserRouter читает URL уже на клиенте и рендерит н
 
 ### 4.4 Компоненты
 
-| Компонент        | Назначение                                                                                                              |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `Logo`           | Наковальня, drawSVG (Intro)                                                                                             |
-| `LogoText`       | Текст "COVSKIY" — SVG morph между формами                                                                               |
-| `Tagline`        | Слоган — клавиатура, поэтапная анимация                                                                                 |
-| `SkipControls`   | Кнопки skip / never-show для Intro                                                                                      |
-| `IntroAnimation` | Intro overlay (position: fixed, поверх layout)                                                                          |
-| `LayoutProvider` | Машина раскладки + per-component animator: единственный источник `mode`, низкоуровневые каналы, рендерит nav + `<main>` |
-| `NavigationBar`  | Презентационная панель (часть layout): многосостояние fullscreen/standard/slim/invisible, ScrollTrigger + toggle        |
-| `PageTransition` | Обёртка анимации смены роута                                                                                            |
+| Компонент        | Назначение                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Logo`           | Наковальня, drawSVG (Intro)                                                                                                                      |
+| `LogoText`       | Текст "COVSKIY" — SVG morph между формами                                                                                                        |
+| `Tagline`        | Слоган — клавиатура, поэтапная анимация                                                                                                          |
+| `SkipControls`   | Кнопки skip / never-show для Intro                                                                                                               |
+| `IntroAnimation` | Intro overlay (position: fixed, поверх layout)                                                                                                   |
+| `LayoutProvider` | Контексты layout-движка + реакции на bp/route/resize; nav не рендерит (см. `docs/Components/Layout/README.md`)                                   |
+| `NavigationBar`  | Презентационная панель (часть layout): многосостояние fullscreen/standard/slim/invisible, читает `useLayoutSnapshot` сам, ScrollTrigger + toggle |
+| `PageTransition` | Обёртка анимации смены роута                                                                                                                     |
 
 Подробности по `Logo` / `LogoText` / `Tagline` — в `docs/Components/`.
 Подробности по `IntroAnimation` — в `docs/Components/IntroAnimation.md`.
@@ -579,35 +572,36 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 
 ## 11. Сводка файлов — быстрый поиск
 
-| Задача                       | Файл                                                                                                              |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Точка входа JS               | `src/main.tsx`                                                                                                    |
-| Корневой компонент           | `src/App.tsx`                                                                                                     |
-| Все роуты                    | `src/routes.tsx`                                                                                                  |
-| Layout (машина/композер)     | `src/components/layout/LayoutProvider/LayoutProvider.tsx`                                                         |
-| Layout (context)             | `src/components/layout/LayoutProvider/LayoutContext.ts`                                                           |
-| Layout (чистая логика)       | `src/components/layout/machine/` (layoutMode / geometry / derive)                                                 |
-| Layout (сцены-хуки)          | `src/components/layout/scenes/` (useLayoutMachine/ScrollScrub/NavPosition)                                        |
-| Layout (панель)              | `src/components/layout/nav/` (NavigationBar, NavList/NavItem, ToggleButton, navItems)                             |
-| HomePage                     | `src/pages/HomePage/HomePage.tsx`                                                                                 |
-| Стили раскладки              | CSS Modules (`LayoutProvider.module.css`, `NavigationBar.module.css`, `NavItem.module.css`, `NavList.module.css`) |
-| Breakpoint hook              | `src/utils/breakpoints.ts`                                                                                        |
-| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`                                                                |
-| Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`                                                             |
-| Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts`                                                            |
-| Layout (документация)        | `docs/Components/Layout/` (папка доков фичи)                                                                      |
-| HomePage (документация)      | `docs/Pages/HomePage.md`                                                                                          |
-| Типы intro                   | `src/types/intro.types.ts`                                                                                        |
-| GSAP-инициализация           | `src/utils/initGsap.ts`                                                                                           |
-| Логгер                       | `src/utils/logger.ts`                                                                                             |
-| Design tokens build          | `sd.config.js`                                                                                                    |
-| Design tokens источник       | `design-tokens/*.json`                                                                                            |
-| Design tokens (документация) | `docs/design-tokens.md`                                                                                           |
-| Сгенерированные токены       | `src/styles/*.css`                                                                                                |
-| Preloader HTML               | `index.html`                                                                                                      |
-| Vite config                  | `vite.config.ts`                                                                                                  |
-| ESLint config                | `eslint.config.js`                                                                                                |
-| Deploy CI                    | `.github/workflows/deploy.yml`                                                                                    |
-| Husky hook                   | `.husky/pre-commit`                                                                                               |
-| Скрипты npm                  | `package.json`                                                                                                    |
-| Обзор проекта (для AI)       | `AGENTS.md`                                                                                                       |
+| Задача                       | Файл                                                                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Точка входа JS               | `src/main.tsx`                                                                                                                           |
+| Корневой компонент           | `src/App.tsx`                                                                                                                            |
+| Все роуты                    | `src/routes.tsx`                                                                                                                         |
+| Layout (движок)              | `src/components/Layout/engine.ts` (send/subscribe/getSnapshot/registerSlot)                                                              |
+| Layout (чистая логика)       | `src/components/Layout/machine/` (layoutMode / transition / derive / geometry / layoutSnapshot)                                          |
+| Layout (контекст)            | `src/components/Layout/context/` (LayoutProvider + layoutContexts)                                                                       |
+| Layout (GSAP-шина)           | `src/components/Layout/gsap/` (gsapBus / GsapProvider / useRegisterScrollTrigger)                                                        |
+| Layout (DOM-обвязка)         | `src/components/Layout/slots/` (LayoutRoot / LayoutSlot / useLayoutApplier)                                                              |
+| Layout (панель)              | `src/components/Layout/nav/` (NavigationBar, NavList/NavItem, ToggleButton)                                                              |
+| HomePage                     | `src/pages/HomePage/HomePage.tsx`                                                                                                        |
+| Стили раскладки              | `src/components/Layout/styles/layout.css` + CSS Modules навбара (`NavigationBar.module.css`, `NavItem.module.css`, `NavList.module.css`) |
+| Breakpoint hook              | `src/utils/breakpoints.ts`                                                                                                               |
+| Intro animation              | `src/components/IntroAnimation/IntroAnimation.tsx`                                                                                       |
+| Intro storage                | `src/components/IntroAnimation/utils/introStorage.ts`                                                                                    |
+| Skip-логика                  | `src/components/IntroAnimation/hooks/useSplashSkip.ts`                                                                                   |
+| Layout (документация)        | `docs/Components/Layout/` (папка доков фичи)                                                                                             |
+| HomePage (документация)      | `docs/Pages/HomePage.md`                                                                                                                 |
+| Типы intro                   | `src/types/intro.types.ts`                                                                                                               |
+| GSAP-инициализация           | `src/utils/initGsap.ts`                                                                                                                  |
+| Логгер                       | `src/utils/logger.ts`                                                                                                                    |
+| Design tokens build          | `sd.config.js`                                                                                                                           |
+| Design tokens источник       | `design-tokens/*.json`                                                                                                                   |
+| Design tokens (документация) | `docs/design-tokens.md`                                                                                                                  |
+| Сгенерированные токены       | `src/styles/*.css`                                                                                                                       |
+| Preloader HTML               | `index.html`                                                                                                                             |
+| Vite config                  | `vite.config.ts`                                                                                                                         |
+| ESLint config                | `eslint.config.js`                                                                                                                       |
+| Deploy CI                    | `.github/workflows/deploy.yml`                                                                                                           |
+| Husky hook                   | `.husky/pre-commit`                                                                                                                      |
+| Скрипты npm                  | `package.json`                                                                                                                           |
+| Обзор проекта (для AI)       | `AGENTS.md`                                                                                                                              |

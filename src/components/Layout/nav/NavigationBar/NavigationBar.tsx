@@ -6,24 +6,16 @@ import { ToggleButton } from '../ToggleButton/ToggleButton';
 import { useNavPosition } from './useNavPosition';
 import styles from './NavigationBar.module.css';
 
-export interface NavigationBarProps {
-  isSlim: boolean;
-  hasToggle: boolean;
-}
-
-export function NavigationBar({ isSlim, hasToggle }: NavigationBarProps) {
+export function NavigationBar() {
   const snapshot = useLayoutSnapshot();
+  const { isSlim, hasToggle } = snapshot;
   const isMobile = useBreakpoint() === 'mobile';
   const navRef = useRef<HTMLElement>(null);
-  useNavPosition(navRef);
+  useNavPosition(navRef, snapshot);
 
   return (
     <>
-      <nav
-        ref={navRef}
-        className={styles.nav}
-        data-layout-state={snapshot.value}
-      >
+      <nav ref={navRef} className={styles.nav}>
         <div className={styles.navInner}>
           <div className={styles.logo}>✦ Portfolio</div>
           <NavList isSlim={isSlim} />

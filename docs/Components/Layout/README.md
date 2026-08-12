@@ -144,7 +144,10 @@ interface TransitionResult {
 ```
 
 `transition` ничего не выполняет сам — только описывает. Применяет результат
-`engine.send()` (см. §6). Это позволяет тестировать переходы без DOM/GSAP.
+`engine.send()` (см. §6). Машина и движок покрыты юнит-тестами (`vitest`):
+co-located `*.test.ts` в `machine/` + `engine.test.ts`. Запуск — `npm run test`,
+прогоняется в pre-commit. React-компоненты (gsap/context/slots/nav) не тестируются.
+Глоссарий терминов и конвенция имен тестов — в [`testing.md`](./testing.md).
 
 ---
 

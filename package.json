@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:design-tokens": "style-dictionary build --config sd.config.js --verbose",
     "preview": "vite preview",
+    "test": "vitest run",
     "check": "npm run lint && npm run format && npm run stylelint",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -48,6 +49,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.10",
     "browserslist": "^4.28.2",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -62,10 +64,10 @@
     "style-dictionary": "^5.4.0",
     "stylelint": "^16.26.1",
     "stylelint-config-standard": "^39.0.1",
-    "tsx": "^4.23.11",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
     "vite": "^8.0.1",
-    "vite-plugin-svgr": "^5.2.0"
+    "vite-plugin-svgr": "^5.2.0",
+    "vitest": "^4.1.10"
   }
 }

@@ -587,7 +587,7 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Layout (машина/композер)     | `src/components/layout/LayoutProvider/LayoutProvider.tsx`                                                         |
 | Layout (context)             | `src/components/layout/LayoutProvider/LayoutContext.ts`                                                           |
 | Layout (чистая логика)       | `src/components/layout/machine/` (layoutMode / geometry / derive)                                                 |
-| Layout (сцены-хуки)          | `src/components/layout/scenes/` (useLayoutMachine/ScrollScrub/NavPosition)                                                                  |
+| Layout (сцены-хуки)          | `src/components/layout/scenes/` (useLayoutMachine/ScrollScrub/NavPosition)                                        |
 | Layout (панель)              | `src/components/layout/nav/` (NavigationBar, NavList/NavItem, ToggleButton, navItems)                             |
 | HomePage                     | `src/pages/HomePage/HomePage.tsx`                                                                                 |
 | Стили раскладки              | CSS Modules (`LayoutProvider.module.css`, `NavigationBar.module.css`, `NavItem.module.css`, `NavList.module.css`) |

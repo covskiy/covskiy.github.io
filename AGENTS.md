@@ -14,6 +14,7 @@ React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pag
 | `npm run build`                       | `tsc -b && vite build` — типы + production-сборка    |
 | `npm run build:design-tokens`         | `style-dictionary build` — JSON → `src/styles/*.css` |
 | `npm run preview`                     | Локальный просмотр production-сборки                 |
+| `npm run test`                        | `vitest run` — юнит-тесты layout-машины              |
 | `npm run lint` / `lint:fix`           | ESLint                                               |
 | `npm run format` / `format:fix`       | Prettier                                             |
 | `npm run stylelint` / `stylelint:fix` | Stylelint по `src/**/*.css`                          |
@@ -63,6 +64,8 @@ covskiy.github.io/
   `machine/` + `engine.ts` — без React/GSAP/DOM. Состояние (`mode`)
   держится в движке, не в React. Страницы регистрируют ScrollTrigger
   через `useRegisterHomeSpacer(triggerRef)` (`src/components/Layout/gsap/GsapLayoutBridge.tsx`).
+  Чистый слой покрыт юнит-тестами (`vitest`): co-located `*.test.ts`
+  в `machine/` + `engine.test.ts` — React-компоненты не тестируются.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
   поверх собственного контента и регистрирует ScrollTrigger раскладки
@@ -106,6 +109,7 @@ covskiy.github.io/
 | `docs/Components/Logo.md`           | Анимация логотипа (наковальня)                                      |
 | `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)                                |
 | `docs/Components/Layout/README.md`  | Layout-движок: machine/engine/snapshot/CSS-vars/GsapProvider/Bridge |
+| `docs/Components/Layout/testing.md` | Тесты: глоссарий терминов и конвенция имен (GWT/AAA)                |
 | `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)                                       |
 | `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                                          |
 | `docs/Pages/NotFoundPage.md`        | Описание страницы 404                                               |
@@ -126,6 +130,7 @@ covskiy.github.io/
   `eslint-plugin-react`, `-react-hooks`, `-react-refresh`,
   `eslint-config-prettier`, `globals`.
 - **Стиль**: `prettier`, `stylelint`, `stylelint-config-standard`.
+- **Тесты**: `vitest`, `@vitest/coverage-v8`.
 - **Git-хуки**: `husky`, `lint-staged`.
 
 ## CI/CD
@@ -147,6 +152,7 @@ covskiy.github.io/
 - Stylelint: `selector-class-pattern: null` (CSS Modules генерируют хеши).
 - Проект WIP — `App.tsx`, `routes.tsx`, страницы будут дорабатываться.
 - Husky v8 + lint-staged, см. `package.json` секцию `lint-staged`.
+  Pre-commit дополнительно прогоняет `npm run test` (vitest).
 
 ## Соглашения по коммитам
 

@@ -173,23 +173,7 @@ describe('признак home-страницы', () => {
   });
 });
 
-describe('слоты и освобождение ресурсов', () => {
-  it('когда регистрируют и снимают слот, движок не падает', () => {
-    // Arrange: движок на tablet, fake-элемент слота.
-    const engine = makeEngine('tablet', false);
-    const el = {} as HTMLElement;
-
-    // Act: регистрация, снятие и запрос несуществующего слота.
-    expect(() => {
-      engine.registerSlot('nav', el);
-      engine.registerSlot('nav', null);
-      engine.registerSlot('missing', null);
-    }).not.toThrow();
-
-    // Assert: не выброшено; ресурсы освобождаются в dispose.
-    engine.dispose();
-  });
-
+describe('освобождение ресурсов', () => {
   it('когда движок dispose-ни, подписчики больше не уведомляются', () => {
     // Arrange: движок с подписчиком.
     const engine = makeEngine('mobile', true);

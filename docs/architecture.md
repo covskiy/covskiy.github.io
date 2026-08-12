@@ -120,7 +120,7 @@ covskiy.github.io/
 │   │   │       ├── introStorage.ts
 │   │   │       └── index.ts
 │   │   ├── Layout/                  # Layout (машина + движок + GSAP-шина), см. docs/Components/Layout/README.md
-│   │   │   ├── engine.ts            # Внешний движок: createLayoutEngine (send/subscribe/getSnapshot/registerSlot)
+│   │   │   ├── engine.ts            # Внешний движок: createLayoutEngine (send/subscribe/getSnapshot/setIsHome)
 │   │   │   ├── machine/             # ЧИСТАЯ логика (без React/GSAP/DOM)
 │   │   │   │   ├── layoutMode.ts    # LayoutMode + LayoutEvent + MachineContext
 │   │   │   │   ├── transition.ts    # transition(state,event,ctx) — единственный решатель переходов
@@ -135,9 +135,8 @@ covskiy.github.io/
 │   │   │   │   ├── gsapBus.ts
 │   │   │   │   ├── GsapProvider.tsx # gsapBus + registerScrollTrigger (scroll:progress / REACH_*)
 │   │   │   │   └── useRegisterScrollTrigger.ts
-│   │   │   ├── slots/               # DOM-обвязка: root + слоты + applier
+│   │   │   ├── slots/               # DOM-обвязка: root + applier
 │   │   │   │   ├── LayoutRoot.tsx   # корневая нода; CSS-переменные лейаута
-│   │   │   │   ├── LayoutSlot.tsx   # регистрация слота в движке
 │   │   │   │   └── useLayoutApplier.ts # gsap.to(root, snapshot.vars) + scroll-lock
 │   │   │   ├── styles/layout.css    # CSS-переменные лейаута на root
 │   │   │   └── nav/                 # Презентационная панель (часть layout)
@@ -577,11 +576,11 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Точка входа JS               | `src/main.tsx`                                                                                                                           |
 | Корневой компонент           | `src/App.tsx`                                                                                                                            |
 | Все роуты                    | `src/routes.tsx`                                                                                                                         |
-| Layout (движок)              | `src/components/Layout/engine.ts` (send/subscribe/getSnapshot/registerSlot)                                                              |
+| Layout (движок)              | `src/components/Layout/engine.ts` (send/subscribe/getSnapshot/setIsHome)                                                                 |
 | Layout (чистая логика)       | `src/components/Layout/machine/` (layoutMode / transition / derive / geometry / layoutSnapshot)                                          |
 | Layout (контекст)            | `src/components/Layout/context/` (LayoutProvider + layoutContexts)                                                                       |
 | Layout (GSAP-шина)           | `src/components/Layout/gsap/` (gsapBus / GsapProvider / useRegisterScrollTrigger)                                                        |
-| Layout (DOM-обвязка)         | `src/components/Layout/slots/` (LayoutRoot / LayoutSlot / useLayoutApplier)                                                              |
+| Layout (DOM-обвязка)         | `src/components/Layout/slots/` (LayoutRoot / useLayoutApplier)                                                                           |
 | Layout (панель)              | `src/components/Layout/nav/` (NavigationBar, NavList/NavItem, ToggleButton)                                                              |
 | HomePage                     | `src/pages/HomePage/HomePage.tsx`                                                                                                        |
 | Стили раскладки              | `src/components/Layout/styles/layout.css` + CSS Modules навбара (`NavigationBar.module.css`, `NavItem.module.css`, `NavList.module.css`) |

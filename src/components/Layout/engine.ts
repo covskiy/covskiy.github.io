@@ -32,7 +32,6 @@ export interface LayoutEngine {
   getMode: () => LayoutMode;
   setViewport: (px: number) => void;
   setIsHome: (isHome: boolean) => void;
-  registerSlot: (id: string, el: HTMLElement | null) => void;
   dispose: () => void;
 }
 
@@ -143,16 +142,6 @@ export function createLayoutEngine(
     notify();
   }
 
-  const slots = new Map<string, HTMLElement>();
-
-  function registerSlot(id: string, el: HTMLElement | null) {
-    if (el) {
-      slots.set(id, el);
-    } else {
-      slots.delete(id);
-    }
-  }
-
   function setIsHome(isHome: boolean) {
     if (context.isHome === isHome) return;
     context = { ...context, isHome };
@@ -176,10 +165,8 @@ export function createLayoutEngine(
     },
     setViewport,
     setIsHome,
-    registerSlot,
     dispose() {
       listeners.clear();
-      slots.clear();
     },
   };
 }

@@ -62,7 +62,7 @@ src/components/Layout/
 │   ├── geometry.ts          # SLIM_WIDTH, getNavTransform(state, viewport),
 │   │                        #   deriveMainOffset
 │   └── layoutSnapshot.ts    # LayoutSnapshot, LayoutVars, resolveLayout (ctx → snapshot)
-├── engine.ts                # createLayoutEngine (send/subscribe/getSnapshot/setViewport/setIsHome/registerSlot)
+├── engine.ts                # createLayoutEngine (send/subscribe/getSnapshot/setViewport/setIsHome)
 ├── gsap/
 │   ├── gsapBus.ts           # 60fps-шина (каналы: scroll:frame, frame, scroll:progress)
 │   ├── gsapContext.ts       # GsapContext + useGsapBus
@@ -73,7 +73,6 @@ src/components/Layout/
 │   └── LayoutProvider.tsx   # реакция на bp/route/resize, владеет движком
 ├── slots/
 │   ├── LayoutRoot.tsx       # корневая нода с CSS-переменными
-│   ├── LayoutSlot.tsx       # navbar/content слот
 │   └── useLayoutApplier.ts  # snapshot → gsap.to(root, vars)
 ├── nav/
 │   ├── NavigationBar/
@@ -187,15 +186,6 @@ engine.getSnapshot() → LayoutSnapshot
 | ----------------- | --------------------------------------------------- | -------------------------------- |
 | `setViewport(px)` | Пересчитывает `--nav-content-offset` без смены mode | `LayoutProvider` при resize      |
 | `setIsHome(bool)` | Обновляет `context.isHome` и `homeEndState`         | `LayoutProvider` при смене роута |
-
-### Регистрация слотов
-
-```ts
-engine.registerSlot(id: 'navbar' | 'content', el: HTMLElement | null)
-```
-
-`LayoutSlot` регистрирует DOM-элемент при mount. Engine хранит их в `Map`.
-Пока нигде не потребляется — задел для будущего.
 
 ### 6.1 LayoutSnapshot — производные флаги
 

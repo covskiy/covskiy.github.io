@@ -6,8 +6,7 @@
  *     <GsapProvider>
  *       <GsapLayoutBridge />
  *       <LayoutRoot>
- *         <LayoutSlot id="navbar">...</LayoutSlot>
- *         <LayoutSlot id="content">...</LayoutSlot>
+ *         {children}
  *       </LayoutRoot>
  *     </GsapProvider>
  *   </LayoutProvider>

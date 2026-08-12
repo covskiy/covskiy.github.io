@@ -1,5 +1,6 @@
 import type { Breakpoint } from '../../../utils/breakpoints';
 import { deriveMainOffset } from './geometry';
+import { hasToggleFor, isSlimFor } from './derive';
 import type { LayoutMode, MachineContext } from './layoutMode';
 
 /**
@@ -41,6 +42,8 @@ export interface LayoutSnapshot {
   transition: LayoutTransition;
   bp: Breakpoint;
   homeEndState: LayoutMode;
+  hasToggle: boolean;
+  isSlim: boolean;
 }
 
 export const ROOT_VAR_NAMES = {
@@ -89,5 +92,7 @@ export function resolveLayout(
     transition,
     bp,
     homeEndState,
+    hasToggle: hasToggleFor(bp),
+    isSlim: isSlimFor(value),
   };
 }

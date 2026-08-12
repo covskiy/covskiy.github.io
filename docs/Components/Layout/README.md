@@ -58,7 +58,7 @@ src/components/Layout/
 │   ├── layoutMode.ts        # LayoutMode, LayoutEvent, MachineContext, EVENT_TO_SOURCE
 │   ├── transition.ts        # чистый reducer (transition(state, event, ctx))
 │   ├── derive.ts            # getDefaultState, homeEndStateFor, isManualMobileState,
-│   │                        #   isPreferredStateValid, isHomePath, hasToggleFor
+│   │                        #   isPreferredStateValid, hasToggleFor, isSlimFor, isHomePath
 │   ├── geometry.ts          # SLIM_WIDTH, getNavTransform(state, viewport),
 │   │                        #   deriveMainOffset
 │   └── layoutSnapshot.ts    # LayoutSnapshot, LayoutVars, resolveLayout (ctx → snapshot)
@@ -194,6 +194,20 @@ engine.registerSlot(id: 'navbar' | 'content', el: HTMLElement | null)
 `LayoutSlot` регистрирует DOM-элемент при mount. Engine хранит их в `Map`.
 Пока нигде не потребляется — задел для будущего.
 
+### 6.1 LayoutSnapshot — производные флаги
+
+`LayoutSnapshot` публикует готовые производные значения, чтобы
+React-потребители не пересчитывали их локально:
+
+| Поле           | Вычисление                                    | Источник                                 |
+| -------------- | --------------------------------------------- | ---------------------------------------- |
+| `hasToggle`    | `hasToggleFor(context.bp)` (true вне desktop) | `resolveLayout`                          |
+| `isSlim`       | `isSlimFor(value)` (slim/invisible)           | `resolveLayout`                          |
+| `homeEndState` | `homeEndStateFor(bp, preferred)`              | `MachineContext` (владелец — transition) |
+
+Единая точка вычисления — `resolveLayout` (`layoutSnapshot.ts`), наружу
+вызывается только чтение полей. Хелперы остаются machine-internal.
+
 ---
 
 ## 7. Подсистемы
@@ -264,8 +278,13 @@ import {
 } from 'src/components/Layout/context/layoutContexts';
 import { useRegisterScrollTrigger } from 'src/components/Layout/gsap/useRegisterScrollTrigger';
 import { useGsapBus } from 'src/components/Layout/gsap/gsapContext';
-import { hasToggleFor, isHomePath } from 'src/components/Layout/machine/derive';
+import { isHomePath } from 'src/components/Layout/machine/derive';
 ```
+
+Хелперы `hasToggleFor`, `isSlimFor`, `getDefaultState`, `homeEndStateFor`,
+`isManualMobileState`, `isPreferredStateValid` — **machine-internal**: они
+используются только внутри машины / `resolveLayout`. Наружу они не утекают —
+готовые производные флаги публикуются в `LayoutSnapshot` (см. §6.1).
 
 ### Регистрация ScrollTrigger на /home
 

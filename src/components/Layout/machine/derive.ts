@@ -9,6 +9,10 @@ export function hasToggleFor(bp: Breakpoint): boolean {
   return bp !== 'desktop';
 }
 
+export function isSlimFor(mode: LayoutMode): boolean {
+  return mode === 'slim' || mode === 'invisible';
+}
+
 export function getDefaultState(bp: Breakpoint, isHome: boolean): LayoutMode {
   if (isHome) return 'fullscreen';
   if (bp === 'mobile') return 'invisible';

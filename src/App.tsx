@@ -6,7 +6,6 @@ import { NavigationBar } from './components/Layout/nav/NavigationBar/NavigationB
 import { useLayoutSnapshot } from './components/Layout/context/layoutContexts';
 import PageTransition from './components/PageTransition/PageTransition';
 import { routes } from './routes';
-import { hasToggleFor } from './components/Layout/machine/derive';
 
 import { initGsap } from './utils/initGsap';
 
@@ -37,10 +36,10 @@ function App() {
 
 function NavbarSlot() {
   const snapshot = useLayoutSnapshot();
-  const isSlim = snapshot.value === 'slim' || snapshot.value === 'invisible';
-  const hasToggle = hasToggleFor(snapshot.bp);
 
-  return <NavigationBar isSlim={isSlim} hasToggle={hasToggle} />;
+  return (
+    <NavigationBar isSlim={snapshot.isSlim} hasToggle={snapshot.hasToggle} />
+  );
 }
 
 export default App;

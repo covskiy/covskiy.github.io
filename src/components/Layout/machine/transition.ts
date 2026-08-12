@@ -1,7 +1,6 @@
 import {
   getDefaultState,
   homeEndStateFor,
-  isManualMobileState,
   isPreferredStateValid,
 } from './derive';
 import type {
@@ -11,10 +10,31 @@ import type {
   MachineContext,
 } from './layoutMode';
 
+/**
+ * Результат одного шага reducer-а `transition()`.
+ *
+ * Контракт «`undefined` === не трогать»: поля с суффиксом `*After`, если
+ * не заданы, означают «движок сохраняет текущее значение контекста». Движок
+ * резолвит их через `??` и кладёт в новый `MachineContext`.
+ *
+ * - `state`              — следующий режим навбара;
+ * - `actions`            — сайд-эффекты, которые движок применяет после шага;
+ * - `preferredAfter`     — обновление ручного tablet-выбора (`null` = сброс,
+ *                          `undefined` = не трогать);
+ * - `manualOverrideAfter`— обновление флага ручного состояния на mobile `/home`
+ *                          (`true`/`false` = явная установка,
+ *                          `undefined` = не трогать, движок резолвит в
+ *                          `ctx.manualOverride`). Запись явного bool — это
+ *                          протокол: `TOGGLE` mobile / `REACH_BOTTOM` preserve
+ *                          → `true`; reset-события (`REACH_TOP`, `ROUTE_CHANGED`,
+ *                          `BREAKPOINT_CHANGED`, `REACH_BOTTOM` без override)
+ *                          → `false`; `INTRO_COMPLETE` / no-op → `undefined`.
+ */
 export interface TransitionResult {
   state: LayoutMode;
   actions: LayoutAction[];
   preferredAfter?: LayoutMode | null;
+  manualOverrideAfter?: boolean;
 }
 
 function notifyActions(
@@ -37,6 +57,7 @@ function nonHomeResult(
     return {
       state: preferred,
       actions: notifyActions(state, preferred, source),
+      manualOverrideAfter: false,
     };
   }
   const target = getDefaultState(bp, false);
@@ -44,6 +65,7 @@ function nonHomeResult(
     state: target,
     actions: notifyActions(state, target, source),
     preferredAfter: null,
+    manualOverrideAfter: false,
   };
 }
 
@@ -54,6 +76,7 @@ function homeResult(
   return {
     state: 'fullscreen',
     actions: notifyActions(state, 'fullscreen', source),
+    manualOverrideAfter: false,
   };
 }
 
@@ -62,7 +85,7 @@ export function transition(
   event: LayoutEvent,
   ctx: MachineContext,
 ): TransitionResult {
-  const { bp, isHome, preferred, lastSource, source } = ctx;
+  const { bp, isHome, preferred, source } = ctx;
 
   switch (event.type) {
     case 'TOGGLE': {
@@ -76,12 +99,14 @@ export function transition(
               ...notifyActions('fullscreen', 'invisible', source),
               ...(isHome ? ([{ type: 'SCROLL_TO_END' }] as const) : []),
             ],
+            manualOverrideAfter: true,
           };
         }
         if (state === 'invisible') {
           return {
             state: 'fullscreen',
             actions: notifyActions('invisible', 'fullscreen', source),
+            manualOverrideAfter: true,
           };
         }
         return { state, actions: [] };
@@ -114,14 +139,19 @@ export function transition(
       return {
         state: 'fullscreen',
         actions: notifyActions(state, 'fullscreen', source),
+        manualOverrideAfter: false,
       };
 
     case 'REACH_BOTTOM': {
-      if (isManualMobileState(bp, lastSource, state)) {
-        return { state, actions: [] };
+      if (ctx.manualOverride) {
+        return { state, actions: [], manualOverrideAfter: true };
       }
       const end = homeEndStateFor(bp, preferred);
-      return { state: end, actions: notifyActions(state, end, source) };
+      return {
+        state: end,
+        actions: notifyActions(state, end, source),
+        manualOverrideAfter: false,
+      };
     }
 
     case 'ROUTE_CHANGED':

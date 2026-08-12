@@ -74,6 +74,7 @@ export function createLayoutEngine(
     homeEndState:
       options.initialContext?.homeEndState ??
       homeEndStateFor(initialBp, initialPreferred),
+    manualOverride: options.initialContext?.manualOverride ?? false,
   };
 
   let snapshot: LayoutSnapshot = resolveLayout(mode, context, {
@@ -108,6 +109,7 @@ export function createLayoutEngine(
       result.preferredAfter === undefined
         ? context.preferred
         : result.preferredAfter;
+    const finalManual = result.manualOverrideAfter ?? context.manualOverride;
     const finalHomeEnd = homeEndStateFor(nextBp, finalPreferred);
 
     const nextMode = result.state;
@@ -117,7 +119,8 @@ export function createLayoutEngine(
       finalPreferred !== context.preferred ||
       context.source !== source ||
       nextBp !== context.bp ||
-      finalHomeEnd !== context.homeEndState;
+      finalHomeEnd !== context.homeEndState ||
+      finalManual !== context.manualOverride;
 
     context = {
       ...context,
@@ -126,6 +129,7 @@ export function createLayoutEngine(
       homeEndState: finalHomeEnd,
       lastSource: source,
       source,
+      manualOverride: finalManual,
     };
 
     if (changed) {

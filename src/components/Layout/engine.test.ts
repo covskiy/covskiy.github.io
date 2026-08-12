@@ -16,7 +16,12 @@ import { homeEndStateFor } from './machine/derive';
 import type { LayoutSnapshot } from './machine/layoutSnapshot';
 import type { Breakpoint } from './machine/layoutMode';
 
-function makeContext(bp: Breakpoint, isHome: boolean, preferred = null) {
+function makeContext(
+  bp: Breakpoint,
+  isHome: boolean,
+  preferred = null,
+  manualOverride = false,
+) {
   return {
     bp,
     isHome,
@@ -24,6 +29,7 @@ function makeContext(bp: Breakpoint, isHome: boolean, preferred = null) {
     lastSource: 'route' as const,
     source: 'route' as const,
     homeEndState: homeEndStateFor(bp, preferred),
+    manualOverride,
   };
 }
 
@@ -186,5 +192,100 @@ describe('освобождение ресурсов', () => {
 
     // Assert: без уведомлений.
     expect(fn).not.toHaveBeenCalled();
+  });
+});
+
+describe('ручной override manualOverride', () => {
+  it('когда на mobile /home жмут TOGGLE, флаг manualOverride=true и snapshot.isManualToggle=true', () => {
+    // Arrange: движок на mobile /home, подписчик.
+    const engine = makeEngine('mobile', true);
+    const fn = vi.fn<(snap: LayoutSnapshot) => void>();
+    engine.subscribe(fn);
+
+    // Act: TOGGLE из fullscreen.
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: контекст и снапшот публикуют manualOverride / isManualToggle.
+    const snap = engine.getSnapshot();
+    expect(snap.context.manualOverride).toBe(true);
+    expect(snap.isManualToggle).toBe(true);
+    expect(snap.value).toBe('invisible');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('когда после ручного override приходит REACH_TOP, флаг сбрасывается в false', () => {
+    // Arrange: движок на mobile /home с manualOverride=true.
+    const engine = createLayoutEngine({
+      initialContext: makeContext('mobile', true, null, true),
+    });
+    const fn = vi.fn();
+    engine.subscribe(fn);
+
+    // Act: REACH_TOP.
+    engine.send({ type: 'REACH_TOP' });
+
+    // Assert: флаг сброшен, снапшот пересчитан.
+    expect(engine.getSnapshot().context.manualOverride).toBe(false);
+    expect(engine.getSnapshot().isManualToggle).toBe(false);
+    expect(engine.getMode()).toBe('fullscreen');
+  });
+
+  it('corner: manual mobile fullscreen + 2× REACH_BOTTOM — state и override сохраняются', () => {
+    // Arrange: движок с manualOverride=true, режим fullscreen.
+    const engine = createLayoutEngine({
+      initialContext: makeContext('mobile', true, null, true),
+      initialMode: 'fullscreen',
+    });
+    const fn = vi.fn();
+    engine.subscribe(fn);
+
+    // Act: двойной REACH_BOTTOM — первый меняет source (route→scroll),
+    // второй уже source=scroll и state не меняется.
+    engine.send({ type: 'REACH_BOTTOM' });
+    const callsAfterFirst = fn.mock.calls.length;
+    engine.send({ type: 'REACH_BOTTOM' });
+
+    // Assert: после обоих событий режим и флаг сохранились; второй вызов
+    // не уведомляет (state/source/manual неизменны).
+    expect(engine.getMode()).toBe('fullscreen');
+    expect(engine.getSnapshot().context.manualOverride).toBe(true);
+    expect(fn.mock.calls.length - callsAfterFirst).toBe(0);
+  });
+
+  it('когда флаг сбрасывается false→false, но source/bp поменялись, уведомление всё равно приходит', () => {
+    // Arrange: mobile /home, manualOverride=false, подписчик.
+    const engine = makeEngine('mobile', true);
+    const fn = vi.fn();
+    engine.subscribe(fn);
+
+    // Act: REACH_TOP — флаг сбросится в false (false→false), но state поменяется.
+    engine.send({ type: 'REACH_TOP' });
+
+    // Assert: уведомление есть (state changed).
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(engine.getSnapshot().context.manualOverride).toBe(false);
+  });
+
+  it('когда флаг true→true и state/bp/source не меняются на повторном REACH_BOTTOM, второго уведомления нет', () => {
+    // Arrange: mobile /home, manualOverride=true, режим invisible.
+    const engine = createLayoutEngine({
+      initialContext: makeContext('mobile', true, null, true),
+      initialMode: 'invisible',
+    });
+    const fn = vi.fn();
+    engine.subscribe(fn);
+
+    // Act: первый REACH_BOTTOM — preserve true (true→true), state=invisible (не меняется).
+    engine.send({ type: 'REACH_BOTTOM' });
+    const callsAfterFirst = fn.mock.calls.length;
+
+    // Act: второй REACH_BOTTOM — тот же сценарий.
+    engine.send({ type: 'REACH_BOTTOM' });
+
+    // Assert: первый вызов уведомил (source route→scroll), второй — нет
+    // (source остаётся scroll, mode остаётся invisible, manual true→true).
+    expect(fn.mock.calls.length - callsAfterFirst).toBe(0);
+    expect(engine.getSnapshot().context.manualOverride).toBe(true);
+    expect(engine.getMode()).toBe('invisible');
   });
 });

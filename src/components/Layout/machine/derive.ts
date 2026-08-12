@@ -1,5 +1,5 @@
 import type { Breakpoint } from '../../../utils/breakpoints';
-import type { LayoutChangeSource, LayoutMode } from './layoutMode';
+import type { LayoutMode } from './layoutMode';
 
 export function isHomePath(pathname: string): boolean {
   return pathname === '/' || pathname === '/home';
@@ -26,18 +26,6 @@ export function homeEndStateFor(
   if (bp === 'mobile') return 'invisible';
   if (bp === 'tablet' && preferred) return preferred;
   return 'standard';
-}
-
-export function isManualMobileState(
-  bp: Breakpoint,
-  source: LayoutChangeSource,
-  mode: LayoutMode,
-): boolean {
-  return (
-    bp === 'mobile' &&
-    source === 'toggle' &&
-    (mode === 'fullscreen' || mode === 'invisible')
-  );
 }
 
 export function isPreferredStateValid(

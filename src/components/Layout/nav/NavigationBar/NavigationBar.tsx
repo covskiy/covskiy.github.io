@@ -8,8 +8,9 @@ import styles from './NavigationBar.module.css';
 
 export function NavigationBar() {
   const snapshot = useLayoutSnapshot();
-  const { isSlim, hasToggle } = snapshot;
+  const { isSlim, hasToggle, isManualToggle } = snapshot;
   const isMobile = useBreakpoint() === 'mobile';
+  const isHome = snapshot.context.isHome;
   const navRef = useRef<HTMLElement>(null);
   useNavPosition(navRef, snapshot);
 
@@ -22,12 +23,22 @@ export function NavigationBar() {
         </div>
 
         {hasToggle && !isMobile && (
-          <ToggleButton isSlim={isSlim} hasToggle={hasToggle} />
+          <ToggleButton
+            isSlim={isSlim}
+            hasToggle={hasToggle}
+            isHome={isHome}
+            isManualToggle={isManualToggle}
+          />
         )}
       </nav>
 
       {hasToggle && isMobile && (
-        <ToggleButton isSlim={isSlim} hasToggle={hasToggle} />
+        <ToggleButton
+          isSlim={isSlim}
+          hasToggle={hasToggle}
+          isHome={isHome}
+          isManualToggle={isManualToggle}
+        />
       )}
     </>
   );

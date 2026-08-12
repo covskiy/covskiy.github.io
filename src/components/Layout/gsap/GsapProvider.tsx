@@ -5,7 +5,7 @@ import { GsapContext } from './gsapContext';
 import { useLayoutEngine, useLayoutSnapshot } from '../context/layoutContexts';
 import { RegisterScrollTriggerContext } from './useRegisterScrollTrigger';
 
-const EDGE_EPS = 0.0001;
+export const EDGE_EPS = 0.0001;
 
 export function GsapProvider({ children }: PropsWithChildren) {
   const busRef = useRef<GsapBus | null>(null);

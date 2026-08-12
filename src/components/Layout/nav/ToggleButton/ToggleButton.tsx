@@ -11,18 +11,30 @@
  * окна); на tablet — внутри навбара, едет с его краем.
  */
 
+import { useRef } from 'react';
 import { useBreakpoint } from '../../../../utils/breakpoints';
 import { useLayoutSend } from '../../context/layoutContexts';
 import styles from './ToggleButton.module.css';
+import { useToggleVisibility } from './useToggleVisibility';
 
 export interface ToggleButtonProps {
   isSlim: boolean;
   hasToggle: boolean;
+  isHome: boolean;
+  isManualToggle: boolean;
 }
 
-export function ToggleButton({ isSlim, hasToggle }: ToggleButtonProps) {
+export function ToggleButton({
+  isSlim,
+  hasToggle,
+  isHome,
+  isManualToggle,
+}: ToggleButtonProps) {
   const send = useLayoutSend();
   const bp = useBreakpoint();
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+
+  useToggleVisibility(btnRef, { isHome, isManualToggle });
 
   if (!hasToggle) return null;
 
@@ -33,9 +45,12 @@ export function ToggleButton({ isSlim, hasToggle }: ToggleButtonProps) {
     send({ type: 'TOGGLE' });
   };
 
+  const startHidden = isHome && !isManualToggle;
+
   return (
     <button
-      className={`${styles.toggleBtn} ${positionClass}`}
+      ref={btnRef}
+      className={`${styles.toggleBtn} ${positionClass} ${startHidden ? styles.isHidden : ''}`}
       onClick={handleClick}
       aria-label={isSlim ? 'Open navigation' : 'Close navigation'}
       type="button"

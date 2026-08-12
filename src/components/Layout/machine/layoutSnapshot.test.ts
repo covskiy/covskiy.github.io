@@ -17,6 +17,7 @@ function makeContext(
   bp: Breakpoint,
   isHome: boolean,
   preferred: LayoutMode | null,
+  manualOverride = false,
 ): MachineContext {
   return {
     bp,
@@ -25,6 +26,7 @@ function makeContext(
     source: 'route',
     lastSource: 'route',
     homeEndState: homeEndStateFor(bp, preferred),
+    manualOverride,
   };
 }
 
@@ -108,6 +110,48 @@ describe('производные поля снапшота', () => {
         resolveLayout(mode, ctx, { viewport: 1024, transition: TS }).isSlim,
       ).toBe(false);
     }
+  });
+
+  it('когда на mobile стоит ручной override, isManualToggle=true; иначе false', () => {
+    expect(
+      resolveLayout('fullscreen', makeContext('mobile', true, null, true), {
+        viewport: 1024,
+        transition: TS,
+      }).isManualToggle,
+    ).toBe(true);
+    expect(
+      resolveLayout('invisible', makeContext('mobile', true, null, true), {
+        viewport: 1024,
+        transition: TS,
+      }).isManualToggle,
+    ).toBe(true);
+  });
+
+  it('когда breakpoint не mobile или override отсутствует, isManualToggle=false', () => {
+    expect(
+      resolveLayout('fullscreen', makeContext('mobile', true, null, false), {
+        viewport: 1024,
+        transition: TS,
+      }).isManualToggle,
+    ).toBe(false);
+    expect(
+      resolveLayout('standard', makeContext('tablet', true, null, true), {
+        viewport: 1024,
+        transition: TS,
+      }).isManualToggle,
+    ).toBe(false);
+    expect(
+      resolveLayout('standard', makeContext('desktop', true, null, true), {
+        viewport: 1024,
+        transition: TS,
+      }).isManualToggle,
+    ).toBe(false);
+    expect(
+      resolveLayout('invisible', makeContext('mobile', false, null, false), {
+        viewport: 1024,
+        transition: TS,
+      }).isManualToggle,
+    ).toBe(false);
   });
 
   it('scrollLocked пока всегда false (зарезервировано на будущее)', () => {

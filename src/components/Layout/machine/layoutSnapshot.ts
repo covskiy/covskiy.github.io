@@ -26,13 +26,24 @@ export interface LayoutResolveOptions {
 }
 
 /**
- * LayoutSnapshot — целевой контракт layout-а (см. план §1, §I.1).
+ * LayoutSnapshot — целевой контракт layout-а.
  *
- * - `value` — текущее состояние машины;
- * - `context` — копия `MachineContext` последнего перехода;
- * - `vars` — CSS-переменные, которые будут анимированы на layout root;
- * - `scrollLocked` — зарезервировано (modal/immersive в будущем, см. D7/p.111);
- * - `transition` — параметры GSAP-анимации этого снимка.
+ * Публикуется движком через `subscribe`; React-слой (`slots/LayoutRoot`,
+ * `nav/NavigationBar`) только читает поля, ничего не пересчитывает.
+ *
+ * - `value`         — текущее состояние машины;
+ * - `context`       — `MachineContext` последнего перехода (read-only);
+ * - `vars`          — CSS-переменные, анимируемые на layout root через GSAP;
+ * - `scrollLocked`  — зарезервировано (modal/immersive в будущем);
+ * - `transition`    — параметры GSAP-анимации этого снимка;
+ * - `bp`            — текущий breakpoint (копия `context.bp`);
+ * - `homeEndState`  — целевой режим на дне спейсера `/home`;
+ * - `hasToggle`     — производный: показывать ли кнопку toggle (true вне desktop);
+ * - `isSlim`        — производный: режим узкой полосы (`slim`/`invisible`);
+ * - `isManualToggle`— производный: ручное состояние на mobile `/home`
+ *                     (`bp === 'mobile' && context.manualOverride`).
+ *                     Единственный потребитель — `NavigationBar`,
+ *                     передаётся в `ToggleButton` пропсом.
  */
 export interface LayoutSnapshot {
   value: LayoutMode;
@@ -44,6 +55,7 @@ export interface LayoutSnapshot {
   homeEndState: LayoutMode;
   hasToggle: boolean;
   isSlim: boolean;
+  isManualToggle: boolean;
 }
 
 export const ROOT_VAR_NAMES = {
@@ -93,5 +105,6 @@ export function resolveLayout(
     homeEndState,
     hasToggle: hasToggleFor(bp),
     isSlim: isSlimFor(value),
+    isManualToggle: bp === 'mobile' && context.manualOverride,
   };
 }

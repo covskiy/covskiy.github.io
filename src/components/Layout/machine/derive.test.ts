@@ -12,11 +12,9 @@ import {
   hasToggleFor,
   homeEndStateFor,
   isHomePath,
-  isManualMobileState,
   isPreferredStateValid,
   isSlimFor,
 } from './derive';
-import type { Breakpoint } from '../../../utils/breakpoints';
 
 describe('распознавание домашних путей', () => {
   it('когда путь — корень или /home, страница считается домашней', () => {
@@ -80,27 +78,6 @@ describe('состояние навбара в конце /home', () => {
     expect(homeEndStateFor('tablet', null)).toBe('standard');
     expect(homeEndStateFor('desktop', null)).toBe('standard');
     expect(homeEndStateFor('desktop', 'slim')).toBe('standard');
-  });
-});
-
-describe('ручное состояние навбара на mobile', () => {
-  const bp: Breakpoint = 'mobile';
-
-  it('когда навбар в fullscreen/invisible из-за бургера, состояние ручное', () => {
-    expect(isManualMobileState(bp, 'toggle', 'fullscreen')).toBe(true);
-    expect(isManualMobileState(bp, 'toggle', 'invisible')).toBe(true);
-  });
-
-  it('когда режим иной, состояние не ручное', () => {
-    expect(isManualMobileState(bp, 'toggle', 'standard')).toBe(false);
-    expect(isManualMobileState(bp, 'toggle', 'slim')).toBe(false);
-  });
-
-  it('когда breakpoint или источник события другие, состояние не ручное', () => {
-    expect(isManualMobileState('tablet', 'toggle', 'fullscreen')).toBe(false);
-    expect(isManualMobileState('desktop', 'toggle', 'invisible')).toBe(false);
-    expect(isManualMobileState(bp, 'scroll', 'invisible')).toBe(false);
-    expect(isManualMobileState(bp, 'route', 'fullscreen')).toBe(false);
   });
 });
 

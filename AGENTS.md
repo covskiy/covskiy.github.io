@@ -22,7 +22,7 @@ React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pag
 
 ## Структура (верхний уровень)
 
-```
+```text
 covskiy.github.io/
 ├── design-tokens/        # JSON-токены → style-dictionary → src/styles/
 ├── docs/                 # Подробная документация (см. ниже)
@@ -179,7 +179,7 @@ LLM должна следовать этим правилам при соста�
 
 **Пример:**
 
-```
+```text
 LogoText
 - доделал анимацию букв
 - добавление в svg траектории для гвоздя

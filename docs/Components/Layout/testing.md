@@ -13,22 +13,24 @@ React-компоненты (`gsap/`, `context/`, `slots/`, `nav/`) не тест
 
 Имена тестов говорят на языке машины. Перевод в пользовательские термины:
 
-| Термин машины        | Продукт-смысл                                                                    |
-| -------------------- | -------------------------------------------------------------------------------- |
-| `TOGGLE`             | Нажатие кнопки-«бургера» переключения навбара                                    |
-| `REACH_TOP`          | Скролл дошёл до верхней границы спейсера на /home (progress ≈ 0)                 |
-| `REACH_BOTTOM`       | Скролл дошёл до нижней границы спейсера на /home (progress ≈ 1)                  |
-| `ROUTE_CHANGED`      | Переход на другой роут (страницу)                                                |
-| `BREAKPOINT_CHANGED` | Поворот/изменение ширины вьюпорта (смена mobile/tablet/desktop)                  |
-| `INTRO_COMPLETE`     | Завершение intro-анимации при первом заходе                                      |
-| `fullscreen`         | Навбар развёрнут на всю ширину                                                   |
-| `standard`           | Навбар в стандартной (широкой) колонке                                           |
-| `slim`               | Навбар в узкой полосе (планшетный режим)                                         |
-| `invisible`          | Навбар скрыт за краем экрана                                                     |
-| `preferred`          | Ручной выбор пользователя на планшете (slim или standard)                        |
-| `homeEndState`       | Во что сворачивается навбар, когда спейсер доскроллен до нижней границы на /home |
-| `isHome`             | Находимся ли на домашней странице (`/`, `/home`)                                 |
-| `bp` / `Breakpoint`  | Текущий тир брейкпоинта: mobile / tablet (768) / desktop (1024)                  |
+| Термин машины        | Продукт-смысл                                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `TOGGLE`             | Нажатие кнопки-«бургера» переключения навбара                                                                               |
+| `REACH_TOP`          | Скролл дошёл до верхней границы спейсера на /home (progress ≈ 0)                                                            |
+| `REACH_BOTTOM`       | Скролл дошёл до нижней границы спейсера на /home (progress ≈ 1)                                                             |
+| `ROUTE_CHANGED`      | Переход на другой роут (страницу)                                                                                           |
+| `BREAKPOINT_CHANGED` | Поворот/изменение ширины вьюпорта (смена mobile/tablet/desktop)                                                             |
+| `INTRO_COMPLETE`     | Завершение intro-анимации при первом заходе                                                                                 |
+| `fullscreen`         | Навбар развёрнут на всю ширину                                                                                              |
+| `standard`           | Навбар в стандартной (широкой) колонке                                                                                      |
+| `slim`               | Навбар в узкой полосе (планшетный режим)                                                                                    |
+| `invisible`          | Навбар скрыт за краем экрана                                                                                                |
+| `preferred`          | Ручной выбор пользователя на планшете (slim или standard)                                                                   |
+| `homeEndState`       | Во что сворачивается навбар, когда спейсер доскроллен до нижней границы на /home                                            |
+| `manualOverride`     | На mobile /home навбар в ручном режиме (TOGGLE) — переживает REACH_BOTTOM и сбрасывается REACH_TOP/route/bp                 |
+| `isManualToggle`     | Производный флаг снапшота: на mobile /home навбар ручной (bp==='mobile' && manualOverride) — кнопка видна даже в scrub-зоне |
+| `isHome`             | Находимся ли на домашней странице (`/`, `/home`)                                                                            |
+| `bp` / `Breakpoint`  | Текущий тир брейкпоинта: mobile / tablet (768) / desktop (1024)                                                             |
 
 ### Сайд-эффекты переходов (`LayoutAction`)
 
@@ -38,6 +40,12 @@ React-компоненты (`gsap/`, `context/`, `slots/`, `nav/`) не тест
 | `SCROLL_TO_END`    | Скролл в конец scroll-области (на /home — конец спейсера) |
 | `RETARGET_SCRUB`   | Перецелить scroll-скраб на новую геометрию навбара        |
 | `NOOP`             | Переход без эффектов                                      |
+
+### Протокол `*After`-полей (`TransitionResult`)
+
+Поля `preferredAfter` и `manualOverrideAfter` — это явный bool (или `null`/
+`undefined`) на стороне reducer-а. Движок резолвит `undefined` через `??` в
+текущее значение контекста. Таблица событий — в `docs/Components/Layout/README.md` §5.
 
 ---
 
@@ -76,13 +84,13 @@ React-компоненты (`gsap/`, `context/`, `slots/`, `nav/`) не тест
 
 ## 4. Что покрыто
 
-| Файл                             | Проверяет                                                        |
-| -------------------------------- | ---------------------------------------------------------------- |
-| `machine/transition.test.ts`     | Поведение reducer-а: события, actions, `preferredAfter`          |
-| `machine/derive.test.ts`         | Чистые хелперы (default state, валидность preferred, home-пути)  |
-| `machine/geometry.test.ts`       | Числовая геометрия навбара (сдвиг, отступ контента)              |
-| `machine/layoutSnapshot.test.ts` | Иммутабельность и CSS-переменные снапшота                        |
-| `engine.test.ts`                 | Контракт движка: subscribe/notify, getSnapshot/getMode, viewport |
+| Файл                             | Проверяет                                                                        |
+| -------------------------------- | -------------------------------------------------------------------------------- |
+| `machine/transition.test.ts`     | Поведение reducer-а: события, actions, `preferredAfter`, `manualOverrideAfter`   |
+| `machine/derive.test.ts`         | Чистые хелперы (default state, валидность preferred, home-пути)                  |
+| `machine/geometry.test.ts`       | Числовая геометрия навбара (сдвиг, отступ контента)                              |
+| `machine/layoutSnapshot.test.ts` | Иммутабельность и CSS-переменные снапшота                                        |
+| `engine.test.ts`                 | Контракт движка: subscribe/notify, getSnapshot/getMode, viewport, manualOverride |
 
 Ограничение покрытия — осознанное: без jsdom/happy-dom React-слой не
 тестируется.

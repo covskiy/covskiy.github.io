@@ -57,7 +57,7 @@ src/components/Layout/
 ├── machine/
 │   ├── layoutMode.ts        # LayoutMode, LayoutEvent, MachineContext, EVENT_TO_SOURCE
 │   ├── transition.ts        # чистый reducer (transition(state, event, ctx))
-│   ├── derive.ts            # getDefaultState, homeEndStateFor, isManualMobileState,
+│   ├── derive.ts            # getDefaultState, homeEndStateFor,
 │   │                        #   isPreferredStateValid, hasToggleFor, isSlimFor, isHomePath
 │   ├── geometry.ts          # SLIM_WIDTH, getNavTransform(state, viewport),
 │   │                        #   deriveMainOffset
@@ -81,7 +81,8 @@ src/components/Layout/
 │   │   └── useNavPosition.ts # GSAP-анимация позиции .nav (scrub + discrete)
 │   ├── ToggleButton/
 │   │   ├── ToggleButton.tsx
-│   │   └── ToggleButton.module.css
+│   │   ├── ToggleButton.module.css
+│   │   └── useToggleVisibility.ts # 60fps-видимость кнопки на /home через gsapBus
 │   └── NavList/
 │       ├── NavList.tsx
 │       ├── NavList.module.css
@@ -139,8 +140,15 @@ interface TransitionResult {
   state: LayoutMode; // новое состояние
   actions: LayoutAction[]; // сайд-эффекты (NOTIFY_NAV_STATE, SCROLL_TO_END, RETARGET_SCRUB)
   preferredAfter?: LayoutMode | null; // обновление ручного tablet-выбора
+  manualOverrideAfter?: boolean; // обновление флага ручного состояния (mobile /home)
 }
 ```
+
+`manualOverrideAfter` — явный bool на стороне машины: `undefined` означает
+«не трогать», движок резолвит в текущее значение контекста. `true` ставится
+в `TOGGLE` (mobile) и `REACH_BOTTOM` (preserve); `false` — сброс на
+`REACH_TOP`/`ROUTE_CHANGED`/`BREAKPOINT_CHANGED`/`REACH_BOTTOM` (без override);
+`INTRO_COMPLETE` оставляет флаг нетронутым (`undefined`).
 
 `transition` ничего не выполняет сам — только описывает. Применяет результат
 `engine.send()` (см. §6). Машина и движок покрыты юнит-тестами (`vitest`):
@@ -159,12 +167,12 @@ co-located `*.test.ts` в `machine/` + `engine.test.ts`. Запуск — `npm r
 
 ### Хранение состояния
 
-| Переменная | Назначение                                                               |
-| ---------- | ------------------------------------------------------------------------ |
-| `mode`     | Текущее состояние (`LayoutMode`)                                         |
-| `viewport` | Ширина вьюпорта (для пересчёта геометрии)                                |
-| `context`  | `MachineContext` (`bp`, `isHome`, `preferred`, `source`, `homeEndState`) |
-| `snapshot` | Текущий публикуемый `LayoutSnapshot`                                     |
+| Переменная | Назначение                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| `mode`     | Текущее состояние (`LayoutMode`)                                                           |
+| `viewport` | Ширина вьюпорта (для пересчёта геометрии)                                                  |
+| `context`  | `MachineContext` (`bp`, `isHome`, `preferred`, `source`, `homeEndState`, `manualOverride`) |
+| `snapshot` | Текущий публикуемый `LayoutSnapshot`                                                       |
 
 ### Приём событий (`send`)
 
@@ -192,11 +200,12 @@ engine.getSnapshot() → LayoutSnapshot
 `LayoutSnapshot` публикует готовые производные значения, чтобы
 React-потребители не пересчитывали их локально:
 
-| Поле           | Вычисление                                    | Источник                                 |
-| -------------- | --------------------------------------------- | ---------------------------------------- |
-| `hasToggle`    | `hasToggleFor(context.bp)` (true вне desktop) | `resolveLayout`                          |
-| `isSlim`       | `isSlimFor(value)` (slim/invisible)           | `resolveLayout`                          |
-| `homeEndState` | `homeEndStateFor(bp, preferred)`              | `MachineContext` (владелец — transition) |
+| Поле             | Вычисление                                    | Источник                                 |
+| ---------------- | --------------------------------------------- | ---------------------------------------- |
+| `hasToggle`      | `hasToggleFor(context.bp)` (true вне desktop) | `resolveLayout`                          |
+| `isSlim`         | `isSlimFor(value)` (slim/invisible)           | `resolveLayout`                          |
+| `homeEndState`   | `homeEndStateFor(bp, preferred)`              | `MachineContext` (владелец — transition) |
+| `isManualToggle` | `bp === 'mobile' && context.manualOverride`   | `resolveLayout`                          |
 
 Единая точка вычисления — `resolveLayout` (`layoutSnapshot.ts`), наружу
 вызывается только чтение полей. Хелперы остаются machine-internal.
@@ -263,6 +272,23 @@ Paused-твин не конфликтует с дискретной анимац
 - Управляет `document.documentElement.style.overflow` (scroll-lock)
 - Вызывает `ScrollTrigger.refresh()` в `onComplete`
 
+### useToggleVisibility
+
+`src/components/Layout/nav/ToggleButton/useToggleVisibility.ts`
+
+Императивный 60fps-контроль видимости кнопки toggle на `/home`. На середине
+скруб-полосы машина не меняет `mode` — поэтому видимость не выражается
+снапшотом, а подписывается на `bus.on('scroll:progress')`.
+
+Правило: `hidden = !(progress >= 1 - EDGE_EPS || isManualToggle)`.
+`EDGE_EPS` экспортируется из `GsapProvider.tsx` (единый источник с граничным
+детектом спейсера). Хук использует `lastProgressRef`, чтобы при перезапуске
+эффекта (вход на `/home` уже на дне) начальное состояние не сбрасывалось в
+`hidden`.
+
+CSS-класс `.isHidden` (`ToggleButton.module.css`): `visibility: hidden;
+pointer-events: none` — кнопка остаётся в DOM и подписанной на клик.
+
 ---
 
 ## 8. Публичный API
@@ -279,9 +305,11 @@ import { isHomePath } from 'src/components/Layout/machine/derive';
 ```
 
 Хелперы `hasToggleFor`, `isSlimFor`, `getDefaultState`, `homeEndStateFor`,
-`isManualMobileState`, `isPreferredStateValid` — **machine-internal**: они
+`isPreferredStateValid` — **machine-internal**: они
 используются только внутри машины / `resolveLayout`. Наружу они не утекают —
 готовые производные флаги публикуются в `LayoutSnapshot` (см. §6.1).
+Распознавание ручного состояния на mobile живёт как `manualOverride` в
+`MachineContext` и публикуется в снапшоте как `isManualToggle` (§6.1).
 
 ### Регистрация ScrollTrigger на /home
 

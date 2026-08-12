@@ -86,7 +86,7 @@ const cases: Case[] = [
         event: { type: 'TOGGLE' },
         expectMode: 'invisible',
         expectActions: ['NOTIFY_NAV_STATE', 'SCROLL_TO_END'],
-        expectManualOverride: true,
+        expectManualOverride: false,
       },
     ],
   },
@@ -100,7 +100,7 @@ const cases: Case[] = [
         event: { type: 'TOGGLE' },
         expectMode: 'invisible',
         expectActions: ['NOTIFY_NAV_STATE', 'SCROLL_TO_END'],
-        expectManualOverride: true,
+        expectManualOverride: false,
       },
       {
         event: { type: 'TOGGLE' },
@@ -204,7 +204,7 @@ const cases: Case[] = [
     ],
   },
   {
-    name: 'когда на /home на mobile навбар зафиксирован скрытым бургером, скролл спейсера до нижней границы его не трогает',
+    name: 'когда на /home на mobile навбар свёрнут вручную, скролл спейсера до нижней границы его не трогает',
     bp: 'mobile',
     isHome: true,
     initialMode: 'fullscreen',
@@ -213,13 +213,13 @@ const cases: Case[] = [
         event: { type: 'TOGGLE' },
         expectMode: 'invisible',
         expectActions: ['NOTIFY_NAV_STATE', 'SCROLL_TO_END'],
-        expectManualOverride: true,
+        expectManualOverride: false,
       },
       {
         event: { type: 'REACH_BOTTOM' },
         expectMode: 'invisible',
         expectActions: [],
-        expectManualOverride: true,
+        expectManualOverride: false,
       },
     ],
   },
@@ -291,7 +291,7 @@ const cases: Case[] = [
  */
 const manualCases: Case[] = [
   {
-    name: 'когда на /home на mobile жмут бургер из fullscreen, флаг manualOverride становится true',
+    name: 'когда на /home на mobile жмут бургер из fullscreen, флаг manualOverride снимается (false)',
     bp: 'mobile',
     isHome: true,
     initialMode: 'fullscreen',
@@ -300,7 +300,7 @@ const manualCases: Case[] = [
         event: { type: 'TOGGLE' },
         expectMode: 'invisible',
         expectActions: ['NOTIFY_NAV_STATE', 'SCROLL_TO_END'],
-        expectManualOverride: true,
+        expectManualOverride: false,
       },
     ],
   },
@@ -315,6 +315,27 @@ const manualCases: Case[] = [
         expectMode: 'fullscreen',
         expectActions: ['NOTIFY_NAV_STATE'],
         expectManualOverride: true,
+      },
+    ],
+  },
+  {
+    name: 'когда на /home mobile вручную открытый навбар закрывают бургером, флаг снимается и REACH_BOTTOM ничего не меняет',
+    bp: 'mobile',
+    isHome: true,
+    initialMode: 'fullscreen',
+    manualOverride: true,
+    steps: [
+      {
+        event: { type: 'TOGGLE' },
+        expectMode: 'invisible',
+        expectActions: ['NOTIFY_NAV_STATE', 'SCROLL_TO_END'],
+        expectManualOverride: false,
+      },
+      {
+        event: { type: 'REACH_BOTTOM' },
+        expectMode: 'invisible',
+        expectActions: [],
+        expectManualOverride: false,
       },
     ],
   },

@@ -145,8 +145,10 @@ interface TransitionResult {
 ```
 
 `manualOverrideAfter` — явный bool на стороне машины: `undefined` означает
-«не трогать», движок резолвит в текущее значение контекста. `true` ставится
-в `TOGGLE` (mobile) и `REACH_BOTTOM` (preserve); `false` — сброс на
+«не трогать», движок резолвит в текущее значение контекста. Семантика флага:
+«навбар **открыт** вручную». `true` — ручное открытие (`TOGGLE`
+invisible→fullscreen) + `REACH_BOTTOM` (preserve); `false` — ручное закрытие
+(`TOGGLE` fullscreen→invisible) + сброс на
 `REACH_TOP`/`ROUTE_CHANGED`/`BREAKPOINT_CHANGED`/`REACH_BOTTOM` (без override);
 `INTRO_COMPLETE` оставляет флаг нетронутым (`undefined`).
 
@@ -180,11 +182,15 @@ co-located `*.test.ts` в `machine/` + `engine.test.ts`. Запуск — `npm r
 2. Вызывает `transition(mode, event, fullCtx)` → получает `TransitionResult`
 3. Проверяет `changed` — реально ли что-то изменилось
 4. Если да — мутирует `mode` + `context`, пересоздаёт snapshot, notify-ит listeners
+5. Диспатчит `result.actions` подписчикам `subscribeActions` — движок только
+   публикует сайд-эффекты, выполняют их потребители DOM-слоя (например,
+   `GsapProvider` скроллит спейсер на `SCROLL_TO_END`)
 
 ### Публикация (pub/sub)
 
 ```ts
 engine.subscribe(listener) → unsubscribe
+engine.subscribeActions(listener) → unsubscribe; // сайд-эффекты LayoutAction[]
 engine.getSnapshot() → LayoutSnapshot
 ```
 
@@ -209,6 +215,11 @@ React-потребители не пересчитывали их локальн
 
 Единая точка вычисления — `resolveLayout` (`layoutSnapshot.ts`), наружу
 вызывается только чтение полей. Хелперы остаются machine-internal.
+
+> Примечание: комбинация `invisible + manualOverride=true` на mobile
+> недостижима — после ручного закрытия (`TOGGLE` fullscreen→invisible) машина
+> снимает флаг, поэтому `isManualToggle` в scrub-зоне после ручного закрытия
+> равен `false` (кнопка скрыта).
 
 ---
 
@@ -243,6 +254,21 @@ React-потребители не пересчитывали их локальн
 
 - `onUpdate` → `bus.emit('scroll:progress')` для scrub-анимаций
 - Boundary detection → `engine.send(REACH_TOP / REACH_BOTTOM)`
+- Сохраняет экземпляр в `spacerTriggerRef` — потребитель `SCROLL_TO_END`
+
+**`SCROLL_TO_END` (пропуск пустого спейсера).** После `TOGGLE` на mobile
+`/home` (`fullscreen → invisible`, машина декларирует action, а движок
+публикует его через `subscribeActions`) `GsapProvider` доскролливает страницу
+до конца спейсера, чтобы контент подтянулся вместо пустого участка spacer-а:
+
+```ts
+gsap.to(window, { scrollTo: st.end, duration, ease, overwrite: 'auto' });
+```
+
+Guard-ы: триггер зарегистрирован (`spacerTriggerRef.current`), ещё не в конце
+(`st.progress < 1 − EDGE_EPS` — иначе перемотка с контента вниз), `st.end`
+уже вычислен. Скролл идёт через `ScrollToPlugin` (зарегистрирован в
+`initGsap.ts`), поэтому наследует прерываемость GSAP-твинов.
 
 ### useNavPosition
 

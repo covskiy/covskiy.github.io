@@ -66,9 +66,9 @@ export type LayoutAction =
  * - `lastSource` хранит источник предыдущего шага (для diff-нотификаций
  *   и редких логик, завязанных на источник);
  * - `source` — источник текущего шага (см. `EVENT_TO_SOURCE`);
- * - `manualOverride` — first-class флаг ручного состояния на mobile `/home`,
- *   переживает `REACH_BOTTOM`, сбрасывается `REACH_TOP`/`ROUTE_CHANGED`/
- *   `BREAKPOINT_CHANGED`; см. JSDoc поля.
+ * - `manualOverride` — first-class флаг «открыт вручную» на mobile `/home`,
+ *   ставится при ручном открытии, снимается при ручном закрытии и
+ *   reset-событиях; см. JSDoc поля.
  */
 export interface MachineContext {
   /** Текущий breakpoint вьюпорта. */
@@ -86,12 +86,14 @@ export interface MachineContext {
   /**
    * Флаг ручного состояния навбара на mobile `/home`.
    *
-   * Закрывает corner: пользователь развернул навбар бургером, доскроллил
-   * до дна (`REACH_BOTTOM`) — `mode` остался `fullscreen`/`invisible`, но
-   * авто-смена источника на `'scroll'` стирает признак ручного управления.
-   * Флаг переживает `REACH_BOTTOM` (preserve), ставится в `TOGGLE` (mobile),
-   * сбрасывается в `REACH_TOP` / `ROUTE_CHANGED` / `BREAKPOINT_CHANGED` /
-   * `REACH_BOTTOM` без override. Публикуется в снапшоте как `isManualToggle`.
+   * Семантика: «навбар **открыт** вручную и удерживается в этом состоянии».
+   * Ставится при ручном **открытии** (`TOGGLE` invisible→fullscreen),
+   * снимается при ручном **закрытии** (`TOGGLE` fullscreen→invisible) и
+   * reset-событиях (`REACH_TOP` / `ROUTE_CHANGED` / `BREAKPOINT_CHANGED` /
+   * `REACH_BOTTOM` без override). Флаг переживает `REACH_BOTTOM` (preserve),
+   * поэтому комбинация `invisible + manualOverride` недостижима — после ручного
+   * закрытия навбар возвращается в авто-режим scrub. Публикуется в снапшоте
+   * как `isManualToggle`.
    */
   manualOverride: boolean;
 }

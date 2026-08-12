@@ -6,6 +6,10 @@
  *   делегирует чистому `transition`, при реальном переходе строит новый
  *   `LayoutSnapshot` и уведомляет listeners.
  * - `subscribe(fn)` — подписка на snapshot-ы; возврат unsubscribe.
+ * - `subscribeActions(fn)` — подписка на сайд-эффекты последнего перехода
+ *   (`LayoutAction[]`: `NOTIFY_NAV_STATE`, `SCROLL_TO_END`, ...); возврат
+ *   unsubscribe. Движок только публикует — выполняют их потребители DOM-слоя
+ *   (например, `GsapProvider` скроллит спейсер на `SCROLL_TO_END`).
  * - `getSnapshot()` — синхронный текущий снимок.
  * - `setViewport(px)` — обновление ширины вьюпорта для пересчёта vars
  *   (без перехода состояния машины — `_resolve` без notify).
@@ -18,6 +22,7 @@
 import { resolveLayout, type LayoutSnapshot } from './machine/layoutSnapshot';
 import {
   EVENT_TO_SOURCE,
+  type LayoutAction,
   type LayoutEvent,
   type LayoutMode,
   type MachineContext,
@@ -28,6 +33,9 @@ import { transition, type TransitionResult } from './machine/transition';
 export interface LayoutEngine {
   send: (event: LayoutEvent) => void;
   subscribe: (fn: (snapshot: LayoutSnapshot) => void) => () => void;
+  subscribeActions: (
+    fn: (actions: readonly LayoutAction[]) => void,
+  ) => () => void;
   getSnapshot: () => LayoutSnapshot;
   getMode: () => LayoutMode;
   setViewport: (px: number) => void;
@@ -54,6 +62,7 @@ export function createLayoutEngine(
   options: CreateEngineOptions = {},
 ): LayoutEngine {
   const listeners = new Set<(snapshot: LayoutSnapshot) => void>();
+  const actionListeners = new Set<(actions: readonly LayoutAction[]) => void>();
   const transitionDuration =
     options.transitionDuration ?? DEFAULT_TRANSITION.duration;
   const transitionEase = options.transitionEase ?? DEFAULT_TRANSITION.ease;
@@ -84,6 +93,11 @@ export function createLayoutEngine(
 
   function notify() {
     for (const listener of listeners) listener(snapshot);
+  }
+
+  function dispatchActions(actions: readonly LayoutAction[]) {
+    if (actions.length === 0) return;
+    for (const listener of actionListeners) listener(actions);
   }
 
   function rebuildSnapshot(transitionOptions: {
@@ -137,6 +151,8 @@ export function createLayoutEngine(
       rebuildSnapshot({ duration: transitionDuration, ease: transitionEase });
       notify();
     }
+
+    dispatchActions(result.actions);
   }
 
   function setViewport(px: number) {
@@ -161,6 +177,12 @@ export function createLayoutEngine(
         listeners.delete(listener);
       };
     },
+    subscribeActions(listener) {
+      actionListeners.add(listener);
+      return () => {
+        actionListeners.delete(listener);
+      };
+    },
     getSnapshot() {
       return snapshot;
     },
@@ -171,6 +193,7 @@ export function createLayoutEngine(
     setIsHome,
     dispose() {
       listeners.clear();
+      actionListeners.clear();
     },
   };
 }

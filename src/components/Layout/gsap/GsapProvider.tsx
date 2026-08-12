@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, type PropsWithChildren } from 'react';
+import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { createGsapBus, type GsapBus } from './gsapBus';
 import { GsapContext } from './gsapContext';
@@ -7,12 +8,16 @@ import { RegisterScrollTriggerContext } from './useRegisterScrollTrigger';
 
 export const EDGE_EPS = 0.0001;
 
+const SCROLL_SPACER_DURATION = 0.4;
+const SCROLL_SPACER_EASE = 'power2.inOut';
+
 export function GsapProvider({ children }: PropsWithChildren) {
   const busRef = useRef<GsapBus | null>(null);
   busRef.current ??= createGsapBus();
 
   const engine = useLayoutEngine();
   const snapshot = useLayoutSnapshot();
+  const spacerTriggerRef = useRef<ScrollTrigger | null>(null);
 
   useEffect(() => {
     const bus = busRef.current;
@@ -27,6 +32,29 @@ export function GsapProvider({ children }: PropsWithChildren) {
       ScrollTrigger.refresh();
     }
   }, [snapshot.context.isHome]);
+
+  const scrollSpacerToEnd = useCallback(() => {
+    const st = spacerTriggerRef.current;
+    if (!st) return;
+    if (st.progress >= 1 - EDGE_EPS) return;
+    if (typeof st.end !== 'number') return;
+    gsap.to(window, {
+      scrollTo: st.end,
+      duration: SCROLL_SPACER_DURATION,
+      ease: SCROLL_SPACER_EASE,
+      overwrite: 'auto',
+    });
+  }, []);
+
+  useEffect(() => {
+    return engine.subscribeActions((actions) => {
+      for (const action of actions) {
+        if (action.type === 'SCROLL_TO_END') {
+          scrollSpacerToEnd();
+        }
+      }
+    });
+  }, [engine, scrollSpacerToEnd]);
 
   const registerScrollTrigger = useCallback(
     (el: HTMLElement): (() => void) => {
@@ -62,7 +90,10 @@ export function GsapProvider({ children }: PropsWithChildren) {
         },
       });
 
+      spacerTriggerRef.current = st;
+
       return () => {
+        if (spacerTriggerRef.current === st) spacerTriggerRef.current = null;
         st.kill();
       };
     },

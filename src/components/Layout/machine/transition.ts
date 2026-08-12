@@ -24,11 +24,13 @@ import type {
  * - `manualOverrideAfter`— обновление флага ручного состояния на mobile `/home`
  *                          (`true`/`false` = явная установка,
  *                          `undefined` = не трогать, движок резолвит в
- *                          `ctx.manualOverride`). Запись явного bool — это
- *                          протокол: `TOGGLE` mobile / `REACH_BOTTOM` preserve
- *                          → `true`; reset-события (`REACH_TOP`, `ROUTE_CHANGED`,
- *                          `BREAKPOINT_CHANGED`, `REACH_BOTTOM` без override)
- *                          → `false`; `INTRO_COMPLETE` / no-op → `undefined`.
+ *                          `ctx.manualOverride`). Семантика флага: «навбар
+ *                          **открыт** вручную». `true` — ручное открытие
+ *                          (`TOGGLE` invisible→fullscreen) + `REACH_BOTTOM`
+ *                          preserve; `false` — ручное закрытие (`TOGGLE`
+ *                          fullscreen→invisible) + сброс-события (`REACH_TOP`,
+ *                          `ROUTE_CHANGED`, `BREAKPOINT_CHANGED`, `REACH_BOTTOM`
+ *                          без override); `INTRO_COMPLETE` / no-op → `undefined`.
  */
 export interface TransitionResult {
   state: LayoutMode;
@@ -99,7 +101,7 @@ export function transition(
               ...notifyActions('fullscreen', 'invisible', source),
               ...(isHome ? ([{ type: 'SCROLL_TO_END' }] as const) : []),
             ],
-            manualOverrideAfter: true,
+            manualOverrideAfter: false,
           };
         }
         if (state === 'invisible') {

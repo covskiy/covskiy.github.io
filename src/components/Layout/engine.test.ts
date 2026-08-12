@@ -195,8 +195,96 @@ describe('освобождение ресурсов', () => {
   });
 });
 
+describe('проброс сайд-эффектов (subscribeActions)', () => {
+  it('когда на mobile /home жмут TOGGLE из fullscreen, слушатель получает NOTIFY_NAV_STATE и SCROLL_TO_END', () => {
+    // Arrange: движок на mobile /home, подписанный на actions.
+    const engine = makeEngine('mobile', true);
+    const fn = vi.fn<(actions: readonly { type: string }[]) => void>();
+    engine.subscribeActions(fn);
+
+    // Act: сворачивание навбара бургером.
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: опубликованы оба сайд-эффекта (SCROLL_TO_END — доскролл спейсера).
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn.mock.calls[0][0].map((a) => a.type)).toEqual([
+      'NOTIFY_NAV_STATE',
+      'SCROLL_TO_END',
+    ]);
+    expect(engine.getMode()).toBe('invisible');
+  });
+
+  it('когда вне /home mobile разворачивают навбар, SCROLL_TO_END не эмитится', () => {
+    // Arrange: mobile, не home.
+    const engine = makeEngine('mobile', false);
+    const fn = vi.fn<(actions: readonly { type: string }[]) => void>();
+    engine.subscribeActions(fn);
+
+    // Act: TOGGLE из invisible в fullscreen.
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: только уведомление о смене режима, без доскролла.
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn.mock.calls[0][0].map((a) => a.type)).toEqual([
+      'NOTIFY_NAV_STATE',
+    ]);
+  });
+
+  it('когда desktop TOGGLE ничего не меняет, actions не диспатчатся', () => {
+    // Arrange: desktop /home — бургера нет.
+    const engine = makeEngine('desktop', true);
+    const fn = vi.fn();
+    engine.subscribeActions(fn);
+
+    // Act: TOGGLE — no-op с пустым массивом actions.
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: пустые actions не публикуются.
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('когда на tablet переключают колонку, слушатель получает RETARGET_SCRUB', () => {
+    // Arrange: tablet, не home.
+    const engine = makeEngine('tablet', false);
+    const fn = vi.fn<(actions: readonly { type: string }[]) => void>();
+    engine.subscribeActions(fn);
+
+    // Act: TOGGLE standard → slim.
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: сайд-эффект ретаргета scrub-твина присутствует.
+    expect(fn.mock.calls[0][0].map((a) => a.type)).toEqual([
+      'NOTIFY_NAV_STATE',
+      'RETARGET_SCRUB',
+    ]);
+  });
+
+  it('когда отписку сняли или движок dispose-нут, actions больше не приходят', () => {
+    // Arrange: движок с подписчиком actions.
+    const engine = makeEngine('mobile', true);
+    const fn = vi.fn();
+    const off = engine.subscribeActions(fn);
+    off();
+
+    // Act: переход, который раньше опубликовал бы actions.
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: отписка сработала.
+    expect(fn).not.toHaveBeenCalled();
+
+    // Act: новый слушатель, затем dispose.
+    const fn2 = vi.fn();
+    engine.subscribeActions(fn2);
+    engine.dispose();
+    engine.send({ type: 'TOGGLE' });
+
+    // Assert: dispose очистил слушателей actions.
+    expect(fn2).not.toHaveBeenCalled();
+  });
+});
+
 describe('ручной override manualOverride', () => {
-  it('когда на mobile /home жмут TOGGLE, флаг manualOverride=true и snapshot.isManualToggle=true', () => {
+  it('когда на mobile /home жмут TOGGLE из fullscreen, навбар сворачивается и ручной флаг снимается', () => {
     // Arrange: движок на mobile /home, подписчик.
     const engine = makeEngine('mobile', true);
     const fn = vi.fn<(snap: LayoutSnapshot) => void>();
@@ -205,12 +293,32 @@ describe('ручной override manualOverride', () => {
     // Act: TOGGLE из fullscreen.
     engine.send({ type: 'TOGGLE' });
 
-    // Assert: контекст и снапшот публикуют manualOverride / isManualToggle.
+    // Assert: контекст и снапшот публикуют снятый manualOverride / isManualToggle.
     const snap = engine.getSnapshot();
-    expect(snap.context.manualOverride).toBe(true);
-    expect(snap.isManualToggle).toBe(true);
+    expect(snap.context.manualOverride).toBe(false);
+    expect(snap.isManualToggle).toBe(false);
     expect(snap.value).toBe('invisible');
     expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('когда после ручного закрытия навбара приходит REACH_BOTTOM, state и флаг не меняются', () => {
+    // Arrange: движок на mobile /home с вручную открытым навбаром
+    // (fullscreen + manualOverride=true) и подписчиком.
+    const engine = createLayoutEngine({
+      initialContext: makeContext('mobile', true, null, true),
+      initialMode: 'fullscreen',
+    });
+    const fn = vi.fn();
+    engine.subscribe(fn);
+
+    // Act: ручное закрытие бургером, затем REACH_BOTTOM (подтяжка контента).
+    engine.send({ type: 'TOGGLE' });
+    engine.send({ type: 'REACH_BOTTOM' });
+
+    // Assert: навбар закрыт, ручной флаг снят и не «держится» на дне.
+    expect(engine.getMode()).toBe('invisible');
+    expect(engine.getSnapshot().context.manualOverride).toBe(false);
+    expect(engine.getSnapshot().isManualToggle).toBe(false);
   });
 
   it('когда после ручного override приходит REACH_TOP, флаг сбрасывается в false', () => {

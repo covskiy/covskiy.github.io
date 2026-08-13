@@ -7,6 +7,53 @@ CSS-переменные на root → CSS задаёт геометрию сл�
 
 ---
 
+## 0. Архитектурные принципы и поток данных
+
+Чтобы быстро понять, как работает система, важно видеть разделение ответственности.
+Данные текут строго в одном направлении:
+
+```
+[React UI]
+   │ (1) send({ type: 'TOGGLE' })
+   ▼
+[LayoutEngine]
+   │ (2) transition(currentMode, event, MachineContext) → TransitionResult
+   │ (3) resolveLayout(newMode, newContext) → LayoutSnapshot
+   ▼
+[React UI]
+   │ (4) useLayoutSnapshot() получает готовый LayoutSnapshot
+   ▼
+[GSAP / CSS]
+   │ (5) useLayoutApplier применяет snapshot.vars к DOM, CSS рисует геометрию
+```
+
+### Ключевое различие: MachineContext vs LayoutSnapshot
+
+Это **два разных представления одного состояния**, и их смешивание — ошибка.
+
+| Характеристика | `MachineContext`                                                     | `LayoutSnapshot`                                            |
+| -------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Назначение** | Входные данные для чистой функции `transition()`.                    | Публичный контракт для React-компонентов.                   |
+| **Содержит**   | Сырые данные и служебные поля (`lastSource`, `source`, `preferred`). | Готовые к использованию значения и производные флаги.       |
+| **Кто читает** | Только `engine.ts` и `transition.ts`.                                | Все UI-компоненты (`NavigationBar`, `ToggleButton` и т.д.). |
+| **Правило**    | **UI никогда не должен читать `snapshot.context.*`**.                | Все необходимые UI данные вынесены на верхний уровень.      |
+
+> **Почему некоторые поля дублируются?** (например, `bp`, `isHome`, `homeEndState`)
+> Это осознанный компромисс для эргономики API. UI не должен писать `snapshot.context.isHome`.
+> Дублирование на верхнем уровне `LayoutSnapshot` защищает UI от изменений внутренней структуры машины.
+
+**Пример доступа к состоянию:**
+
+```ts
+// ❌ Неправильно — чтение внутреннего контекста машины из UI
+const { isHome } = snapshot.context;
+
+// ✅ Правильно — готовое производное поле на верхнем уровне снапшота
+const { isHome } = snapshot;
+```
+
+---
+
 ## 1. Архитектурный контекст
 
 Layout опирается на три внешние системы:
@@ -123,7 +170,16 @@ src/components/Layout/
 
 `src/components/Layout/machine/transition.ts`
 
-Чистая функция-описатель (Elm Architecture подход):
+### Назначение
+
+`transition()` — чистый reducer-«мозг» машины состояний Layout. По тройке
+входных аргументов `(state, event, ctx)` она **решает**, в какой `mode` перейти
+навбар и какие side-эффекты (`LayoutAction[]`) объявить. Функция **не мутирует**
+состояние, **не трогает** DOM/GSAP и ничего не выполняет сама — она только
+_описывает_ результат. Применяет результат владелец состояния — `engine.send()`
+(см. §6), который публикует сайд-эффекты потребителям DOM-слоя.
+
+### Контракт
 
 ```ts
 function transition(
@@ -133,24 +189,74 @@ function transition(
 ): TransitionResult;
 ```
 
+`state` — текущий режим машины; `event` — входящее событие (см. §4); `ctx` —
+полный `MachineContext`, включая `source`, вычисленный движком до вызова.
+
 Возвращает:
 
 ```ts
 interface TransitionResult {
-  state: LayoutMode; // новое состояние
+  state: LayoutMode; // новое состояние (может совпадать с входным — тогда шаг no-op)
   actions: LayoutAction[]; // сайд-эффекты (NOTIFY_NAV_STATE, SCROLL_TO_END, RETARGET_SCRUB)
   preferredAfter?: LayoutMode | null; // обновление ручного tablet-выбора
   manualOverrideAfter?: boolean; // обновление флага ручного состояния (mobile /home)
 }
 ```
 
-`manualOverrideAfter` — явный bool на стороне машины: `undefined` означает
-«не трогать», движок резолвит в текущее значение контекста. Семантика флага:
-«навбар **открыт** вручную». `true` — ручное открытие (`TOGGLE`
-invisible→fullscreen) + `REACH_BOTTOM` (preserve); `false` — ручное закрытие
-(`TOGGLE` fullscreen→invisible) + сброс на
-`REACH_TOP`/`ROUTE_CHANGED`/`BREAKPOINT_CHANGED`/`REACH_BOTTOM` (без override);
-`INTRO_COMPLETE` оставляет флаг нетронутым (`undefined`).
+- `actions` — **только объявляются** здесь. Движок публикует их через
+  `subscribeActions`, а **выполняют** потребители DOM-слоя: `GsapProvider`
+  скроллит спейсер на `SCROLL_TO_END` и перенастраивает scrub-твин на
+  `RETARGET_SCRUB` (§7).
+- Поля с суффиксом `*After` следуют контракту **«`undefined` === не трогать»**:
+  если значение не задано, движок сохраняет текущее поле контекста (резолвит
+  через `??`). Явные значения означают принудительную установку.
+
+| Поле                  | `undefined`      | Явное значение                              |
+| --------------------- | ---------------- | ------------------------------------------- |
+| `preferredAfter`      | не трогать выбор | `LayoutMode` — новый выбор / `null` — сброс |
+| `manualOverrideAfter` | не трогать флаг  | `true` / `false` — принудительно установить |
+
+Семантика `manualOverrideAfter` («навбар **открыт** вручную»):
+
+- `true` — ручное открытие (`TOGGLE` invisible→fullscreen) + `REACH_BOTTOM`
+  (preserve, флаг переживает scrub-зону);
+- `false` — ручное закрытие (`TOGGLE` fullscreen→invisible) + сброс на
+  `REACH_TOP`/`ROUTE_CHANGED`/`BREAKPOINT_CHANGED`/`REACH_BOTTOM` (без override);
+- `INTRO_COMPLETE` оставляет флаг нетронутым (`undefined`).
+
+### Таблица решений
+
+Какой `event` при каких условиях даёт какой результат (логика из `transition.ts`):
+
+| Event                | Условие (`bp` / `state` / `ctx`)  | След. `mode`                     | `actions`                                           | Обновление контекста                     |
+| -------------------- | --------------------------------- | -------------------------------- | --------------------------------------------------- | ---------------------------------------- |
+| `TOGGLE`             | `desktop`                         | — (no-op)                        | —                                                   | —                                        |
+| `TOGGLE`             | `mobile`, `fullscreen`            | `invisible`                      | `NOTIFY_NAV_STATE` (+`SCROLL_TO_END` если `isHome`) | `manualOverride=false`                   |
+| `TOGGLE`             | `mobile`, `invisible`             | `fullscreen`                     | `NOTIFY_NAV_STATE`                                  | `manualOverride=true`                    |
+| `TOGGLE`             | `tablet`, `standard`↔`slim`       | `slim`/`standard`                | `NOTIFY_NAV_STATE` + `RETARGET_SCRUB`               | `preferred={slim\|standard}`             |
+| `REACH_TOP`          | любой                             | `fullscreen`                     | `NOTIFY_NAV_STATE`                                  | `manualOverride=false`                   |
+| `REACH_BOTTOM`       | `manualOverride === true`         | — (no-op, preserve)              | —                                                   | `manualOverride=true`                    |
+| `REACH_BOTTOM`       | иначе                             | `homeEndStateFor(bp, preferred)` | `NOTIFY_NAV_STATE`                                  | `manualOverride=false`                   |
+| `ROUTE_CHANGED`      | `isHome`                          | `fullscreen`                     | `NOTIFY_NAV_STATE`                                  | `manualOverride=false`                   |
+| `ROUTE_CHANGED`      | не `/home`, `preferred` valid     | `preferred`                      | `NOTIFY_NAV_STATE`                                  | `manualOverride=false`                   |
+| `ROUTE_CHANGED`      | не `/home`, иначе                 | `getDefaultState(bp, false)`     | `NOTIFY_NAV_STATE`                                  | `preferred=null`, `manualOverride=false` |
+| `BREAKPOINT_CHANGED` | как `ROUTE_CHANGED` (по `isHome`) | как выше                         | как выше                                            | как выше                                 |
+| `INTRO_COMPLETE`     | любой                             | — (no-op)                        | —                                                   | —                                        |
+
+Строки «— (no-op)» означают, что `state` не меняется и `actions` пусты.
+
+### Пример трассировки
+
+На mobile `/home` пользователь жмёт бургер (`hasToggle === true`):
+
+1. `engine.send({ type: 'TOGGLE' })`, текущий `state = 'fullscreen'`, `ctx.isHome = true`.
+2. `transition('fullscreen', TOGGLE, ctx)` →
+   `{ state: 'invisible', actions: [NOTIFY_NAV_STATE, SCROLL_TO_END], manualOverrideAfter: false }`.
+3. Движок фиксирует смену `mode`, пересобирает `LayoutSnapshot`, уведомляет
+   подписчиков и публикует `actions` через `subscribeActions`.
+4. `useLayoutApplier` анимирует CSS-переменные (`--nav-pointer-events: none`,
+   `--nav-content-offset`), а `GsapProvider` на `SCROLL_TO_END` доскролливает
+   страницу до конца спейсера, чтобы контент подтянулся вместо пустого участка.
 
 `transition` ничего не выполняет сам — только описывает. Применяет результат
 `engine.send()` (см. §6). Машина и движок покрыты юнит-тестами (`vitest`):
@@ -164,17 +270,17 @@ co-located `*.test.ts` в `machine/` + `engine.test.ts`. Запуск — `npm r
 
 `src/components/Layout/engine.ts`
 
-Импурный оркестратор — единственный владелец состояния (`mode`, `context`,
+Импурный (Impure) оркестратор — единственный владелец состояния (`mode`, `context`,
 `snapshot`). React-компоненты только читают через `subscribe`.
 
 ### Хранение состояния
 
-| Переменная | Назначение                                                                                 |
-| ---------- | ------------------------------------------------------------------------------------------ |
-| `mode`     | Текущее состояние (`LayoutMode`)                                                           |
-| `viewport` | Ширина вьюпорта (для пересчёта геометрии)                                                  |
-| `context`  | `MachineContext` (`bp`, `isHome`, `preferred`, `source`, `homeEndState`, `manualOverride`) |
-| `snapshot` | Текущий публикуемый `LayoutSnapshot`                                                       |
+| Переменная | Назначение                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| `mode`     | Текущее состояние (`LayoutMode`)                                                                         |
+| `viewport` | Ширина вьюпорта (для пересчёта геометрии)                                                                |
+| `context`  | `MachineContext` (`bp`, `isHome`, `preferred`, `source`, `lastSource`, `homeEndState`, `manualOverride`) |
+| `snapshot` | Текущий публикуемый `LayoutSnapshot`                                                                     |
 
 ### Приём событий (`send`)
 
@@ -192,7 +298,29 @@ co-located `*.test.ts` в `machine/` + `engine.test.ts`. Запуск — `npm r
 engine.subscribe(listener) → unsubscribe
 engine.subscribeActions(listener) → unsubscribe; // сайд-эффекты LayoutAction[]
 engine.getSnapshot() → LayoutSnapshot
+engine.getMode() → LayoutMode; // текущий режим (для хуков / dev-отладки)
 ```
+
+Две подписки разведены по **условию срабатывания** и **потребителю** — это
+осознанное разделение, а не дублирование:
+
+| Подписка           | Когда срабатывает                                                   | Кто потребитель                                              | Назначение                                        |
+| ------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- |
+| `subscribe`        | Только если `changed === true` (реально изменился `mode`/`context`) | `LayoutProvider` → `useState(snapshot)`                      | Двигать **React-перерисовку** при смене состояния |
+| `subscribeActions` | Безусловно в конце каждого `send()`, вне зависимости от `changed`   | `GsapProvider` (исполняет `SCROLL_TO_END`, `RETARGET_SCRUB`) | Доставлять **императивные side-эффекты** DOM-слою |
+
+Почему нельзя слить в одну:
+
+- `notify()` стоит под гейтом `changed`, а `dispatchActions()` — нет (вызывается
+  в `engine.send()` всегда). Если бы снапшот и сайд-эффекты шли одной
+  подпиской, пришлось бы либо ре-рендерить UI на каждый `send`, либо терять
+  side-эффекты, происходящие без смены видимого состояния.
+- Single responsibility: `LayoutSnapshot` отвечает за «что **рендерить**»,
+  `LayoutAction[]` — за «что **сделать**». Два разных контракта для двух
+  разных слоёв (React vs DOM/GSAP).
+
+`subscribe` → «состояние отрисовки изменилось»; `subscribeActions` →
+«машина объявила side-эффект» (и стреляет чаще и независимо).
 
 ### Внешние изменения (без машины)
 
@@ -215,6 +343,10 @@ React-потребители не пересчитывали их локальн
 
 Единая точка вычисления — `resolveLayout` (`layoutSnapshot.ts`), наружу
 вызывается только чтение полей. Хелперы остаются machine-internal.
+
+Поле `scrollLocked` (`boolean`, всегда `false`) зарезервировано для будущих
+modal/immersive-режимов: им управляет `useLayoutApplier` (scroll-lock на
+`document.documentElement`), UI напрямую его не трогает.
 
 > Примечание: комбинация `invisible + manualOverride=true` на mobile
 > недостижима — после ручного закрытия (`TOGGLE` fullscreen→invisible) машина
@@ -388,4 +520,25 @@ const send = useLayoutSend();
 | `--layout-state`       | Строка состояния (для отладки / DevTools)                        |
 
 Позиция навбара (`translateX`) управляется напрямую через GSAP в
-`useNavPosition`, не через CSS-переменную.
+`useNavPosition`, не через CSS-переменную. Поле `scrollLocked` (§6.1) — не
+CSS-переменная, а флаг scroll-lock-а в `useLayoutApplier`.
+
+---
+
+## 11. Правила для контрибьюторов
+
+Жёсткие правила, препятствующие протеканию абстракции и рецидивам ошибок:
+
+- **Запрещено** обращаться к `snapshot.context.*` в React-компонентах и хуках.
+  `context` — внутреннее состояние машины, публикуется только для read-only
+  отладки.
+- Если UI нужно новое значение из состояния машины — оно **сначала** добавляется
+  на верхний уровень `LayoutSnapshot` в функции `resolveLayout` (и при
+  необходимости в `layoutMode.ts`), а затем потребляется из `snapshot`.
+- `MachineContext` используется **исключительно** внутри `engine.ts` и
+  `transition.ts`.
+- Любые изменения в типах сопровождаются обновлением JSDoc в `layoutSnapshot.ts`
+  и `layoutMode.ts`.
+
+Признак нарушения — вхождения `snapshot.context.` / `snap.context.` вне
+`engine.ts` / `transition.ts` / `layoutSnapshot.ts`.

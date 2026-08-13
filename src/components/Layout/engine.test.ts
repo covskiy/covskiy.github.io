@@ -161,7 +161,7 @@ describe('признак home-страницы', () => {
 
     // Assert: контекст обновлён, режим не тронут.
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(engine.getSnapshot().context.isHome).toBe(true);
+    expect(engine.getSnapshot().isHome).toBe(true);
     expect(engine.getMode()).toBe('invisible');
   });
 

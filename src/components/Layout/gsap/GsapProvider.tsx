@@ -28,10 +28,10 @@ export function GsapProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (!snapshot.context.isHome) {
+    if (!snapshot.isHome) {
       ScrollTrigger.refresh();
     }
-  }, [snapshot.context.isHome]);
+  }, [snapshot.isHome]);
 
   const scrollSpacerToEnd = useCallback(() => {
     const st = spacerTriggerRef.current;

@@ -29,21 +29,21 @@ export interface LayoutResolveOptions {
  * LayoutSnapshot — целевой контракт layout-а.
  *
  * Публикуется движком через `subscribe`; React-слой (`slots/LayoutRoot`,
- * `nav/NavigationBar`) только читает поля, ничего не пересчитывает.
+ * `nav/NavigationBar`) только читает поля, ничего не пересчитывает и **не должен**
+ * обращаться к `snapshot.context` (это внутреннее состояние машины).
  *
  * - `value`         — текущее состояние машины;
- * - `context`       — `MachineContext` последнего перехода (read-only);
+ * - `context`       — `MachineContext` последнего перехода (read-only, только для отладки);
  * - `vars`          — CSS-переменные, анимируемые на layout root через GSAP;
  * - `scrollLocked`  — зарезервировано (modal/immersive в будущем);
  * - `transition`    — параметры GSAP-анимации этого снимка;
  * - `bp`            — текущий breakpoint (копия `context.bp`);
+ * - `isHome`        — признак «домашней» страницы (копия `context.isHome`, вынесена для UI);
  * - `homeEndState`  — целевой режим на дне спейсера `/home`;
  * - `hasToggle`     — производный: показывать ли кнопку toggle (true вне desktop);
  * - `isSlim`        — производный: режим узкой полосы (`slim`/`invisible`);
  * - `isManualToggle`— производный: ручное состояние на mobile `/home`
  *                     (`bp === 'mobile' && context.manualOverride`).
- *                     Единственный потребитель — `NavigationBar`,
- *                     передаётся в `ToggleButton` пропсом.
  */
 export interface LayoutSnapshot {
   value: LayoutMode;
@@ -52,6 +52,7 @@ export interface LayoutSnapshot {
   scrollLocked: boolean;
   transition: LayoutTransition;
   bp: Breakpoint;
+  isHome: boolean;
   homeEndState: LayoutMode;
   hasToggle: boolean;
   isSlim: boolean;
@@ -102,6 +103,7 @@ export function resolveLayout(
     scrollLocked: false,
     transition,
     bp,
+    isHome,
     homeEndState,
     hasToggle: hasToggleFor(bp),
     isSlim: isSlimFor(value),

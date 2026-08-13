@@ -8,9 +8,8 @@ import styles from './NavigationBar.module.css';
 
 export function NavigationBar() {
   const snapshot = useLayoutSnapshot();
-  const { isSlim, hasToggle, isManualToggle } = snapshot;
+  const { isSlim, hasToggle, isManualToggle, isHome } = snapshot;
   const isMobile = useBreakpoint() === 'mobile';
-  const isHome = snapshot.context.isHome;
   const navRef = useRef<HTMLElement>(null);
   useNavPosition(navRef, snapshot);
 

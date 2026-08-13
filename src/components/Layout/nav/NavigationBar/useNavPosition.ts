@@ -57,7 +57,7 @@ export function useNavPosition(
       buildScrub();
 
       const unsubscribe = engine.subscribe((snap) => {
-        if (snap.context.isHome) return;
+        if (snap.isHome) return;
         const navEl = navRef.current;
         if (!navEl) return;
         const t = getNavTransform(snap.value, window.innerWidth);
@@ -79,9 +79,9 @@ export function useNavPosition(
   );
 
   useEffect(() => {
-    if (!snapshot.context.isHome) return;
+    if (!snapshot.isHome) return;
     return bus.on('scroll:progress', ({ progress }) => {
       scrubTweenRef.current?.progress(progress);
     });
-  }, [bus, snapshot.context.isHome]);
+  }, [bus, snapshot.isHome]);
 }

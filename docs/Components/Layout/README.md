@@ -87,7 +87,7 @@ layout.css → геометрия слотов
 
 ```
 Spacer (HTMLElement)
-  │  регистрируется через registerScrollTrigger(el)
+  │  регистрируется через registerSpacerScrollTrigger(el)
   ↓
 ScrollTrigger.create({ trigger: el, scrub: true })
   ├─ onUpdate → bus.emit('scroll:progress', { progress, direction })
@@ -113,8 +113,8 @@ src/components/Layout/
 ├── gsap/
 │   ├── gsapBus.ts           # 60fps-шина (каналы: scroll:frame, frame, scroll:progress)
 │   ├── gsapContext.ts       # GsapContext + useGsapBus
-│   ├── GsapProvider.tsx     # инфраструктура (bus, ticker, cleanup) + registerScrollTrigger
-│   └── useRegisterScrollTrigger.ts # хук для регистрации ScrollTrigger страницами
+│   ├── GsapProvider.tsx     # инфраструктура (bus, ticker, cleanup) + registerSpacerScrollTrigger
+│   └── useRegisterSpacerScrollTrigger.ts # хук для регистрации ScrollTrigger страницами
 ├── context/
 │   ├── layoutContexts.ts    # useLayoutEngine / useLayoutSnapshot / useLayoutSend
 │   └── LayoutProvider.tsx   # реакция на bp/route/resize, владеет движком
@@ -372,17 +372,17 @@ modal/immersive-режимов: им управляет `useLayoutApplier` (scro
 
 `gsap.ticker` автоматически ставится на паузу при неактивной вкладке.
 
-### GsapProvider + useRegisterScrollTrigger
+### GsapProvider + useRegisterSpacerScrollTrigger
 
 `src/components/Layout/gsap/GsapProvider.tsx`
-`src/components/Layout/gsap/useRegisterScrollTrigger.ts`
+`src/components/Layout/gsap/useRegisterSpacerScrollTrigger.ts`
 
 `GsapProvider` создаёт `gsapBus`, прокидывает через `GsapContext`, предоставляет
-`registerScrollTrigger(el)` через `RegisterScrollTriggerContext`. Также
+`registerSpacerScrollTrigger(el)` через `RegisterSpacerScrollTriggerContext`. Также
 вызывает `ScrollTrigger.refresh()` при уходе с `/home`.
 
-`useRegisterScrollTrigger()` — хук для страниц. Возвращает функцию
-`registerScrollTrigger(el)`, которая создаёт `ScrollTrigger` на спейсере:
+`useRegisterSpacerScrollTrigger()` — хук для страниц. Возвращает функцию
+`registerSpacerScrollTrigger(el)`, которая создаёт `ScrollTrigger` на спейсере:
 
 - `onUpdate` → `bus.emit('scroll:progress')` для scrub-анимаций
 - Boundary detection → `engine.send(REACH_TOP / REACH_BOTTOM)`
@@ -457,7 +457,7 @@ import {
   useLayoutSnapshot,
   useLayoutSend,
 } from 'src/components/Layout/context/layoutContexts';
-import { useRegisterScrollTrigger } from 'src/components/Layout/gsap/useRegisterScrollTrigger';
+import { useRegisterSpacerScrollTrigger } from 'src/components/Layout/gsap/useRegisterSpacerScrollTrigger';
 import { useGsapBus } from 'src/components/Layout/gsap/gsapContext';
 import { isHomePath } from 'src/components/Layout/machine/derive';
 ```
@@ -474,13 +474,13 @@ import { isHomePath } from 'src/components/Layout/machine/derive';
 ```tsx
 function HomePage() {
   const spacerRef = useRef<HTMLElement>(null);
-  const registerScrollTrigger = useRegisterScrollTrigger();
+  const registerSpacerScrollTrigger = useRegisterSpacerScrollTrigger();
 
   useEffect(() => {
     if (spacerRef.current) {
-      return registerScrollTrigger(spacerRef.current);
+      return registerSpacerScrollTrigger(spacerRef.current);
     }
-  }, [registerScrollTrigger]);
+  }, [registerSpacerScrollTrigger]);
 
   return <div ref={spacerRef} />;
 }

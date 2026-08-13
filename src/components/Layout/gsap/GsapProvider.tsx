@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { createGsapBus, type GsapBus } from './gsapBus';
 import { GsapContext } from './gsapContext';
 import { useLayoutEngine, useLayoutSnapshot } from '../context/layoutContexts';
-import { RegisterScrollTriggerContext } from './useRegisterScrollTrigger';
+import { RegisterSpacerScrollTriggerContext } from './useRegisterSpacerScrollTrigger';
 
 export const EDGE_EPS = 0.0001;
 
@@ -56,7 +56,12 @@ export function GsapProvider({ children }: PropsWithChildren) {
     });
   }, [engine, scrollSpacerToEnd]);
 
-  const registerScrollTrigger = useCallback(
+  const getSpacerScrollProgress = useCallback(
+    () => spacerTriggerRef.current?.progress ?? 0,
+    [],
+  );
+
+  const registerSpacerScrollTrigger = useCallback(
     (el: HTMLElement): (() => void) => {
       const bus = busRef.current!;
 
@@ -102,9 +107,11 @@ export function GsapProvider({ children }: PropsWithChildren) {
 
   return (
     <GsapContext.Provider value={busRef.current}>
-      <RegisterScrollTriggerContext.Provider value={registerScrollTrigger}>
+      <RegisterSpacerScrollTriggerContext.Provider
+        value={{ registerSpacerScrollTrigger, getSpacerScrollProgress }}
+      >
         {children}
-      </RegisterScrollTriggerContext.Provider>
+      </RegisterSpacerScrollTriggerContext.Provider>
     </GsapContext.Provider>
   );
 }

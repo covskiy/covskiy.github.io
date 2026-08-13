@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IntroAnimation, introStorage } from '../../components/IntroAnimation';
 import { LandingSections } from '../../components';
-import { useRegisterScrollTrigger } from '../../components/Layout/gsap/useRegisterScrollTrigger';
+import { useRegisterSpacerScrollTrigger } from '../../components/Layout/gsap/useRegisterSpacerScrollTrigger';
 import styles from './HomePage.module.css';
 
 function HomePage() {
@@ -10,13 +10,13 @@ function HomePage() {
     () => !introStorage.getNeverShow() && !introStorage.getSessionSkip(),
   );
   const spacerRef = useRef<HTMLDivElement>(null);
-  const registerScrollTrigger = useRegisterScrollTrigger();
+  const { registerSpacerScrollTrigger } = useRegisterSpacerScrollTrigger();
 
   useEffect(() => {
     if (spacerRef.current) {
-      return registerScrollTrigger(spacerRef.current);
+      return registerSpacerScrollTrigger(spacerRef.current);
     }
-  }, [registerScrollTrigger]);
+  }, [registerSpacerScrollTrigger]);
 
   useEffect(() => {
     if (showIntro) {

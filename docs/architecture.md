@@ -133,8 +133,8 @@ covskiy.github.io/
 │   │   │   │   └── layoutContexts.ts  # LayoutEngineContext + LayoutSnapshotContext + хуки
 │   │   │   ├── gsap/                # 60fps-шина + ScrollTrigger-фабрика
 │   │   │   │   ├── gsapBus.ts
-│   │   │   │   ├── GsapProvider.tsx # gsapBus + registerScrollTrigger (scroll:progress / REACH_*)
-│   │   │   │   └── useRegisterScrollTrigger.ts
+│   │   │   │   ├── GsapProvider.tsx # gsapBus + registerSpacerScrollTrigger (scroll:progress / REACH_*)
+│   │   │   │   └── useRegisterSpacerScrollTrigger.ts
 │   │   │   ├── slots/               # DOM-обвязка: root + applier
 │   │   │   │   ├── LayoutRoot.tsx   # корневая нода; CSS-переменные лейаута
 │   │   │   │   └── useLayoutApplier.ts # gsap.to(root, snapshot.vars) + scroll-lock
@@ -213,7 +213,7 @@ covskiy.github.io/
   ├─ Чистый layout-компонент:
   │    └─ <LayoutProvider />          ← всегда в DOM: контексты машин + реакции
   │         │                             на bp/route/resize → engine
-  │         └─ <GsapProvider />       ← 60fps-шина (gsapBus) + registerScrollTrigger
+  │         └─ <GsapProvider />       ← 60fps-шина (gsapBus) + registerSpacerScrollTrigger
   │              └─ <LayoutRoot />    ← корневая нода; useLayoutApplier
   │                   │                  gsap.to(root, snapshot.vars) + scroll-lock
   │                   ├─ <NavigationBar/> ← nav (fixed), читает useLayoutSnapshot сам,
@@ -239,7 +239,7 @@ covskiy.github.io/
   ├─ showIntro === true →
   │    createPortal(<IntroAnimation />, document.body) — overlay поверх контента
   │    onComplete → setShowIntro(false)
-  └─ useEffect → registerScrollTrigger(spacerRef.current)
+  └─ useEffect → registerSpacerScrollTrigger(spacerRef.current)
        ├─ ScrollTrigger создаётся в GsapProvider (scrub: true)
        ├─ onUpdate:
        │    ├─ bus.emit('scroll:progress')   ← scrub-шина для навбара
@@ -248,7 +248,7 @@ covskiy.github.io/
        │    ├─ useLayoutApplier → gsap.to(root, vars) + scroll-lock
        │    └─ useNavPosition → paused scrub-твин по bus + дискретная
        │                        анимация из engine.subscribe
-       └─ cleanup из registerScrollTrigger → kill() при размонтировании
+       └─ cleanup из registerSpacerScrollTrigger → kill() при размонтировании
 
 Подробнее: `docs/Pages/HomePage.md`.
 ```
@@ -266,7 +266,7 @@ covskiy.github.io/
 `PageTransition` использует `useGSAP` с `scope` и `dependencies: [pathname]`.
 
 **ScrollTrigger-анимация раскладки** работает только на `/home`. При переходе
-на другие роуты HomePage анмаунтится, cleanup из `registerScrollTrigger`
+на другие роуты HomePage анмаунтится, cleanup из `registerSpacerScrollTrigger`
 убивает ScrollTrigger и таймлайн, и раскладка переходит в состояние
 по умолчанию (`invisible` на mobile, `standard` на tablet/desktop).
 Подробнее: `docs/Components/Layout/`.
@@ -579,7 +579,7 @@ Flat-config с type-checked правилами: `@eslint/js` recommended +
 | Layout (движок)              | `src/components/Layout/engine.ts` (send/subscribe/getSnapshot/setIsHome)                                                                 |
 | Layout (чистая логика)       | `src/components/Layout/machine/` (layoutMode / transition / derive / geometry / layoutSnapshot)                                          |
 | Layout (контекст)            | `src/components/Layout/context/` (LayoutProvider + layoutContexts)                                                                       |
-| Layout (GSAP-шина)           | `src/components/Layout/gsap/` (gsapBus / GsapProvider / useRegisterScrollTrigger)                                                        |
+| Layout (GSAP-шина)           | `src/components/Layout/gsap/` (gsapBus / GsapProvider / useRegisterSpacerScrollTrigger)                                                  |
 | Layout (DOM-обвязка)         | `src/components/Layout/slots/` (LayoutRoot / useLayoutApplier)                                                                           |
 | Layout (панель)              | `src/components/Layout/nav/` (NavigationBar, NavList/NavItem, ToggleButton)                                                              |
 | HomePage                     | `src/pages/HomePage/HomePage.tsx`                                                                                                        |

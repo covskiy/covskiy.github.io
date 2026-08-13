@@ -4,6 +4,7 @@ import { useGSAP } from '@gsap/react';
 import type { RefObject } from 'react';
 import { useLayoutEngine } from '../../context/layoutContexts';
 import { useGsapBus } from '../../gsap/gsapContext';
+import { useRegisterSpacerScrollTrigger } from '../../gsap/useRegisterSpacerScrollTrigger';
 import { getNavTransform } from '../../machine/geometry';
 import type { LayoutSnapshot } from '../../machine/layoutSnapshot';
 
@@ -29,6 +30,7 @@ export function useNavPosition(
 ) {
   const engine = useLayoutEngine();
   const bus = useGsapBus();
+  const { getSpacerScrollProgress } = useRegisterSpacerScrollTrigger();
   const scrubTweenRef = useRef<gsap.core.Tween | null>(null);
   const prevManualRef = useRef(false);
 
@@ -85,8 +87,13 @@ export function useNavPosition(
 
   useEffect(() => {
     if (!snapshot.isHome || snapshot.isManualToggle) return;
+    const tween = scrubTweenRef.current;
+    if (tween) {
+      tween.invalidate();
+      tween.progress(getSpacerScrollProgress());
+    }
     return bus.on('scroll:progress', ({ progress }) => {
       scrubTweenRef.current?.progress(progress);
     });
-  }, [bus, snapshot.isHome, snapshot.isManualToggle]);
+  }, [bus, snapshot.isHome, snapshot.isManualToggle, getSpacerScrollProgress]);
 }

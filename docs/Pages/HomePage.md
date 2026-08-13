@@ -24,7 +24,7 @@ pages/HomePage/
 
 - `IntroAnimation`, `introStorage` — `components/IntroAnimation/`
 - `LandingSections` — `components/LandingSections/`
-- `useLayout` — `components/layout/` (`registerScrollTrigger`)
+- `useLayout` — `components/layout/` (`registerSpacerScrollTrigger`)
 - `useBreakpoint` — `utils/breakpoints.ts`
 
 ## IntroAnimation
@@ -48,8 +48,8 @@ const [showIntro, setShowIntro] = useState(
 ## ScrollTrigger
 
 ScrollTrigger создаёт **useScrollScrub** (сцена layout-модуля) через
-`registerScrollTrigger`, который HomePage вызывает в `useEffect`.
-Пересоздаётся только при смене breakpoint (`dependencies: [registerScrollTrigger, bp]`).
+`registerSpacerScrollTrigger`, который HomePage вызывает в `useEffect`.
+Пересоздаётся только при смене breakpoint (`dependencies: [registerSpacerScrollTrigger, bp]`).
 
 ### Спейсер
 
@@ -71,17 +71,17 @@ ScrollTrigger создаёт **useScrollScrub** (сцена layout-модуля)
 ### Регистрация триггера
 
 ```tsx
-const { registerScrollTrigger } = useLayout();
+const { registerSpacerScrollTrigger } = useLayout();
 
 useEffect(() => {
   if (!spacerRef.current) return;
-  return registerScrollTrigger(spacerRef.current);
-}, [registerScrollTrigger, bp]);
+  return registerSpacerScrollTrigger(spacerRef.current);
+}, [registerSpacerScrollTrigger, bp]);
 ```
 
 Сам таймлайн (scrub) и обновление состояния раскладки на границах спейсера
 живут в layout-модуле — HomePage отдаёт только элемент-триггер. Cleanup,
-возвращённый из `registerScrollTrigger`, убивает ScrollTrigger и таймлайн
+возвращённый из `registerSpacerScrollTrigger`, убивает ScrollTrigger и таймлайн
 при размонтировании страницы или смене breakpoint.
 
 **Целевые значения** зависят от breakpoint и известны провайдеру:
@@ -112,7 +112,7 @@ useEffect(() => {
 
 ```text
 HomePage (useEffect)
-  └── useLayout().registerScrollTrigger(spacerRef.current)
+  └── useLayout().registerSpacerScrollTrigger(spacerRef.current)
         │
         LayoutProvider (машина + композер)
           ├── mode — единственный источник состояния (React Context)
@@ -137,7 +137,7 @@ React-рендера; каждый компонент панели `nav/*` ст�
 - **Страница не знает о DOM навбара** — никаких селекторов `.nav` / `<main>`
   и целевых ширин; страница отдаёт только элемент-триггер.
 - **Жизненный цикл триггера — на странице** — создание в `useEffect`,
-  уничтожение через cleanup из `registerScrollTrigger` при размонтировании
+  уничтожение через cleanup из `registerSpacerScrollTrigger` при размонтировании
   или смене breakpoint.
 - **`overwrite: 'auto'`** только в прямых твинах `useNavPosition` (дискретные
   переходы из `onNavState` с `source !== 'scroll'`) — гарантирует, что ручной

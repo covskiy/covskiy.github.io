@@ -30,6 +30,7 @@ export function useNavPosition(
   const engine = useLayoutEngine();
   const bus = useGsapBus();
   const scrubTweenRef = useRef<gsap.core.Tween | null>(null);
+  const prevManualRef = useRef(false);
 
   useGSAP(
     (_ctx, contextSafe) => {
@@ -57,7 +58,11 @@ export function useNavPosition(
       buildScrub();
 
       const unsubscribe = engine.subscribe((snap) => {
-        if (snap.isHome) return;
+        const manualNow = snap.isManualToggle;
+        // Обычный /home-scrub: пропускаем discrete-анимацию, пока НЕ было
+        // ручного toggle (иначе твин будет биться со scrub-твином).
+        if (snap.isHome && !manualNow && !prevManualRef.current) return;
+        prevManualRef.current = manualNow;
         const navEl = navRef.current;
         if (!navEl) return;
         const t = getNavTransform(snap.value, window.innerWidth);
@@ -79,9 +84,9 @@ export function useNavPosition(
   );
 
   useEffect(() => {
-    if (!snapshot.isHome) return;
+    if (!snapshot.isHome || snapshot.isManualToggle) return;
     return bus.on('scroll:progress', ({ progress }) => {
       scrubTweenRef.current?.progress(progress);
     });
-  }, [bus, snapshot.isHome]);
+  }, [bus, snapshot.isHome, snapshot.isManualToggle]);
 }

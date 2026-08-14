@@ -6,6 +6,7 @@ import { useLayoutEngine } from '../../context/layoutContexts';
 import { useGsapBus } from '../../gsap/gsapContext';
 import { useRegisterSpacerScrollTrigger } from '../../gsap/useRegisterSpacerScrollTrigger';
 import { getNavTransform } from '../../machine/geometry';
+import { logger } from '../../../../utils/logger';
 import type { LayoutSnapshot } from '../../machine/layoutSnapshot';
 
 const NAV_ANIM_DURATION = 0.6;
@@ -40,6 +41,16 @@ export function useNavPosition(
       if (!nav) return;
 
       const buildScrub = contextSafe!(() => {
+        // Scrub-твин — владелец x только на /home. Вне /home позицию держит
+        // дискретная gsap.to, поэтому твин не создаём: иначе пересборка
+        // (например, TOGGLE на tablet меняет homeEndState) вызывала бы
+        // progress(0) → рендер x:0 (fullscreen) и навбар «прыгал» в
+        // полноэкранный режим перед анимацией.
+        if (!snapshot.isHome) {
+          scrubTweenRef.current?.kill();
+          scrubTweenRef.current = null;
+          return;
+        }
         const prevProgress = scrubTweenRef.current?.progress() ?? 0;
         scrubTweenRef.current?.kill();
         const endX = getNavTransform(
@@ -57,6 +68,13 @@ export function useNavPosition(
           },
         );
         scrubTweenRef.current.progress(prevProgress);
+        logger.debug('NavigationBar', 'buildScrub', {
+          isHome: snapshot.isHome,
+          homeEndState: snapshot.homeEndState,
+          bp: snapshot.bp,
+          endX,
+          prevProgress,
+        });
       });
 
       buildScrub();
@@ -65,11 +83,26 @@ export function useNavPosition(
         const manualNow = snap.isManualToggle;
         // Обычный /home-scrub: пропускаем discrete-анимацию, пока НЕ было
         // ручного toggle (иначе твин будет биться со scrub-твином).
-        if (snap.isHome && !manualNow && !prevManualRef.current) return;
+        if (snap.isHome && !manualNow && !prevManualRef.current) {
+          logger.trace(
+            'NavigationBar',
+            'applyDiscrete skipped (home scrub owns x)',
+            {
+              mode: snap.value,
+            },
+          );
+          return;
+        }
         prevManualRef.current = manualNow;
         const navEl = navRef.current;
         if (!navEl) return;
         const t = getNavTransform(snap.value, window.innerWidth);
+        logger.debug('NavigationBar', 'applyDiscrete', {
+          mode: snap.value,
+          navX: t.navX,
+          isHome: snap.isHome,
+          manual: manualNow,
+        });
         gsap.to(navEl, {
           x: t.navX,
           duration: NAV_ANIM_DURATION,
@@ -85,7 +118,13 @@ export function useNavPosition(
       };
     },
     {
-      dependencies: [navRef, engine, snapshot.homeEndState, snapshot.bp],
+      dependencies: [
+        navRef,
+        engine,
+        snapshot.homeEndState,
+        snapshot.bp,
+        snapshot.isHome,
+      ],
       scope: navRef,
     },
   );

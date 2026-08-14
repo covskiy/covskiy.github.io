@@ -19,6 +19,7 @@
  * Чистый слой: без React, GSAP, DOM. Использует pure `transition` + `resolveLayout`.
  */
 
+import { logger } from '../../utils/logger';
 import { resolveLayout, type LayoutSnapshot } from './machine/layoutSnapshot';
 import {
   EVENT_TO_SOURCE,
@@ -113,6 +114,12 @@ export function createLayoutEngine(
   function send(event: LayoutEvent) {
     const source = EVENT_TO_SOURCE[event.type];
     const nextBp = event.type === 'BREAKPOINT_CHANGED' ? event.bp : context.bp;
+    const prevMode = mode;
+    logger.debug('LayoutEngine', 'send', {
+      type: event.type,
+      source,
+      bp: nextBp,
+    });
     const fullCtx: MachineContext = {
       ...context,
       bp: nextBp,
@@ -147,6 +154,15 @@ export function createLayoutEngine(
     };
 
     if (changed) {
+      logger.debug('LayoutEngine', 'transition', {
+        prev: prevMode,
+        next: nextMode,
+        actions: result.actions.map((a) => a.type),
+        bp: context.bp,
+        preferred: finalPreferred,
+        homeEndState: finalHomeEnd,
+        manualOverride: finalManual,
+      });
       mode = nextMode;
       rebuildSnapshot({ duration: transitionDuration, ease: transitionEase });
       notify();

@@ -12,6 +12,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEngine } from '../context/layoutContexts';
 import type { LayoutSnapshot } from '../machine/layoutSnapshot';
+import { logger } from '../../../utils/logger';
 
 export function useLayoutApplier(rootRef: RefObject<HTMLElement | null>) {
   const engine = useLayoutEngine();
@@ -28,6 +29,11 @@ export function useLayoutApplier(rootRef: RefObject<HTMLElement | null>) {
       document.documentElement.style.overflow = snapshot.scrollLocked
         ? 'hidden'
         : '';
+
+      logger.debug('Layout', 'applySnapshot', {
+        value: snapshot.value,
+        vars: snapshot.vars,
+      });
 
       tween = gsap.to(root, {
         ...snapshot.vars,

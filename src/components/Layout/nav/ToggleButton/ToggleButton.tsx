@@ -16,6 +16,7 @@ import { useBreakpoint } from '../../../../utils/breakpoints';
 import { useLayoutSend } from '../../context/layoutContexts';
 import styles from './ToggleButton.module.css';
 import { useToggleVisibility } from './useToggleVisibility';
+import { logger } from '../../../../utils/logger';
 
 export interface ToggleButtonProps {
   isSlim: boolean;
@@ -42,6 +43,7 @@ export function ToggleButton({
     bp === 'mobile' ? styles.toggleBtnFixed : styles.toggleBtnAbsolute;
 
   const handleClick = () => {
+    logger.debug('ToggleButton', 'click → TOGGLE');
     send({ type: 'TOGGLE' });
   };
 

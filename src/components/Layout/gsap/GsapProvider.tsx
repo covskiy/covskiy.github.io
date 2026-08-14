@@ -5,6 +5,7 @@ import { createGsapBus, type GsapBus } from './gsapBus';
 import { GsapContext } from './gsapContext';
 import { useLayoutEngine, useLayoutSnapshot } from '../context/layoutContexts';
 import { RegisterSpacerScrollTriggerContext } from './useRegisterSpacerScrollTrigger';
+import { logger } from '../../../utils/logger';
 
 export const EDGE_EPS = 0.0001;
 
@@ -38,6 +39,7 @@ export function GsapProvider({ children }: PropsWithChildren) {
     if (!st) return;
     if (st.progress >= 1 - EDGE_EPS) return;
     if (typeof st.end !== 'number') return;
+    logger.debug('GsapProvider', 'scrollSpacerToEnd', { end: st.end });
     gsap.to(window, {
       scrollTo: st.end,
       duration: SCROLL_SPACER_DURATION,
@@ -96,10 +98,12 @@ export function GsapProvider({ children }: PropsWithChildren) {
       });
 
       spacerTriggerRef.current = st;
+      logger.debug('GsapProvider', 'spacer ScrollTrigger registered');
 
       return () => {
         if (spacerTriggerRef.current === st) spacerTriggerRef.current = null;
         st.kill();
+        logger.debug('GsapProvider', 'spacer ScrollTrigger killed');
       };
     },
     [engine],

@@ -27,6 +27,11 @@ const MODULE_COLORS: Record<string, string> = {
   NavigationBar: '#8b5cf6',
   Layout: '#8b5cf6',
   HomePage: '#ec4899',
+  LayoutEngine: '#0ea5e9',
+  useNavPosition: '#7c3aed',
+  GsapProvider: '#14b8a6',
+  LayoutProvider: '#f97316',
+  ToggleButton: '#db2777',
 };
 
 const warnedModules = new Set<string>();

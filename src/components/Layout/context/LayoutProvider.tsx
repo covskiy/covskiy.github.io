@@ -17,6 +17,7 @@ import { createLayoutEngine, type LayoutEngine } from '../engine';
 import { LayoutEngineContext, LayoutSnapshotContext } from './layoutContexts';
 import { isHomePath } from '../machine/derive';
 import { homeEndStateFor } from '../machine/derive';
+import { logger } from '../../../utils/logger';
 import type { LayoutSnapshot } from '../machine/layoutSnapshot';
 import type { LayoutMode } from '../machine/layoutMode';
 
@@ -50,17 +51,25 @@ export function LayoutProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const isHome = isHomePath(location.pathname);
     engine.setIsHome(isHome);
+    logger.info('LayoutProvider', 'ROUTE_CHANGED', {
+      pathname: location.pathname,
+      isHome,
+    });
     engine.send({ type: 'ROUTE_CHANGED' });
   }, [engine, location.pathname]);
 
   // Реакция на breakpoint
   useEffect(() => {
+    logger.info('LayoutProvider', 'BREAKPOINT_CHANGED', { bp });
     engine.send({ type: 'BREAKPOINT_CHANGED', bp });
   }, [engine, bp]);
 
   // Реакция на resize (setViewport не меняет mode, только пересчитывает vars)
   useEffect(() => {
     function handle() {
+      logger.debug('LayoutProvider', 'resize → setViewport', {
+        width: window.innerWidth,
+      });
       engine.setViewport(window.innerWidth);
     }
     window.addEventListener('resize', handle);

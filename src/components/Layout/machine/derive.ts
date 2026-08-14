@@ -25,6 +25,7 @@ export function homeEndStateFor(
 ): LayoutMode {
   if (bp === 'mobile') return 'invisible';
   if (bp === 'tablet' && preferred) return preferred;
+  if (bp === 'tablet') return 'slim';
   return 'standard';
 }
 

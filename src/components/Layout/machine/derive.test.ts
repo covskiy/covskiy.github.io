@@ -74,8 +74,8 @@ describe('состояние навбара в конце /home', () => {
     expect(homeEndStateFor('tablet', 'standard')).toBe('standard');
   });
 
-  it('когда предпочтения нет, в конце — стандартная колонка', () => {
-    expect(homeEndStateFor('tablet', null)).toBe('standard');
+  it('когда предпочтения нет, tablet оседает в slim, desktop — в standard', () => {
+    expect(homeEndStateFor('tablet', null)).toBe('slim');
     expect(homeEndStateFor('desktop', null)).toBe('standard');
     expect(homeEndStateFor('desktop', 'slim')).toBe('standard');
   });

@@ -40,6 +40,7 @@ export function useNavPosition(
       if (!nav) return;
 
       const buildScrub = contextSafe!(() => {
+        const prevProgress = scrubTweenRef.current?.progress() ?? 0;
         scrubTweenRef.current?.kill();
         const endX = getNavTransform(
           snapshot.homeEndState,
@@ -55,6 +56,7 @@ export function useNavPosition(
             immediateRender: false,
           },
         );
+        scrubTweenRef.current.progress(prevProgress);
       });
 
       buildScrub();
@@ -82,7 +84,10 @@ export function useNavPosition(
         scrubTweenRef.current = null;
       };
     },
-    { dependencies: [navRef, engine, snapshot.homeEndState], scope: navRef },
+    {
+      dependencies: [navRef, engine, snapshot.homeEndState, snapshot.bp],
+      scope: navRef,
+    },
   );
 
   useEffect(() => {

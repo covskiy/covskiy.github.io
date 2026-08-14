@@ -498,7 +498,7 @@ describe('уведомление подписчиков о смене состо
 
   it('когда приходит событие, источник в уведомлении — из EVENT_TO_SOURCE', () => {
     const result = transition(
-      'slim',
+      'standard',
       { type: 'REACH_BOTTOM' },
       makeContext('tablet', false, null, EVENT_TO_SOURCE.REACH_BOTTOM, 'route'),
     );

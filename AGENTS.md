@@ -14,6 +14,7 @@ React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pag
 | `npm run build`                       | `tsc -b && vite build` — типы + production-сборка    |
 | `npm run build:design-tokens`         | `style-dictionary build` — JSON → `src/styles/*.css` |
 | `npm run preview`                     | Локальный просмотр production-сборки                 |
+| `npm run test`                        | `vitest run` — юнит-тесты layout-машины              |
 | `npm run lint` / `lint:fix`           | ESLint                                               |
 | `npm run format` / `format:fix`       | Prettier                                             |
 | `npm run stylelint` / `stylelint:fix` | Stylelint по `src/**/*.css`                          |
@@ -21,7 +22,7 @@ React 19 + TypeScript + Vite SPA, разворачивается на GitHub Pag
 
 ## Структура (верхний уровень)
 
-```
+```text
 covskiy.github.io/
 ├── design-tokens/        # JSON-токены → style-dictionary → src/styles/
 ├── docs/                 # Подробная документация (см. ниже)
@@ -29,12 +30,13 @@ covskiy.github.io/
 ├── src/
 │   ├── assets/           # Изображения, SVG-исходники Intro
 │   ├── components/       # Logo, LogoText, Tagline, SkipControls,
-│   │                     #   NavigationBar, PageTransition, IntroAnimation
+│   │                     #   Layout, PageTransition, IntroAnimation
 │   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
+│   ├── test/             # JS-инфраструктура: setupGsapMock, renderHookLite, renderEngine
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
-│   ├── App.tsx           # Чистый layout (NavigationBarProvider + Routes)
+│   ├── App.tsx           # Подключает <LayoutProvider /> (layout-движок)
 │   ├── routes.tsx        # Все роуты + lazy-обёртки
 │   ├── main.tsx          # Entry: BrowserRouter, debug-хелперы
 │   └── index.css         # CSS entry: reset + global
@@ -49,23 +51,29 @@ covskiy.github.io/
 
 ## Ключевые архитектурные решения
 
-- **App.tsx** — чистый layout-компонент: `NavigationBarProvider` + `<Routes>`,
-  обёрнутых в `PageTransition`. Никакой intro/splash-логики, не импортирует
-  `IntroAnimation`, `introStorage`, `useLocation`, `useState`, `useEffect`.
-  `/` всегда рендерит HomePage.
-- **NavigationBarProvider** (диспетчер сцен) — создаёт шину событий
-  (`createNavbarEventBus`, scoped на провайдер), держит рефы корневых
-  DOM-нод навбара (`<nav>`, `<main>`, кнопка toggle) и подключает
-  корневую сцену раскладки `useNavbarLayout`. Страницы регистрируют
-  ScrollTrigger через `useNavbar().registerScrollTrigger(trigger)`
-  (cleanup возвращается странице для `kill()`). Дочерние сцены
-  (NavItem, логотип, будущие расширения) подписываются на шину через
-  `useNavbarEvent` / `useNavbarScrollProgress` и анимируют свои
-  DOM-ноды самостоятельно. Приоритет: автоскролл > ручной toggle.
+- **App.tsx** — рендерит `<LayoutProvider />` (`src/components/Layout/`).
+  Никакой intro/splash-логики, не импортирует `IntroAnimation`,
+  `introStorage`, `useState`, `useEffect`. `/` всегда рендерит HomePage.
+- **Layout** (машина состояния + per-component animator + GSAP-шина) —
+  новый layout-движок, построен с нуля в задаче `task/11.FullLayoutRefactoring.md`.
+  Структура: `machine/` (чистый TS: `transition` reducer + `resolveLayout`),
+  `engine.ts` (внешний движок с `send/subscribe/getSnapshot`),
+  `gsap/` (60fps-шина + `GsapProvider` + `GsapLayoutBridge`),
+  `context/` (React-обёртка, реакция на bp/route/resize),
+  `slots/` (`LayoutRoot` с CSS-vars + `useLayoutApplier` через `gsap.to`),
+  `nav/` (презентационная `VerticalNavigationBar` + `ToggleButton`).
+  `machine/` + `engine.ts` — без React/GSAP/DOM. Состояние (`mode`)
+  держится в движке, не в React. Страницы регистрируют ScrollTrigger
+  через `useRegisterHomeSpacer(triggerRef)` (`src/components/Layout/gsap/GsapLayoutBridge.tsx`).
+  Чистый слой + политики навбара покрыты юнит-тестами (`vitest`): co-located
+  `*.test.ts` в `machine/` + `engine.test.ts` + `navPolicy.ts`. Обвязка хуков
+  (`nav/`, `slots/`) покрыта jsdom-тестами через моки GSAP: `src/test/`
+  (`setupGsapMock.ts`, `renderHookLite.tsx`, `renderEngine.tsx`) — см.
+  `docs/Components/Layout/testing.md` §5.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
-  поверх собственного контента и регистрирует ScrollTrigger навбара
-  через `registerScrollTrigger(spacerRef.current)`.
+  поверх собственного контента и регистрирует ScrollTrigger раскладки
+  через `useRegisterHomeSpacer(spacerRef)`.
 - **routes.tsx** — `RouteConfig[]` с `label`, `HomePage` eager,
   `About/Services/Contact` — `React.lazy` + `withSuspense`.
   Роут `/` — HomePage, роут `*` — NotFoundPage.
@@ -94,22 +102,21 @@ covskiy.github.io/
 
 ## Документация (docs/)
 
-| Файл                                     | Назначение                                                                         |
-| ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| `docs/architecture.md`                   | Архитектура, роутинг, GSAP, стили, конфиги                                         |
-| `docs/breakpoints.md`                    | Breakpoints: модель, источник правды, CSS/JS использование                         |
-| `docs/design-tokens.md`                  | Сборка design tokens, маппинг, градиенты                                           |
-| `docs/preloader.md`                      | Preloader — описание работы                                                        |
-| `docs/logging-rules.md`                  | Соглашения по логгеру (теги, уровни)                                               |
-| `docs/utils/logger.md`                   | API логгера                                                                        |
-| `docs/Components/Logo.md`                | Анимация логотипа (наковальня)                                                     |
-| `docs/Components/LogoText.md`            | Анимация текста логотипа (SVG morph)                                               |
-| `docs/Components/NavigationBar.md`       | Архитектура навбара: сценовая композиция, шина, состояния                          |
-| `docs/Components/navbarEventBus.md`      | API шины событий навбара (NavbarEventMap, NavbarSource)                            |
-| `docs/Components/adding-navbar-scene.md` | Рецепт: добавление новой сцены в навбар (useNavbarEvent / useNavbarScrollProgress) |
-| `docs/Components/Tagline.md`             | Анимация слогана (клавиатура)                                                      |
-| `docs/Components/IntroAnimation.md`      | Хореография Intro-анимации                                                         |
-| `docs/Pages/NotFoundPage.md`             | Описание страницы 404                                                              |
+| Файл                                | Назначение                                                          |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| `docs/architecture.md`              | Архитектура, роутинг, GSAP, стили, конфиги                          |
+| `docs/breakpoints.md`               | Breakpoints: модель, источник правды, CSS/JS использование          |
+| `docs/design-tokens.md`             | Сборка design tokens, маппинг, градиенты                            |
+| `docs/preloader.md`                 | Preloader — описание работы                                         |
+| `docs/logging-rules.md`             | Соглашения по логгеру (теги, уровни)                                |
+| `docs/utils/logger.md`              | API логгера                                                         |
+| `docs/Components/Logo.md`           | Анимация логотипа (наковальня)                                      |
+| `docs/Components/LogoText.md`       | Анимация текста логотипа (SVG morph)                                |
+| `docs/Components/Layout/README.md`  | Layout-движок: machine/engine/snapshot/CSS-vars/GsapProvider/Bridge |
+| `docs/Components/Layout/testing.md` | Тесты: глоссарий терминов и конвенция имен (GWT/AAA)                |
+| `docs/Components/Tagline.md`        | Анимация слогана (клавиатура)                                       |
+| `docs/Components/IntroAnimation.md` | Хореография Intro-анимации                                          |
+| `docs/Pages/NotFoundPage.md`        | Описание страницы 404                                               |
 
 ## Зависимости
 
@@ -127,6 +134,7 @@ covskiy.github.io/
   `eslint-plugin-react`, `-react-hooks`, `-react-refresh`,
   `eslint-config-prettier`, `globals`.
 - **Стиль**: `prettier`, `stylelint`, `stylelint-config-standard`.
+- **Тесты**: `vitest`, `@vitest/coverage-v8`.
 - **Git-хуки**: `husky`, `lint-staged`.
 
 ## CI/CD
@@ -148,6 +156,7 @@ covskiy.github.io/
 - Stylelint: `selector-class-pattern: null` (CSS Modules генерируют хеши).
 - Проект WIP — `App.tsx`, `routes.tsx`, страницы будут дорабатываться.
 - Husky v8 + lint-staged, см. `package.json` секцию `lint-staged`.
+  Pre-commit дополнительно прогоняет `npm run test` (vitest).
 
 ## Соглашения по коммитам
 
@@ -174,7 +183,7 @@ LLM должна следовать этим правилам при соста�
 
 **Пример:**
 
-```
+```text
 LogoText
 - доделал анимацию букв
 - добавление в svg траектории для гвоздя

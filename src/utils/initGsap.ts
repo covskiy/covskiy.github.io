@@ -1,6 +1,7 @@
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { SplitText } from 'gsap/SplitText';
 import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
@@ -11,6 +12,7 @@ function initGsap() {
   gsap.registerPlugin(useGSAP);
   gsap.registerPlugin(SplitText);
   gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollToPlugin);
   gsap.registerPlugin(MorphSVGPlugin);
   gsap.registerPlugin(DrawSVGPlugin);
   gsap.registerPlugin(MotionPathPlugin);

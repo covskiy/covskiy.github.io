@@ -1,4 +1,4 @@
-import { useRef, useEffect, type ReactNode } from 'react';
+import { useRef, useLayoutEffect, type ReactNode } from 'react';
 import { useLocation } from 'react-router';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -22,7 +22,7 @@ function PageTransition({ children }: PageTransitionProps) {
     { scope: containerRef, dependencies: [location.pathname] },
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 

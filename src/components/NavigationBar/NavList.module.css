@@ -1,7 +1,0 @@
-/** Вертикальный список навигационных ссылок. */
-.list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xxs);
-}

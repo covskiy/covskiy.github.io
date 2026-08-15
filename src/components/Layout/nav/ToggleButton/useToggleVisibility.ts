@@ -1,6 +1,7 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import { useGsapBus } from '../../gsap/gsapContext';
 import { EDGE_EPS } from '../../gsap/GsapProvider';
+import { shouldHideToggle } from '../../machine/navPolicy';
 import styles from './ToggleButton.module.css';
 
 /**
@@ -46,7 +47,11 @@ export function useToggleVisibility(
     const apply = () => {
       el.classList.toggle(
         styles.isHidden,
-        !(lastProgressRef.current >= 1 - EDGE_EPS || opts.isManualToggle),
+        shouldHideToggle({
+          progress: lastProgressRef.current,
+          isManualToggle: opts.isManualToggle,
+          edgeEps: EDGE_EPS,
+        }),
       );
     };
 

@@ -6,6 +6,11 @@ import { useLayoutEngine } from '../../context/layoutContexts';
 import { useGsapBus } from '../../gsap/gsapContext';
 import { useRegisterSpacerScrollTrigger } from '../../gsap/useRegisterSpacerScrollTrigger';
 import { getNavTransform } from '../../machine/geometry';
+import {
+  decideScrubBuild,
+  shouldAnimateDiscrete,
+  shouldResyncScrub,
+} from '../../machine/navPolicy';
 import { logger } from '../../../../utils/logger';
 import type { LayoutSnapshot } from '../../machine/layoutSnapshot';
 
@@ -46,34 +51,35 @@ export function useNavPosition(
         // (например, TOGGLE на tablet меняет homeEndState) вызывала бы
         // progress(0) → рендер x:0 (fullscreen) и навбар «прыгал» в
         // полноэкранный режим перед анимацией.
-        if (!snapshot.isHome) {
+        const decision = decideScrubBuild({
+          isHome: snapshot.isHome,
+          homeEndState: snapshot.homeEndState,
+          viewport: window.innerWidth,
+          existingProgress: scrubTweenRef.current?.progress() ?? 0,
+        });
+        if (!decision.shouldBuild) {
           scrubTweenRef.current?.kill();
           scrubTweenRef.current = null;
           return;
         }
-        const prevProgress = scrubTweenRef.current?.progress() ?? 0;
         scrubTweenRef.current?.kill();
-        const endX = getNavTransform(
-          snapshot.homeEndState,
-          window.innerWidth,
-        ).navX;
         scrubTweenRef.current = gsap.fromTo(
           nav,
           { x: 0 },
           {
-            x: endX,
+            x: decision.endX,
             ease: 'none',
             paused: true,
             immediateRender: false,
           },
         );
-        scrubTweenRef.current.progress(prevProgress);
+        scrubTweenRef.current.progress(decision.prevProgress);
         logger.debug('NavigationBar', 'buildScrub', {
           isHome: snapshot.isHome,
           homeEndState: snapshot.homeEndState,
           bp: snapshot.bp,
-          endX,
-          prevProgress,
+          endX: decision.endX,
+          prevProgress: decision.prevProgress,
         });
       });
 
@@ -83,7 +89,13 @@ export function useNavPosition(
         const manualNow = snap.isManualToggle;
         // Обычный /home-scrub: пропускаем discrete-анимацию, пока НЕ было
         // ручного toggle (иначе твин будет биться со scrub-твином).
-        if (snap.isHome && !manualNow && !prevManualRef.current) {
+        if (
+          !shouldAnimateDiscrete({
+            isHome: snap.isHome,
+            manualNow,
+            prevManual: prevManualRef.current,
+          })
+        ) {
           logger.trace(
             'NavigationBar',
             'applyDiscrete skipped (home scrub owns x)',
@@ -130,7 +142,14 @@ export function useNavPosition(
   );
 
   useEffect(() => {
-    if (!snapshot.isHome || snapshot.isManualToggle) return;
+    if (
+      !shouldResyncScrub({
+        isHome: snapshot.isHome,
+        isManualToggle: snapshot.isManualToggle,
+      })
+    ) {
+      return;
+    }
     const tween = scrubTweenRef.current;
     if (tween) {
       tween.invalidate();

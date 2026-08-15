@@ -1,11 +1,12 @@
-# Тесты layout-движка: как читать
+# Тесты layout-движка, политик навбара и обвязки хуков: как читать
 
-Юнит-тесты (`vitest`) покрывают чистый слой: `machine/` + не-React `engine.ts`.
-React-компоненты (`gsap/`, `context/`, `slots/`, `nav/`) не тестируются.
+Юнит-тесты (`vitest`) покрывают:
 
-Файлы: co-located `*.test.ts` в `src/components/Layout/machine/` и
-`src/components/Layout/engine.test.ts`. Запуск — `npm run test`, прогоняется
-в pre-commit.
+- чистый слой: `machine/` + не-React `engine.ts`;
+- чистые политики навбара: `machine/navPolicy.ts`;
+- обвязку GSAP-хуков (`nav/`, `slots/`) через jsdom + моки GSAP.
+
+Запуск — `npm run test`, прогоняется в pre-commit.
 
 ---
 
@@ -84,13 +85,68 @@ React-компоненты (`gsap/`, `context/`, `slots/`, `nav/`) не тест
 
 ## 4. Что покрыто
 
-| Файл                             | Проверяет                                                                        |
-| -------------------------------- | -------------------------------------------------------------------------------- |
-| `machine/transition.test.ts`     | Поведение reducer-а: события, actions, `preferredAfter`, `manualOverrideAfter`   |
-| `machine/derive.test.ts`         | Чистые хелперы (default state, валидность preferred, home-пути)                  |
-| `machine/geometry.test.ts`       | Числовая геометрия навбара (сдвиг, отступ контента)                              |
-| `machine/layoutSnapshot.test.ts` | Иммутабельность и CSS-переменные снапшота                                        |
-| `engine.test.ts`                 | Контракт движка: subscribe/notify, getSnapshot/getMode, viewport, manualOverride |
+| Файл                                            | Проверяет                                                                           |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `machine/transition.test.ts`                    | Поведение reducer-а: события, actions, `preferredAfter`, `manualOverrideAfter`      |
+| `machine/derive.test.ts`                        | Чистые хелперы (default state, валидность preferred, home-пути)                     |
+| `machine/geometry.test.ts`                      | Числовая геометрия навбара (сдвиг, отступ контента)                                 |
+| `machine/layoutSnapshot.test.ts`                | Иммутабельность и CSS-переменные снапшота                                           |
+| `engine.test.ts`                                | Контракт движка: subscribe/notify, getSnapshot/getMode, viewport, manualOverride    |
+| `machine/navPolicy.test.ts`                     | Чистые политики навбара: scrub-build, discrete-skip, resync-guard, видимость toggle |
+| `nav/NavigationBar/useNavPosition.test.tsx`     | Обвязка: scrub-build/rebuild, discrete-skip, bus-подписка, resync (jsdom)           |
+| `nav/ToggleButton/useToggleVisibility.test.tsx` | Обвязка: видимость кнопки по progress/manual (jsdom)                                |
+| `slots/useLayoutApplier.test.tsx`               | Обвязка: gsap.to CSS-переменных, scroll-lock, ScrollTrigger.refresh (jsdom)         |
 
 Ограничение покрытия — осознанное: без jsdom/happy-dom React-слой не
-тестируется.
+тестировался; с задачей 16 обвязка хуков тестируется в jsdom через моки GSAP,
+но реальный DOM-рендер навбара и реальный ScrollTrigger/rAF — по-прежнему
+ручная проверка в `npm run dev`.
+
+---
+
+## 5. Тестирование GSAP/DOM-слоя (хуки и applier)
+
+Среда: `// @vitest-environment jsdom` per-file + `setupFiles` →
+`src/test/setupGsapMock.ts` (моки `gsap`, `gsap/ScrollTrigger`, `@gsap/react`).
+
+Render-хелпер: `src/test/renderHookLite.tsx` (0 новых рантайм-deps, только
+`react` + `react-dom/client`). Провайдеры: `src/test/renderEngine.tsx`
+(`makeRenderEnv`) — лёгкий движок + gsapBus + контексты.
+
+> **Почему не `@testing-library/react` (renderHook):** решение осознанное —
+> замена `renderHookLite` на RTL потребовала бы 2 новых devDeps
+> (`@testing-library/react` v16 под React 19 + обязательный peer
+> `@testing-library/dom`), а весь их инструментарий (`getBy*`, `fireEvent`,
+> `waitFor`) для тестов хуков и провайдеров не нужен — сценарии синхронные,
+> DOM-взаимодействия не тестируются. Это противоречит критерию плана 16:
+> «0 новых devDeps, кроме jsdom». При расширении функций сохраняем
+> совместимость по API с `renderHook` (`result` / `rerender` / `unmount`,
+> см. `renderHookLite.tsx:15-19`), чтобы при появлении DOM-тестов (клики по
+> toggle, рендер навбара) переход на RTL был точечной заменой файла.
+
+Что покрываем:
+
+- подписки и их cleanup (unmount → повторный `bus.emit` не дёргает твины);
+- последовательность `kill → fromTo → progress(prev)` при пересборке scrub;
+- `prevManualRef.current = manualNow` **после** skip-guard (E2.3);
+- `lastProgressRef` после перезапуска эффекта (back-navigation на /home);
+- scroll-lock на `documentElement.style.overflow` и `ScrollTrigger.refresh`
+  в `onComplete`.
+
+Что НЕ покрываем: реальный rAF, реальный ScrollTrigger, реальный DOM-рендер
+навбара — для этого остаётся ручная проверка в `npm run dev`.
+
+---
+
+## 6. Глоссарий императивной логики
+
+- `scrub-режим` — paused `fromTo`-твин на /home, ведомый `scroll:progress`;
+- `discrete-режим` — `gsap.to` на смену mode (toggle/route/breakpoint);
+- `prevProgress` — сохранённый прогресс при пересборке scrub-твина
+  (`existingProgress` из `scrubTweenRef` — ref не обнуляется на смену deps,
+  т.к. `useGSAP` с dependencies не зовёт cleanup, см. E1.2);
+- `prevManualRef` — буфер «было ли manual в предыдущем snapshot»
+  (skip-логика discrete);
+- `lastProgressRef` — последний известный прогресс для `useToggleVisibility`
+  (corner: back-nav на /home уже на дне);
+- `EDGE_EPS` — граница включительности `progress >= 1 - EDGE_EPS`.

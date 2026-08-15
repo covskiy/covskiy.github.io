@@ -33,6 +33,7 @@ covskiy.github.io/
 │   │                     #   Layout, PageTransition, IntroAnimation
 │   ├── pages/            # HomePage + About/Services/Contact
 │   ├── styles/           # reset/global.css + сгенерированные токен-файлы
+│   ├── test/             # JS-инфраструктура: setupGsapMock, renderHookLite, renderEngine
 │   ├── types/            # Типы intro и общие типы
 │   ├── utils/            # initGsap, logger
 │   ├── App.tsx           # Подключает <LayoutProvider /> (layout-движок)
@@ -64,8 +65,11 @@ covskiy.github.io/
   `machine/` + `engine.ts` — без React/GSAP/DOM. Состояние (`mode`)
   держится в движке, не в React. Страницы регистрируют ScrollTrigger
   через `useRegisterHomeSpacer(triggerRef)` (`src/components/Layout/gsap/GsapLayoutBridge.tsx`).
-  Чистый слой покрыт юнит-тестами (`vitest`): co-located `*.test.ts`
-  в `machine/` + `engine.test.ts` — React-компоненты не тестируются.
+  Чистый слой + политики навбара покрыты юнит-тестами (`vitest`): co-located
+  `*.test.ts` в `machine/` + `engine.test.ts` + `navPolicy.ts`. Обвязка хуков
+  (`nav/`, `slots/`) покрыта jsdom-тестами через моки GSAP: `src/test/`
+  (`setupGsapMock.ts`, `renderHookLite.tsx`, `renderEngine.tsx`) — см.
+  `docs/Components/Layout/testing.md` §5.
 - **HomePage** — владеет состоянием `showIntro`, `useEffect` для
   `overflow: hidden` на body, рендерит `<IntroAnimation />` как overlay
   поверх собственного контента и регистрирует ScrollTrigger раскладки

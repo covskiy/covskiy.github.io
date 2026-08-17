@@ -82,7 +82,7 @@ describe('buildScrub (E1) — scrub-твин на /home', () => {
     expect(toVars.immediateRender).toBe(false);
   });
 
-  it('когда homeEndState меняется standard→slim, scrub пересобирается с сохранением прогресса', () => {
+  it('когда homeEndState меняется standard→slim, scrub плавно перецеливается с сохранением прогресса', () => {
     const env = makeRenderEnv({ bp: 'desktop', isHome: true });
     const navRef = makeNavRef();
     let snapshot = env.engine.getSnapshot();
@@ -99,11 +99,46 @@ describe('buildScrub (E1) — scrub-твин на /home', () => {
     snapshot = env.engine.getSnapshot();
     r.rerender(() => useNavPosition(navRef, snapshot));
 
+    // перецеливка: плавный gsap.to к target = endX * prevProgress
+    const tos = callsBy('to');
+    expect(tos).toHaveLength(1);
+    expect(tos[0].target).toBe(navRef.current);
+    expect(tos[0].vars.x).toBe(-944 * 0.4);
+    expect(tos[0].vars.duration).toBe(snapshot.transition.duration);
+    expect(tos[0].vars.ease).toBe(snapshot.transition.ease);
+
+    // завершаем анимацию — scrub пересобирается в новой геометрии
+    (getLastTween() as { _onComplete?: () => void } | null)?._onComplete?.();
     expect(callsBy('fromTo')).toHaveLength(2);
-    expect(first.killed).toBe(true);
     const rebuilt = currentTween();
     expect(rebuilt.toVars.x).toBe(-944);
-    expect(rebuilt._progress).toBe(0.4);
+    expect(rebuilt._progress).toBe(env.getSpacerScrollProgress());
+  });
+
+  it('когда TOGGLE внизу /home, nav-перецеливка использует snapshot.transition (синхронно с контентом)', () => {
+    const env = makeRenderEnv({
+      bp: 'tablet',
+      isHome: true,
+      initialMode: 'slim',
+    });
+    const navRef = makeNavRef();
+    let snapshot = env.engine.getSnapshot();
+    const r = renderHookLite(() => useNavPosition(navRef, snapshot), {
+      wrapper: env.Wrapper,
+    });
+    tweens.push(r);
+
+    // на дне спейсера: прогресс 1
+    currentTween().progress(1);
+
+    env.engine.send({ type: 'TOGGLE' });
+    snapshot = env.engine.getSnapshot();
+    r.rerender(() => useNavPosition(navRef, snapshot));
+
+    const tos = callsBy('to');
+    expect(tos).toHaveLength(1);
+    expect(tos[0].vars.duration).toBe(snapshot.transition.duration);
+    expect(tos[0].vars.ease).toBe(snapshot.transition.ease);
   });
 
   it('когда isHome меняется true→false, scrub-твин убивается и новый не создаётся', () => {
@@ -181,8 +216,8 @@ describe('discrete-skip (E2) — владение x через engine.subscribe'
     expect(tos[0].target).toBe(navRef.current);
     expect(tos[0].vars).toMatchObject({
       x: 0,
-      duration: 0.6,
-      ease: 'power2.inOut',
+      duration: 0.45,
+      ease: 'power3.inOut',
       overwrite: 'auto',
     });
   });
@@ -224,6 +259,30 @@ describe('discrete-skip (E2) — владение x через engine.subscribe'
     env.engine.setViewport(900);
 
     expect(callsBy('to')).toHaveLength(2);
+  });
+
+  it('когда TOGGLE, nav-твин берёт duration/ease из snap.transition (единый источник с контентом)', () => {
+    const env = makeRenderEnv({
+      bp: 'mobile',
+      isHome: true,
+      initialMode: 'invisible',
+    });
+    const navRef = makeNavRef();
+    const snapshot = env.engine.getSnapshot();
+    tweens.push(
+      renderHookLite(() => useNavPosition(navRef, snapshot), {
+        wrapper: env.Wrapper,
+      }),
+    );
+
+    env.engine.send({ type: 'TOGGLE' });
+
+    const to = callsBy('to')[0];
+    const snap = env.engine.getSnapshot();
+    expect(to.vars.duration).toBe(snap.transition.duration);
+    expect(to.vars.ease).toBe(snap.transition.ease);
+    expect(to.vars.duration).toBe(0.45);
+    expect(to.vars.ease).toBe('power3.inOut');
   });
 });
 

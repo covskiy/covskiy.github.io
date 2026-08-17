@@ -14,9 +14,6 @@ import {
 import { logger } from '../../../../utils/logger';
 import type { LayoutSnapshot } from '../../machine/layoutSnapshot';
 
-const NAV_ANIM_DURATION = 0.6;
-const NAV_ANIM_EASE = 'power2.inOut';
-
 /**
  * useNavPosition — владелец x-позиции `.nav`.
  *
@@ -47,10 +44,13 @@ export function useNavPosition(
 
       const buildScrub = contextSafe!(() => {
         // Scrub-твин — владелец x только на /home. Вне /home позицию держит
-        // дискретная gsap.to, поэтому твин не создаём: иначе пересборка
-        // (например, TOGGLE на tablet меняет homeEndState) вызывала бы
-        // progress(0) → рендер x:0 (fullscreen) и навбар «прыгал» в
-        // полноэкранный режим перед анимацией.
+        // дискретная gsap.to, поэтому твин не создаём. При перецеливке
+        // (TOGGLE на tablet / смена breakpoint меняет homeEndState) старый
+        // твин жив — useGSAP перезапускает колбэк без cleanup, и
+        // `scrubTweenRef` сохраняется, поэтому проигрываем плавную анимацию
+        // к новой геометрии синхронно с контентом (snapshot.transition), и
+        // лишь по завершении пересобираем scrub. Иначе навбар «прыгал»
+        // мгновенно, пока контент плывёт.
         const decision = decideScrubBuild({
           isHome: snapshot.isHome,
           homeEndState: snapshot.homeEndState,
@@ -62,24 +62,55 @@ export function useNavPosition(
           scrubTweenRef.current = null;
           return;
         }
+
+        const prevProgress = decision.prevProgress;
+        const hadScrub = scrubTweenRef.current != null;
         scrubTweenRef.current?.kill();
-        scrubTweenRef.current = gsap.fromTo(
-          nav,
-          { x: 0 },
-          {
-            x: decision.endX,
-            ease: 'none',
-            paused: true,
-            immediateRender: false,
-          },
-        );
-        scrubTweenRef.current.progress(decision.prevProgress);
+
+        if (hadScrub) {
+          const endX = decision.endX;
+          const targetX = endX * prevProgress;
+          scrubTweenRef.current = null;
+          gsap.to(nav, {
+            x: targetX,
+            duration: snapshot.transition.duration,
+            ease: snapshot.transition.ease,
+            overwrite: 'auto',
+            onComplete: () => {
+              scrubTweenRef.current = gsap.fromTo(
+                nav,
+                { x: 0 },
+                {
+                  x: endX,
+                  ease: 'none',
+                  paused: true,
+                  immediateRender: false,
+                },
+              );
+              scrubTweenRef.current.progress(getSpacerScrollProgress());
+            },
+          });
+        } else {
+          scrubTweenRef.current = gsap.fromTo(
+            nav,
+            { x: 0 },
+            {
+              x: decision.endX,
+              ease: 'none',
+              paused: true,
+              immediateRender: false,
+            },
+          );
+          scrubTweenRef.current.progress(prevProgress);
+        }
+
         logger.debug('NavigationBar', 'buildScrub', {
           isHome: snapshot.isHome,
           homeEndState: snapshot.homeEndState,
           bp: snapshot.bp,
           endX: decision.endX,
-          prevProgress: decision.prevProgress,
+          prevProgress,
+          retarget: hadScrub,
         });
       });
 
@@ -117,8 +148,8 @@ export function useNavPosition(
         });
         gsap.to(navEl, {
           x: t.navX,
-          duration: NAV_ANIM_DURATION,
-          ease: NAV_ANIM_EASE,
+          duration: snap.transition.duration,
+          ease: snap.transition.ease,
           overwrite: 'auto',
         });
       });

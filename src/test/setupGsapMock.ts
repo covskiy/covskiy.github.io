@@ -83,6 +83,7 @@ let lastTween: FakeTween | null = null;
 mockState.__getLastTween = () => lastTween;
 
 const mockedGsap = {
+  killTweensOf: vi.fn(),
   to(target: unknown, vars: Record<string, unknown>): FakeTween {
     gsapCalls.push({ method: 'to', target, vars });
     lastTween = createFakeTween(undefined, vars);

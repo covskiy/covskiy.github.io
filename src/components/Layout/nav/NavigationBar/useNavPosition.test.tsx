@@ -55,6 +55,10 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const r of tweens.splice(0)) r.unmount();
+  Object.defineProperty(window, 'innerWidth', {
+    value: 1024,
+    configurable: true,
+  });
 });
 
 describe('buildScrub (E1) — scrub-твин на /home', () => {
@@ -381,5 +385,104 @@ describe('resync (E4) — invalidate + progress(getSpacerScrollProgress)', () =>
     env.bus.emit('scroll:progress', { progress: 0.7, direction: 1 });
 
     expect(currentTween()._progress).toBe(0);
+  });
+});
+
+describe('resize — snap внутри breakpoint на /home', () => {
+  it('когда resize внутри breakpoint после прокрутки, endX scrub-твина обновляется под новый viewport, прогресс сохранён', () => {
+    const env = makeRenderEnv({ bp: 'desktop', isHome: true });
+    const navRef = makeNavRef();
+    const snapshot = env.engine.getSnapshot();
+    tweens.push(
+      renderHookLite(() => useNavPosition(navRef, snapshot), {
+        wrapper: env.Wrapper,
+      }),
+    );
+
+    currentTween().progress(0.5);
+
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1400,
+      configurable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    const rebuilt = currentTween();
+    expect(rebuilt.toVars.x).toBe(-1050); // getNavTransform('standard', 1400).navX
+    expect(rebuilt._progress).toBe(0.5);
+    expect(callsBy('to')).toHaveLength(0); // snap, без анимации
+  });
+
+  it('когда resize вне /home, позиция навбара не пересобирается', () => {
+    const env = makeRenderEnv({ bp: 'desktop', isHome: false });
+    const navRef = makeNavRef();
+    const snapshot = env.engine.getSnapshot();
+    tweens.push(
+      renderHookLite(() => useNavPosition(navRef, snapshot), {
+        wrapper: env.Wrapper,
+      }),
+    );
+
+    const fromToBefore = callsBy('fromTo').length;
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1400,
+      configurable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    expect(callsBy('fromTo')).toHaveLength(fromToBefore);
+  });
+});
+
+describe('RETARGET_SCRUB (явная обработка) — tablet TOGGLE', () => {
+  it('когда TOGGLE на /home (tablet), RETARGET_SCRUB запускает анимированную перецеливку с duration/ease из snapshot.transition', () => {
+    const env = makeRenderEnv({
+      bp: 'tablet',
+      isHome: true,
+      initialMode: 'slim',
+    });
+    const navRef = makeNavRef();
+    const snapshot = env.engine.getSnapshot();
+    tweens.push(
+      renderHookLite(() => useNavPosition(navRef, snapshot), {
+        wrapper: env.Wrapper,
+      }),
+    );
+
+    currentTween().progress(1);
+
+    env.engine.send({ type: 'TOGGLE' });
+
+    const tos = callsBy('to');
+    expect(tos).toHaveLength(1);
+    expect(tos[0].target).toBe(navRef.current);
+    const live = env.engine.getSnapshot();
+    expect(tos[0].vars.duration).toBe(live.transition.duration);
+    expect(tos[0].vars.ease).toBe(live.transition.ease);
+    // targetX = endX(standard, 1024) * progress(1) = -768
+    expect(tos[0].vars.x).toBe(-768);
+  });
+
+  it('когда RETARGET_SCRUB приходит без построенного scrub-твина (не /home), перецеливка не запускается', () => {
+    const env = makeRenderEnv({
+      bp: 'tablet',
+      isHome: false,
+      initialMode: 'standard',
+    });
+    const navRef = makeNavRef();
+    const snapshot = env.engine.getSnapshot();
+    tweens.push(
+      renderHookLite(() => useNavPosition(navRef, snapshot), {
+        wrapper: env.Wrapper,
+      }),
+    );
+
+    env.engine.send({ type: 'TOGGLE' }); // tablet → RETARGET_SCRUB, но scrub не построен
+
+    // Только дискретная анимация (NOTIFY_NAV_STATE), перецеливки нет:
+    // retarget запустил бы gsap.to с x:0 (progress 0), а дискретный — x:-944.
+    const tos = callsBy('to');
+    expect(tos).toHaveLength(1);
+    expect(tos[0].vars.x).toBe(-944); // getNavTransform('slim', 1024).navX
   });
 });

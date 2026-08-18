@@ -42,15 +42,51 @@ export function useNavPosition(
       const nav = navRef.current;
       if (!nav) return;
 
+      // Анимированная перецеливка scrub-а на новую геометрию, синхронная с
+      // контентом (snapshot.transition). Единая точка для двух триггеров:
+      // - смена breakpoint (buildScrub находит живой твин и делегирует сюда);
+      // - действие RETARGET_SCRUB (tablet TOGGLE standard↔slim), см. ниже.
+      // Значения homeEndState/transition берём из engine.getSnapshot(), т.к.
+      // RETARGET_SCRUB стреляет синхронно внутри send() ДО ре-рендера, и
+      // замыкание `snapshot` было бы устаревшим.
+      const retargetScrub = contextSafe!(() => {
+        const live = engine.getSnapshot();
+        const progress =
+          scrubTweenRef.current?.progress() ?? getSpacerScrollProgress();
+        const endX = getNavTransform(live.homeEndState, window.innerWidth).navX;
+        gsap.killTweensOf(nav);
+        scrubTweenRef.current?.kill();
+        scrubTweenRef.current = null;
+        gsap.to(nav, {
+          x: endX * progress,
+          duration: live.transition.duration,
+          ease: live.transition.ease,
+          overwrite: 'auto',
+          onComplete: () => {
+            scrubTweenRef.current = gsap.fromTo(
+              nav,
+              { x: 0 },
+              {
+                x: endX,
+                ease: 'none',
+                paused: true,
+                immediateRender: false,
+              },
+            );
+            scrubTweenRef.current.progress(getSpacerScrollProgress());
+          },
+        });
+      });
+
       const buildScrub = contextSafe!(() => {
         // Scrub-твин — владелец x только на /home. Вне /home позицию держит
         // дискретная gsap.to, поэтому твин не создаём. При перецеливке
-        // (TOGGLE на tablet / смена breakpoint меняет homeEndState) старый
-        // твин жив — useGSAP перезапускает колбэк без cleanup, и
-        // `scrubTweenRef` сохраняется, поэтому проигрываем плавную анимацию
-        // к новой геометрии синхронно с контентом (snapshot.transition), и
-        // лишь по завершении пересобираем scrub. Иначе навбар «прыгал»
-        // мгновенно, пока контент плывёт.
+        // (смена breakpoint меняет homeEndState) старый твин жив — useGSAP
+        // перезапускает колбэк без cleanup, `scrubTweenRef` сохраняется, поэтому
+        // проигрываем плавную анимацию к новой геометрии (retargetScrub),
+        // синхронно с контентом. Иначе навбар «прыгал» мгновенно, пока контент
+        // плывёт. RETARGET_SCRUB (tablet TOGGLE) ведёт ту же анимацию через
+        // подписку на действие, не через rebuild.
         const decision = decideScrubBuild({
           isHome: snapshot.isHome,
           homeEndState: snapshot.homeEndState,
@@ -65,44 +101,23 @@ export function useNavPosition(
 
         const prevProgress = decision.prevProgress;
         const hadScrub = scrubTweenRef.current != null;
-        scrubTweenRef.current?.kill();
-
         if (hadScrub) {
-          const endX = decision.endX;
-          const targetX = endX * prevProgress;
-          scrubTweenRef.current = null;
-          gsap.to(nav, {
-            x: targetX,
-            duration: snapshot.transition.duration,
-            ease: snapshot.transition.ease,
-            overwrite: 'auto',
-            onComplete: () => {
-              scrubTweenRef.current = gsap.fromTo(
-                nav,
-                { x: 0 },
-                {
-                  x: endX,
-                  ease: 'none',
-                  paused: true,
-                  immediateRender: false,
-                },
-              );
-              scrubTweenRef.current.progress(getSpacerScrollProgress());
-            },
-          });
-        } else {
-          scrubTweenRef.current = gsap.fromTo(
-            nav,
-            { x: 0 },
-            {
-              x: decision.endX,
-              ease: 'none',
-              paused: true,
-              immediateRender: false,
-            },
-          );
-          scrubTweenRef.current.progress(prevProgress);
+          retargetScrub();
+          return;
         }
+
+        scrubTweenRef.current?.kill();
+        scrubTweenRef.current = gsap.fromTo(
+          nav,
+          { x: 0 },
+          {
+            x: decision.endX,
+            ease: 'none',
+            paused: true,
+            immediateRender: false,
+          },
+        );
+        scrubTweenRef.current.progress(prevProgress);
 
         logger.debug('NavigationBar', 'buildScrub', {
           isHome: snapshot.isHome,
@@ -115,6 +130,23 @@ export function useNavPosition(
       });
 
       buildScrub();
+
+      // Явная обработка RETARGET_SCRUB (вариант A из task/18): tablet TOGGLE
+      // standard↔slim меняет homeEndState без смены bp/isHome, поэтому
+      // buildScrub не перезапускается — перецеливку запускаем по действию.
+      // guard `scrubTweenRef.current` — перецеливка имеет смысл только когда
+      // scrub уже построен (на /home).
+      const unsubscribeActions = engine.subscribeActions((actions) => {
+        for (const action of actions) {
+          if (action.type === 'RETARGET_SCRUB' && scrubTweenRef.current) {
+            retargetScrub();
+          }
+        }
+      });
+
+      // Ресайз внутри breakpoint (RC2 из task/18) обрабатывается отдельным
+      // useEffect-ом (см. ниже) — не внутри useGSAP, чтобы повторные запуски
+      // колбэка по смене deps не навешивали дубликаты listener-а.
 
       const unsubscribe = engine.subscribe((snap) => {
         const manualNow = snap.isManualToggle;
@@ -156,21 +188,49 @@ export function useNavPosition(
 
       return () => {
         unsubscribe();
+        unsubscribeActions();
         scrubTweenRef.current?.kill();
         scrubTweenRef.current = null;
       };
     },
     {
-      dependencies: [
-        navRef,
-        engine,
-        snapshot.homeEndState,
-        snapshot.bp,
-        snapshot.isHome,
-      ],
+      dependencies: [navRef, engine, snapshot.bp, snapshot.isHome],
       scope: navRef,
     },
   );
+
+  // Ресайз внутри breakpoint: контент адаптируется мгновенно
+  // (CSS-переменная), а навбар «плывёт», т.к. scrub-твин запечён под старую
+  // ширину. Снапаем позицию под новый viewport без анимации (как у контента),
+  // сохраняя прогресс. Отдельный effect (mount-once) — чтобы повторные
+  // перезапуски useGSAP по смене deps не дублировали listener.
+  useEffect(() => {
+    function handleResize() {
+      const navEl = navRef.current;
+      if (!navEl) return;
+      const live = engine.getSnapshot();
+      if (!live.isHome) return;
+      const progress =
+        scrubTweenRef.current?.progress() ?? getSpacerScrollProgress();
+      gsap.killTweensOf(navEl);
+      scrubTweenRef.current?.kill();
+      scrubTweenRef.current = gsap.fromTo(
+        navEl,
+        { x: 0 },
+        {
+          x: getNavTransform(live.homeEndState, window.innerWidth).navX,
+          ease: 'none',
+          paused: true,
+          immediateRender: false,
+        },
+      );
+      scrubTweenRef.current.progress(progress);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [engine, navRef, getSpacerScrollProgress]);
 
   useEffect(() => {
     if (

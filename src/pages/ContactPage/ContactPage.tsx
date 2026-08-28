@@ -2,7 +2,7 @@ import styles from './ContactPage.module.css';
 
 function ContactPage() {
   return (
-    <main className={styles.contact}>
+    <div className={styles.contact}>
       <h1>Контакты</h1>
 
       <section className={styles.section}>
@@ -73,7 +73,7 @@ function ContactPage() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 

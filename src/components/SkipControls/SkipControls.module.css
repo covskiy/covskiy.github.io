@@ -60,7 +60,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-core-400);
+    outline: 2px solid var(--color-border-focus);
     outline-offset: 2px;
     border-radius: var(--border-radius-sm);
   }
@@ -74,7 +74,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   font-size: var(--font-sizes-xs);
   cursor: pointer;
 
@@ -96,8 +96,8 @@
   }
 
   input[type='checkbox']:checked {
-    border-color: var(--color-core-700);
-    background: var(--color-core-700);
+    border-color: var(--color-border-accent);
+    background: var(--color-border-accent);
   }
 
   input[type='checkbox']:checked::after {

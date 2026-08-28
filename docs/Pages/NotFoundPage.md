@@ -7,15 +7,15 @@
 
 ```
 pages/NotFoundPage/
-├── NotFoundPage.tsx          # Компонент (main, h1, p, NavLink)
+├── NotFoundPage.tsx          # Компонент (div, h1, p, NavLink)
 └── NotFoundPage.module.css   # Стили (CSS Modules)
 ```
 
 ## Структура компонента
 
-- `<main>` — контейнер на всю высоту viewport, flex-центрирование
-- `<h1>` — код ошибки `404`, жирный шрифт через `--text-h`
-- `<p>` — сообщение «Страница не найдена», цвет `--text`
+- `<div>` — контейнер на всю высоту viewport, flex-центрирование
+- `<h1>` — код ошибки `404`, жирный шрифт через `--color-text-heading`
+- `<p>` — сообщение «Страница не найдена», цвет `--color-text-body`
 - `<NavLink to="/">` — кнопка-ссылка «На главную» с accent-стилями
 
 ## Стили

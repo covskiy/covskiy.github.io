@@ -13,6 +13,10 @@
     "body": {
       "$value": "\"Open Sans\", sans-serif",
       "$description": "Универсальный шрифт без засечек для основного текста, параграфов, подписей и мелких элементов."
+    },
+    "mono": {
+      "$value": "\"Fira Code\", monospace",
+      "$description": "Моноширинный шрифт — инлайн-код, <pre>, <kbd>."
     }
   },
   "fontSizes": {

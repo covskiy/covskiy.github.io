@@ -138,6 +138,7 @@ Tagline зарегистрирован на master-таймлайне в поз�
 
 ```tsx
 import { IntroAnimation, introStorage } from './components/IntroAnimation';
+import { LandingSections } from './components';
 import { useEffect, useState } from 'react';
 
 function HomePage() {
@@ -157,7 +158,7 @@ function HomePage() {
   return (
     <>
       {/* Контент HomePage всегда в DOM */}
-      <HomePageContent />
+      <LandingSections />
       {/* IntroAnimation — оверлей поверх контента HomePage */}
       {showIntro && (
         <IntroAnimation onComplete={handleIntroComplete} skipDelay={800} />

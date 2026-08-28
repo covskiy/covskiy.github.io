@@ -1,0 +1,41 @@
+/**
+ * layout.css — превращает CSS-переменные на `.layout-root` в геометрию
+ * слотов. Никаких `data-*` атрибутов (D7): только переменные.
+ *
+ * Корневой контейнер (`LayoutRoot`) держит:
+ *   --nav-pointer-events    none | auto
+ *   --nav-content-offset    margin-left <main> (px / vw)
+ *   --layout-state          fullscreen | standard | slim | invisible (для отладки)
+ *
+ * Значения публикуются `useLayoutApplier`-ом через `gsap.to(root, vars)`.
+ *
+ * Позиция `.nav` (translateX) управляется напрямую через GSAP в
+ * `useNavPosition`, а не через CSS-переменную.
+ * Scroll-lock — на `document.documentElement.style.overflow` (см. useLayoutApplier).
+ */
+
+.layout-root {
+  min-height: 100dvh;
+
+  --nav-pointer-events: auto;
+  --nav-content-offset: 0px;
+  --layout-state: fullscreen;
+}
+
+/**
+ * Слот навбара: позиция управляется GSAP напрямую (useNavPosition).
+ * Pointer-events отключаются на invisible, чтобы клики не проваливались
+ * в невидимой области.
+ */
+.layout-navbar {
+  position: fixed;
+  inset-block: 0;
+  left: 0;
+  z-index: 50;
+  pointer-events: var(--nav-pointer-events, auto);
+}
+
+.layout-content {
+  margin-left: var(--nav-content-offset, 0);
+  width: calc(100% - var(--nav-content-offset, 0));
+}

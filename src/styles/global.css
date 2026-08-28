@@ -8,13 +8,14 @@
 @import url('./spacing.css');
 @import url('./transitions.css');
 @import url('./typography.css');
+@import url('./semantic-mid.css');
 @import url('./fonts.css');
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: var(--font-size-base)/var(--line-height-base) var(--sans);
+  background: var(--color-bg-page);
+  color: var(--color-text-body);
+  font: var(--font-size-base)/var(--line-height-base) var(--font-body);
   letter-spacing: var(--letter-spacing-base);
 }
 
@@ -30,9 +31,9 @@ body {
 
 h1,
 h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weights-medium);
+  color: var(--color-text-heading);
 }
 
 h1 {
@@ -62,11 +63,11 @@ p {
 }
 
 code {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;
   border-radius: 4px;
-  background: var(--code-bg);
-  color: var(--text-h);
+  background: var(--color-bg-code);
+  color: var(--color-text-heading);
 }

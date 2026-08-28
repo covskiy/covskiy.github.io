@@ -29,7 +29,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  font-family: var(--font-families-headings);
+  font-family: var(--font-heading);
   font-size: var(--font-sizes-xl);
   line-height: var(--line-heights-normal);
   font-weight: var(--font-weights-semibold);
